@@ -2,6 +2,10 @@
 
 Leia README.md e docs/DESENVOLVIMENTO.md antes de implementar. O usuário autorizou autonomia nas decisões técnicas e criativas reversíveis. Trabalhe em português e registre decisões relevantes. Não peça aprovação para cada detalhe.
 
+## Economia de créditos
+
+O usuário quer economizar o máximo possível. Trabalhe por marcos pequenos, agrupe leituras/alterações e mantenha um resumo durável do estado para reduzir releituras. Use ferramentas diretas quando disponíveis, limite verificações ao que a mudança exige e evite consultas repetidas sem nova evidência. Salve commits em pontos úteis, sem necessidade de um commit por pequeno ajuste. Não inicie uma implementação grande quando o marco autorizado for apenas configuração. Registre os testes feitos para evitar repeti-los sem motivo.
+
 ## Prioridades
 
 - Bonito: cartoon 2D expressivo, identidade própria, interface limpa e efeitos legíveis.
