@@ -1,0 +1,12 @@
+.godot/
+.tools/
+builds/
+*.apk
+*.aab
+*.keystore
+*.jks
+.env
+.env.*
+!.env.example
+Thumbs.db
+.DS_Store
