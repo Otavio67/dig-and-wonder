@@ -1,0 +1,4 @@
+{
+  "basic": {"name": "Broca Pioneira", "pattern": [[0, 0]], "speed": 1.0, "color": "#fff1c2", "cost": 0},
+  "prism": {"name": "Broca Prisma", "pattern": [[0, 0], [-1, 1], [1, 1]], "speed": 1.0, "color": "#55f0df", "cost": 30}
+}

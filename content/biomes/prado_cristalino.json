@@ -1,0 +1,13 @@
+{
+  "id": "prado_cristalino",
+  "name": "Prado Cristalino",
+  "sky": "#92e4de",
+  "surface": "#f4ca73",
+  "layers": [
+    {"name": "Terra macia", "color": "#ca8052", "hardness": 1, "reward": 1, "chance": 0.24},
+    {"name": "Argila rosada", "color": "#a95e59", "hardness": 1, "reward": 2, "chance": 0.32},
+    {"name": "Pedra azul", "color": "#547b91", "hardness": 2, "reward": 4, "chance": 0.30},
+    {"name": "Veio de cristal", "color": "#54d9cb", "hardness": 2, "reward": 8, "chance": 0.14}
+  ],
+  "discovery": {"id": "semente-lunar", "name": "Semente lunar", "description": "Uma semente que brilha sem sol.", "depth": 16}
+}

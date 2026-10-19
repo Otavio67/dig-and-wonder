@@ -26,6 +26,19 @@ bash check-project.sh
 
 O instalador baixa a versão fixada do distribuidor oficial e confere o SHA-512. O workflow `.github/workflows/validate.yml` executa importação e inicialização no GitHub Actions. Esses checks não comprovam qualidade visual, 60 FPS, funcionamento em Android ou anúncios.
 
+## Protótipo jogável
+
+O marco atual contém a região **Prado Cristalino**. Toque e segure (ou clique e segure) no terreno para escavar; cada célula coletada entra na mochila. Venda a mochila por moedas no botão inferior. Com 30 moedas, transforme a Broca Pioneira em Broca Prisma: o padrão muda de uma célula para três células em leque. O álbum fica no botão superior direito; a descoberta aparece ao chegar a 16 células de profundidade. O estado é salvo em `user://` e o arquivo anterior válido é recuperado caso o atual esteja corrompido.
+
+No editor, abra `project.godot` com Godot 4.7.2 e rode F6/F5. No desktop, use o mouse; o jogo está em retrato. Para testar a lógica e a persistência, rode:
+
+```bash
+GODOT_BIN=.tools/godot/Godot_v4.7.2-stable_linux.x86_64 bash check-project.sh
+GODOT_BIN=.tools/godot/Godot_v4.7.2-stable_linux.x86_64 bash scripts/run-harnesses.sh
+```
+
+Ainda não foi produzido APK: este ambiente não tem Android SDK, ADB ou templates de exportação configurados. Não foi integrado plugin de anúncios, nem exibido rewarded ad de teste. O Google Mobile Ads oferece IDs de teste Android; validar a chamada, a recompensa e o ciclo do app depende de escolher/instalar uma ponte Godot Android e usar um dispositivo. A meta de 60 FPS também permanece sem medição em aparelho. A revisão visual automática não ficou disponível: o modo de captura do Godot abortou no container sem backend de janela.
+
 ## Diretrizes confirmadas pelo usuário
 
 - Priorizar Android. Considerar iOS depois, conforme os resultados financeiros.

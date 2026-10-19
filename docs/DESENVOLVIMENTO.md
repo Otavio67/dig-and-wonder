@@ -97,6 +97,12 @@ O usuário deu liberdade criativa para combinar ideias, resolver detalhes e disc
 
 Não inventar pesquisa, testes ou resultados comerciais. Números de concorrentes da conversa anterior não foram revalidados nesta retomada; não são premissas de receita ou alcance.
 
+## Checkpoint do primeiro protótipo (19/10/2026)
+
+Implementada uma região, mineração por células agrupadas em trechos de 12, venda por uma moeda, Broca Pioneira e Broca Prisma (padrão de três células), descoberta Semente lunar, álbum e save versionado com backup e recuperação. Conteúdo da região, catálogo de brocas e descobertas ficam em JSON separado dos sistemas. Arte provisória é desenhada com primitivas e paleta cartoon, sem recursos externos.
+
+Verificações executadas com Godot 4.7.2: importação e boot headless; economia (saldo insuficiente, exato e venda); padrão básico versus prisma; save válido, rejeição de esquema inválido e recuperação do backup após corrupção. Não houve teste de APK, Android, toque real, anúncio ou FPS. Não há método de captura visual funcional no container; revisão visual manual continua necessária.
+
 ## Verificação
 
 - Importação e análise de scripts no editor fixado em modo headless.
