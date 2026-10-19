@@ -13,6 +13,19 @@ Direção aprovada: escavar, coletar, vender, transformar a broca e descobrir mu
 - [Especificação e roteiro de desenvolvimento](docs/DESENVOLVIMENTO.md)
 - [Continuidade na nuvem](docs/NUVEM.md)
 
+## Executar e verificar
+
+Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A base atual contém uma tela de abertura estática; ainda não há escavação jogável.
+
+Em Linux x86_64:
+
+```bash
+bash setup-cloud.sh
+bash check-project.sh
+```
+
+O instalador baixa a versão fixada do distribuidor oficial e confere o SHA-512. O workflow `.github/workflows/validate.yml` executa importação e inicialização no GitHub Actions. Esses checks não comprovam qualidade visual, 60 FPS, funcionamento em Android ou anúncios.
+
 ## Diretrizes confirmadas pelo usuário
 
 - Priorizar Android. Considerar iOS depois, conforme os resultados financeiros.
@@ -43,4 +56,4 @@ Direção aprovada: escavar, coletar, vender, transformar a broca e descobrir mu
 
 ## Estado local
 
-Na retomada, esta pasta estava vazia. Git local foi inicializado com branch `main`, ainda sem commits ou remoto. Não há código de jogo, cena executável ou APK. Godot 4.7.2 portátil foi baixado do distribuidor oficial para `.tools/godot/` como preparação local; essa pasta não deve ir para o GitHub. Java e Android SDK não foram encontrados no PATH nem o SDK no diretório padrão verificado. O ambiente de nuvem ainda não foi configurado.
+Foram criados o projeto Godot, uma cena de abertura, instruções para desenvolvimento autônomo e scripts de verificação. A importação local foi executada com Godot 4.7.2. Ainda não há mecânica de jogo, APK ou anúncios integrados. O ambiente do Codex Cloud permanece pendente de configuração; o workflow do GitHub é uma verificação separada. A meta de 60 FPS em Android intermediário ainda precisa ser medida em aparelho.
