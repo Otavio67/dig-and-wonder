@@ -109,6 +109,10 @@ Corrigidos input que minerava ao tocar fora da área de terreno, alinhamento de 
 
 Adicionada tela inicial com Iniciar/Continuar. O autosave persiste também dano parcial em pedra, além de moedas, mochila, profundidade, broca, células quebradas e descobertas. Mantido em `user://` persistente com backup: cache do Android pode ser limpo pelo sistema e não deve ser o único armazenamento de progresso.
 
+Pesquisa de design resumida em `docs/REFERENCIAS-DE-DESIGN.md`. Aplicados objetivo dinâmico no HUD, bônus único de primeira venda, camadas com dureza/valor progressivos e descoberta que conduz ao próximo reforço. A oferta recompensada pós-venda está apenas planejada: requer integração Android e recompensa confirmada pelo SDK.
+
+Camadas mostradas no terreno e camadas usadas na escavação agora compartilham a mesma consulta determinística por célula. O verificador de boot ignora somente as duas mensagens conhecidas de socket bloqueado do container; outros erros no log continuam falhando.
+
 ## Verificação
 
 - Importação e análise de scripts no editor fixado em modo headless.

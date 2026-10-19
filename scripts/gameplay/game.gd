@@ -134,7 +134,7 @@ func _in_world(pos: Vector2) -> bool:
 func _cell_at(pos: Vector2) -> Vector2i:
 	var col := floori((pos.x - (size.x * 0.5 - cell_size * 0.5)) / cell_size)
 	var row := maxi(0, floori((pos.y - grid_origin_y) / cell_size) + camera_depth)
-	return Vector2i(clampi(col, -14, 14), row)
+	return Vector2i(clampi(col, -4, 4), row)
 
 func _perform_dig(cell: Vector2i) -> void:
 	var result := engine.dig(drill.pattern, cell.x, cell.y, drill.level)
@@ -171,9 +171,14 @@ func _sell() -> void:
 	if amount <= 0:
 		_toast("A mochila ainda está vazia.")
 		return
-	state.coins += Economy.sell_coins(amount)
+	var first_sale_bonus := 8 if not state.get("first_sale_bonus_claimed", false) else 0
+	state.coins += Economy.sell_coins(amount, first_sale_bonus)
 	state.inventory = 0
-	_toast("Venda feita: +%d moedas" % amount)
+	if first_sale_bonus > 0:
+		state.first_sale_bonus_claimed = true
+		_toast("Primeira venda! +%d moedas · bônus +%d" % [amount, first_sale_bonus])
+	else:
+		_toast("Venda feita: +%d moedas" % amount)
 	_commit_save()
 
 func _upgrade() -> void:
@@ -234,7 +239,28 @@ func _draw_hud(s: Vector2) -> void:
 	_draw_pill(Rect2(s.x - 134, 16, 117, 43), PANEL, 18)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x - 122, 43), "ÁLBUM  ✦ %d/1" % state.discoveries.size(), HORIZONTAL_ALIGNMENT_CENTER, 92, 14, INK)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "PRADO CRISTALINO  ·  %dm" % (state.depth * 2), HORIZONTAL_ALIGNMENT_CENTER, s.x - 50, 14, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 92), _goal_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 44, 12, Color("#416878"))
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "TOQUE E SEGURE PARA ESCAVAR", HORIZONTAL_ALIGNMENT_CENTER, s.x - 30, 12, Color("#416878"))
+
+func _goal_text() -> String:
+	if drill.id == "basic":
+		var progress_coins := int(state.coins) + int(state.inventory)
+		if progress_coins >= 30:
+			if int(state.coins) >= 30:
+				return "OBJETIVO: TRANSFORME A BROCA POR 30 ◉"
+			return "OBJETIVO: VENDA PEDRAS E TRANSFORME A BROCA"
+		if int(state.inventory) > 0:
+			return "OBJETIVO: VENDA AS PEDRAS · FALTAM %d ◉" % (30 - progress_coins)
+		if int(state.coins) > 0:
+			return "OBJETIVO: JUNTE %d ◉ PARA A BROCA PRISMA" % (30 - int(state.coins))
+		return "OBJETIVO: JUNTE 30 ◉ PARA A BROCA PRISMA"
+	if not state.discoveries.has(biome.discovery.id):
+		var remaining_depth := maxi(0, 32 - int(state.depth) * 2)
+		return "OBJETIVO: DESCUBRA O VEIO BRILHANTE · %d m" % remaining_depth
+	var next_cost := 18 + (drill.level - 1) * 16
+	if int(state.coins) >= next_cost:
+		return "OBJETIVO: REFORCE A BROCA · %d ◉" % next_cost
+	return "OBJETIVO: JUNTE %d ◉ PARA REFORÇAR" % next_cost
 
 func _draw_start_screen(s: Vector2) -> void:
 	draw_circle(Vector2(s.x * 0.5, 286), 88, Color("#b8efdb"))
@@ -266,7 +292,7 @@ func _draw_world(s: Vector2) -> void:
 				draw_rect(rect, Color("#f4d896"))
 				draw_rect(Rect2(x + 2, y + 3, cell_size - 4, cell_size - 5), Color("#f8e8bd"))
 			else:
-				var layer: Dictionary = _layer_visual(depth, col)
+				var layer: Dictionary = engine.layer_for_cell(depth, col)
 				var fill: Color = Color(layer.color)
 				draw_rect(rect, fill)
 				draw_rect(Rect2(x + 3, y + 3, cell_size - 6, cell_size - 7), fill.lightened(0.10))
@@ -280,19 +306,6 @@ func _draw_world(s: Vector2) -> void:
 	_draw_drill(Vector2(s.x * 0.5, top + 2))
 	_draw_pill(Rect2(s.x - 105, top + 11, 89, 30), PANEL, 13)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x - 97, top + 32), "%d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, 73, 14, INK)
-
-func _layer_visual(depth: int, col: int) -> Dictionary:
-	var layers: Array = biome.layers
-	var index := 0
-	if depth > 5:
-		index = 1
-	if depth > 12:
-		index = 2
-	if depth > 23:
-		index = 3
-	if index == 3 and posmod(depth + col * 3, 7) != 0:
-		index = 2
-	return layers[index]
 
 func _draw_drill(center: Vector2) -> void:
 	var color := drill.accent

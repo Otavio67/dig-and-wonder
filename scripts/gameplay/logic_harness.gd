@@ -28,7 +28,7 @@ func _initialize() -> void:
 	assert(prism_result.coins > basic_result.coins)
 	var hard_depth := 0
 	for depth in range(24):
-		if int(engine._layer_for_depth(depth).hardness) > 1:
+		if int(engine.layer_for_cell(depth, 0).hardness) > 1:
 			hard_depth = depth
 			break
 	engine.setup(biome, 72, [])

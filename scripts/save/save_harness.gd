@@ -27,5 +27,10 @@ func _initialize() -> void:
 	malformed = SaveStore.fresh()
 	malformed.damaged = {"0:1": 0}
 	assert(not SaveStore.save_data(malformed))
-	print("SAVE_OK valid=20 backup_recovery=42 invalid_version_cells_and_damage_rejected=true")
+	var legacy := SaveStore.fresh()
+	legacy.erase("damaged")
+	legacy.erase("first_sale_bonus_claimed")
+	assert(SaveStore.save_data(legacy))
+	assert(not SaveStore.load_data().get("first_sale_bonus_claimed", true))
+	print("SAVE_OK valid=20 backup_recovery=42 invalid_version_cells_and_damage_rejected=true legacy_save_migrates=true")
 	quit()

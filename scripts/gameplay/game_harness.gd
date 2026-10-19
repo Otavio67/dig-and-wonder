@@ -18,26 +18,43 @@ func _initialize() -> void:
 	assert(game._cell_at(Vector2(270, 181)) == Vector2i(0, 0))
 	game._on_press(Vector2(270, 100))
 	assert(not game.held and game.engine.dug.is_empty())
+	game.state.inventory = 5
+	game._sell()
+	assert(game.state.coins == 13 and game.state.first_sale_bonus_claimed)
+	game.state.inventory = 4
+	game._sell()
+	assert(game.state.coins == 17)
+	assert(game._goal_text().contains("JUNTE 13"))
+	game._upgrade()
+	assert(game.drill.id == "basic" and game.state.coins == 17)
+	game.state.coins = 30
+	assert(game._goal_text().contains("TRANSFORME A BROCA"))
+	game._upgrade()
+	assert(game.drill.id == "prism" and game.drill.pattern.size() == 3 and game.state.coins == 0)
+	assert(game._goal_text().contains("VEIO BRILHANTE"))
 	game.drill.level = 100
 	for depth in range(17):
 		game._perform_dig(Vector2i(0, depth))
 	assert(game.state.depth >= 17)
 	assert(game.state.discoveries.has(game.biome.discovery.id))
 	assert(game.camera_depth > 0)
+	assert(game._goal_text().contains("REFORÇAR"))
 	game.drill.level = 3
 	game._commit_save()
 	var saved := SaveStore.load_data()
 	assert(saved.drill_level == 3)
 	game.engine.setup(game.biome, 7042, [])
 	game.drill.id = "basic"
+	var basic_pattern: Array[Vector2i] = [Vector2i.ZERO]
+	game.drill.pattern = basic_pattern
 	game.drill.level = 1
 	var hard_depth := 0
 	for depth in range(24):
-		if int(game.engine._layer_for_depth(depth).hardness) > 1:
+		if int(game.engine.layer_for_cell(depth, 0).hardness) > 1:
 			hard_depth = depth
 			break
 	game._perform_dig(Vector2i(0, hard_depth))
 	saved = SaveStore.load_data()
 	assert(saved.damaged.has("0:%d" % hard_depth))
-	print("GAME_OK start_button=true grid_center=0:0 hud_does_not_dig=true discovery_depth=17 scroll=%d saved_drill_level=%d partial_damage_autosaved=true" % [game.camera_depth, game.drill.level])
+	print("GAME_OK start_button=true first_sale_bonus_once=true grid_center=0:0 hud_does_not_dig=true discovery_depth=17 scroll=%d saved_partial_damage=true" % game.camera_depth)
 	quit()

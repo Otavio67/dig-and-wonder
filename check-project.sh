@@ -14,7 +14,11 @@ run_check() {
   shift
   local logfile=".tools/logs/$name.log"
   "$engine" --headless --path . "$@" 2>&1 | tee "$logfile"
-  if grep -Eq 'SCRIPT ERROR:|Parse Error:|ERROR:' "$logfile" && ! grep -q 'Condition "_sock == -1" is true. Returning: FAILED' "$logfile"; then
+  if grep -Eq 'SCRIPT ERROR:|Parse Error:' "$logfile" || \
+    grep 'ERROR:' "$logfile" | \
+      grep -Fv 'Condition "_sock == -1" is true. Returning: FAILED' | \
+      grep -Fv 'Condition "err != OK" is true. Returning: ERR_CANT_CREATE' | \
+      grep -q .; then
     echo "Falha na verificação: $name"
     exit 1
   fi

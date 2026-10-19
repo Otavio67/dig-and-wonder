@@ -6,7 +6,7 @@ const BACKUP := "user://dig_wonder.save.bak.json"
 const VERSION := 1
 
 static func fresh() -> Dictionary:
-	return {"version": VERSION, "coins": 0, "depth": 0, "inventory": 0, "drill": "basic", "drill_level": 1, "dug": [], "damaged": {}, "discoveries": []}
+	return {"version": VERSION, "coins": 0, "depth": 0, "inventory": 0, "drill": "basic", "drill_level": 1, "dug": [], "damaged": {}, "discoveries": [], "first_sale_bonus_claimed": false}
 
 static func _valid(data: Variant) -> bool:
 	if not data is Dictionary or int(data.get("version", -1)) != VERSION:
@@ -19,6 +19,8 @@ static func _valid(data: Variant) -> bool:
 	if not data.get("drill", null) is String or not data.get("dug", null) is Array or not data.get("discoveries", null) is Array:
 		return false
 	if not data.drill in ["basic", "prism"]:
+		return false
+	if data.has("first_sale_bonus_claimed") and not data.first_sale_bonus_claimed is bool:
 		return false
 	for cell in data.dug:
 		if not cell is String or cell.is_empty() or cell.length() > 16:
@@ -60,6 +62,8 @@ static func save_data(data: Dictionary) -> bool:
 	copy["version"] = VERSION
 	if not copy.has("damaged"):
 		copy["damaged"] = {}
+	if not copy.has("first_sale_bonus_claimed"):
+		copy["first_sale_bonus_claimed"] = false
 	if not _valid(copy):
 		return false
 	var temp := PATH + ".tmp"
