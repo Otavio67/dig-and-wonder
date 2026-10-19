@@ -20,5 +20,8 @@ func _initialize() -> void:
 	main_file = null
 	assert(SaveStore.load_data().coins == 42)
 	assert(not SaveStore.save_data({"version": 4}))
-	print("SAVE_OK valid=20 backup_recovery=42 invalid_rejected=true")
+	var malformed := SaveStore.fresh()
+	malformed.dug = [42]
+	assert(not SaveStore.save_data(malformed))
+	print("SAVE_OK valid=20 backup_recovery=42 invalid_version_and_cells_rejected=true")
 	quit()

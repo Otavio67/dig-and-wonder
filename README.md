@@ -28,7 +28,7 @@ O instalador baixa a versão fixada do distribuidor oficial e confere o SHA-512.
 
 ## Protótipo jogável
 
-O marco atual contém a região **Prado Cristalino**. Toque e segure (ou clique e segure) no terreno para escavar; cada célula coletada entra na mochila. Venda a mochila por moedas no botão inferior. Com 30 moedas, transforme a Broca Pioneira em Broca Prisma: o padrão muda de uma célula para três células em leque. O álbum fica no botão superior direito; a descoberta aparece ao chegar a 16 células de profundidade. O estado é salvo em `user://` e o arquivo anterior válido é recuperado caso o atual esteja corrompido.
+O marco atual contém a região **Prado Cristalino**. Toque e segure (ou clique e segure) no terreno para escavar; cada célula coletada entra na mochila. Veios mais raros e profundos valem mais moedas. Venda o valor acumulado no botão inferior. Com 30 moedas, transforme a Broca Pioneira em Broca Prisma: o padrão muda de uma célula para três células em leque. A mina acompanha o avanço em profundidade; o álbum fica no botão superior direito e a descoberta aparece a partir de 16 células. O estado é salvo em `user://` e o arquivo anterior válido é recuperado caso o atual esteja corrompido.
 
 No editor, abra `project.godot` com Godot 4.7.2 e rode F6/F5. No desktop, use o mouse; o jogo está em retrato. Para testar a lógica e a persistência, rode:
 

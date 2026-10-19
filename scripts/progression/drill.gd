@@ -7,6 +7,12 @@ var pattern: Array[Vector2i] = [Vector2i.ZERO]
 var accent := Color("fff1c2")
 var level := 1
 
+func _init() -> void:
+	id = "basic"
+	title = "Broca Pioneira"
+	pattern = [Vector2i.ZERO]
+	accent = Color("fff1c2")
+
 func transform_to_prism() -> void:
 	id = "prism"
 	title = "Broca Prisma"

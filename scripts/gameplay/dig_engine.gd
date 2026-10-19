@@ -6,11 +6,13 @@ const CHUNK_CELLS := 12
 var biome: Dictionary
 var dug := {}
 var durability := {}
-var rng := RandomNumberGenerator.new()
+var seed_value := 0
 
 func setup(data: Dictionary, seed_value: int, dug_cells: Array) -> void:
 	biome = data
-	rng.seed = seed_value
+	self.seed_value = seed_value
+	dug.clear()
+	durability.clear()
 	for cell in dug_cells:
 		dug[str(cell)] = true
 
@@ -22,7 +24,8 @@ func _key(x: int, y: int) -> String:
 
 func _layer_for_depth(depth: int) -> Dictionary:
 	var layers: Array = biome.layers
-	var choice := rng.randf()
+	var hash_value: int = absi(hash("%d:%d" % [seed_value, depth]))
+	var choice: float = float(hash_value % 10000) / 10000.0
 	var sum := 0.0
 	for layer in layers:
 		sum += float(layer.chance)
@@ -41,6 +44,8 @@ func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int) -> 
 		if dug.has(cell_key):
 			continue
 		var layer: Dictionary = _layer_for_depth(y)
+		if not durability.has(cell_key):
+			durability[cell_key] = int(layer.hardness)
 		var remaining: int = int(durability.get(cell_key, int(layer.hardness))) - maxi(1, power)
 		if remaining > 0:
 			durability[cell_key] = remaining

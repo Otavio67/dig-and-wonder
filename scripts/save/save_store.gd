@@ -18,7 +18,15 @@ static func _valid(data: Variant) -> bool:
 			return false
 	if not data.get("drill", null) is String or not data.get("dug", null) is Array or not data.get("discoveries", null) is Array:
 		return false
-	return data.drill in ["basic", "prism"]
+	if not data.drill in ["basic", "prism"]:
+		return false
+	for cell in data.dug:
+		if not cell is String or cell.is_empty() or cell.length() > 16:
+			return false
+	for discovery_id in data.discoveries:
+		if not discovery_id is String or discovery_id.is_empty() or discovery_id.length() > 64:
+			return false
+	return true
 
 static func _read(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

@@ -25,5 +25,6 @@ func _initialize() -> void:
 	engine.setup(biome, 72, [])
 	var prism_result := engine.dig(three, 0, 0, 4)
 	assert(prism_result.broken > basic_result.broken)
-	print("LOGIC_OK economy=pass insufficient_funds=pass basic_pattern=1 prism_pattern=3 broken=%d/%d" % [basic_result.broken, prism_result.broken])
+	assert(prism_result.coins > basic_result.coins)
+	print("LOGIC_OK economy=pass insufficient_funds=pass basic_pattern=1 prism_pattern=3 broken=%d/%d value=%d/%d" % [basic_result.broken, prism_result.broken, basic_result.coins, prism_result.coins])
 	quit()

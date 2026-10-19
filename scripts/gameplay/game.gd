@@ -25,6 +25,8 @@ var toast := ""
 var toast_time := 0.0
 var show_album := false
 var press_scale := 0.0
+var grid_origin_y := 154.0
+var world_bottom := 0.0
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(300, 560)
@@ -37,6 +39,8 @@ func _ready() -> void:
 	engine.setup(biome, 7042, dug_cells)
 	if state.drill == "prism":
 		drill.transform_to_prism()
+	drill.level = maxi(1, int(state.get("drill_level", 1)))
+	camera_depth = maxi(0, int(state.depth) - 8)
 	set_process(true)
 	queue_redraw()
 
@@ -74,7 +78,7 @@ func _process(delta: float) -> void:
 	if changed:
 		queue_redraw()
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if show_album:
 		if event is InputEventScreenTouch and event.pressed or event is InputEventMouseButton and event.pressed:
 			show_album = false
@@ -86,60 +90,58 @@ func _unhandled_input(event: InputEvent) -> void:
 			_on_press(event.position)
 		else:
 			held = false
+		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_on_press(event.position)
 		else:
 			held = false
+		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion and held:
 		if _in_world(event.position):
 			mine_target = _cell_at(event.position)
 
 func _on_press(pos: Vector2) -> void:
 	var size := get_rect().size
-	if _in_button(pos, size.y - 152.0, size.y - 98.0):
+	if pos.y >= size.y - 168.0 and pos.y <= size.y - 108.0:
 		_sell()
-	elif _in_button(pos, size.y - 91.0, size.y - 27.0):
+	elif pos.y >= size.y - 103.0 and pos.y <= size.y - 53.0:
 		_upgrade()
 	elif pos.y < 96.0 and pos.x > size.x - 132.0:
 		show_album = true
-	else:
+	elif _in_world(pos):
 		mine_target = _cell_at(pos)
 		held = true
 		charge = 0.16
 		_perform_dig(mine_target)
 	queue_redraw()
 
-func _in_button(pos: Vector2, top: float, bottom: float) -> bool:
-	return pos.y >= top and pos.y <= bottom
-
 func _in_world(pos: Vector2) -> bool:
-	return pos.y >= 150.0 and pos.y < size.y - 170.0
+	return pos.y >= grid_origin_y and pos.y < world_bottom
 
 func _cell_at(pos: Vector2) -> Vector2i:
-	var col := floori((pos.x - size.x * 0.5) / cell_size)
-	var row := maxi(0, floori((pos.y - 186.0) / cell_size) + camera_depth)
+	var col := floori((pos.x - (size.x * 0.5 - cell_size * 0.5)) / cell_size)
+	var row := maxi(0, floori((pos.y - grid_origin_y) / cell_size) + camera_depth)
 	return Vector2i(clampi(col, -14, 14), row)
 
 func _perform_dig(cell: Vector2i) -> void:
 	var result := engine.dig(drill.pattern, cell.x, cell.y, drill.level)
 	if result.broken <= 0:
 		return
-	state.inventory += result.broken
-	state.depth = maxi(int(state.depth), cell.y + 1)
+	state.inventory += int(result.coins)
 	for target in result.cells:
+		state.depth = maxi(int(state.depth), target.y + 1)
 		_spawn_particles(_cell_center(target), result.broken)
 		if not state.discoveries.has(biome.discovery.id) and target.y >= int(biome.discovery.depth):
 			state.discoveries.append(biome.discovery.id)
 			_toast("Descoberta: Semente lunar!")
-	if state.discoveries.is_empty() and state.depth >= int(biome.discovery.depth):
-		state.discoveries.append(biome.discovery.id)
-		_toast("Descoberta: Semente lunar!")
+	var visible_rows := maxi(1, floori((world_bottom - grid_origin_y) / cell_size))
+	camera_depth = maxi(camera_depth, state.depth - visible_rows + 2)
 	_commit_save()
 	queue_redraw()
 
 func _cell_center(cell: Vector2i) -> Vector2:
-	return Vector2(size.x * 0.5 + (cell.x + 0.5) * cell_size, 186.0 + (cell.y - camera_depth + 0.5) * cell_size)
+	return Vector2(size.x * 0.5 + cell.x * cell_size, grid_origin_y + (cell.y - camera_depth + 0.5) * cell_size)
 
 func _spawn_particles(origin: Vector2, count: int) -> void:
 	var remaining := 26 - fx.size()
@@ -211,18 +213,20 @@ func _draw_hud(s: Vector2) -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(31, 44), "◉  %d" % state.coins, HORIZONTAL_ALIGNMENT_LEFT, 110, 21, Color("#c18431"))
 	_draw_pill(Rect2(s.x - 134, 16, 117, 43), PANEL, 18)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x - 122, 43), "ÁLBUM  ✦ %d/1" % state.discoveries.size(), HORIZONTAL_ALIGNMENT_CENTER, 92, 14, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "PRADO CRISTALINO  ·  %dm" % (camera_depth * 2), HORIZONTAL_ALIGNMENT_CENTER, s.x - 50, 14, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "PRADO CRISTALINO  ·  %dm" % (state.depth * 2), HORIZONTAL_ALIGNMENT_CENTER, s.x - 50, 14, INK)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "TOQUE E SEGURE PARA ESCAVAR", HORIZONTAL_ALIGNMENT_CENTER, s.x - 30, 12, Color("#416878"))
 
 func _draw_world(s: Vector2) -> void:
 	var top := 154.0
 	var bottom := s.y - 174.0
+	grid_origin_y = top
+	world_bottom = bottom
 	draw_rect(Rect2(0, top, s.x, bottom - top), Color("#f0cf91"))
 	var visible_rows := ceili((bottom - top) / cell_size) + 1
 	for screen_row in range(visible_rows):
 		var depth := camera_depth + screen_row
-		for col in range(-5, 6):
-			var x := s.x * 0.5 + float(col) * cell_size
+		for col in range(-4, 5):
+			var x := s.x * 0.5 - cell_size * 0.5 + float(col) * cell_size
 			var y := top + float(screen_row) * cell_size
 			var rect := Rect2(x, y, cell_size, cell_size)
 			if engine.is_dug(col, depth):
@@ -242,7 +246,7 @@ func _draw_world(s: Vector2) -> void:
 	draw_polyline(surface_line, Color("#75b85d"), 6.0, true)
 	_draw_drill(Vector2(s.x * 0.5, top + 2))
 	_draw_pill(Rect2(s.x - 105, top + 11, 89, 30), PANEL, 13)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x - 97, top + 32), "◉ %d" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, 73, 14, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x - 97, top + 32), "%d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, 73, 14, INK)
 
 func _layer_visual(depth: int, col: int) -> Dictionary:
 	var layers: Array = biome.layers
@@ -276,16 +280,16 @@ func _draw_controls(s: Vector2) -> void:
 	draw_rect(Rect2(0, s.y - 168, s.x, 168), Color("#fff9e8"))
 	draw_line(Vector2(18, s.y - 168), Vector2(s.x - 18, s.y - 168), Color("#e3d9bd"), 2.0)
 	_draw_pill(Rect2(18, s.y - 153, s.x - 36, 40), Color("#e8f2d7"), 16)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 127), "MOCHILA  %d" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, s.x - 55, 15, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 127), "VALOR NA MOCHILA  %d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, s.x - 55, 15, INK)
 	_draw_button(Rect2(18, s.y - 102, s.x - 36, 47), Color("#f6c15f"), "VENDER PEDRAS  ·  +%d" % state.inventory, Color("#543e23"))
 	var upgrade_text: String
 	var cost: int
 	if drill.id == "basic":
-		upgrade_text = "TRANSFORMAR EM BROCA PRISMA  ·  30 ◉"
+		upgrade_text = "BROCA PRISMA  ·  30 ◉"
 		cost = 30
 	else:
 		cost = 18 + (drill.level - 1) * 16
-		upgrade_text = "REFORÇAR BROCA NV.%d  ·  %d ◉" % [drill.level, cost]
+		upgrade_text = "REFORÇAR NV.%d  ·  %d ◉" % [drill.level, cost]
 	var enabled := int(state.coins) >= cost
 	_draw_button(Rect2(18, s.y - 48, s.x - 36, 40), Color("#37cbb9") if enabled else Color("#c5d7ce"), upgrade_text, Color("#173d4b"))
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 6), "Broca: %s  ·  quebradas %d" % [drill.title, engine.dug.size()], HORIZONTAL_ALIGNMENT_CENTER, s.x - 24, 11, Color("#55707a"))
@@ -307,7 +311,7 @@ func _draw_pill(rect: Rect2, color: Color, radius: float) -> void:
 func _draw_button(rect: Rect2, color: Color, label: String, text_color: Color) -> void:
 	draw_rect(Rect2(rect.position.x, rect.position.y + 3, rect.size.x, rect.size.y), Color("#354f5c"), true)
 	draw_rect(rect, color, true)
-	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.67), label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 14, text_color)
+	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.67), label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 14, 13, text_color)
 
 func _draw_particles() -> void:
 	for particle in fx:

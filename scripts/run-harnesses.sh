@@ -9,4 +9,5 @@ export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
 "$engine" --headless --path . --script res://scripts/gameplay/logic_harness.gd
+"$engine" --headless --path . --script res://scripts/gameplay/game_harness.gd
 "$engine" --headless --path . --script res://scripts/save/save_harness.gd

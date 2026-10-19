@@ -103,6 +103,10 @@ Implementada uma região, mineração por células agrupadas em trechos de 12, v
 
 Verificações executadas com Godot 4.7.2: importação e boot headless; economia (saldo insuficiente, exato e venda); padrão básico versus prisma; save válido, rejeição de esquema inválido e recuperação do backup após corrupção. Não houve teste de APK, Android, toque real, anúncio ou FPS. Não há método de captura visual funcional no container; revisão visual manual continua necessária.
 
+## Revisão incremental (19/10/2026)
+
+Corrigidos input que minerava ao tocar fora da área de terreno, alinhamento de hit test com a grade, retomada da profundidade e nível salvo da broca, scroll que tornava a descoberta inalcançável e valor dos veios ignorado na venda. Harnesses confirmam coordenada central, HUD não minera, descoberta/scroll, valor maior do padrão prisma e nível da broca salvo. Continuam pendentes contraste/tipografia vistos em celular, validação visual, Android, anúncios e FPS.
+
 ## Verificação
 
 - Importação e análise de scripts no editor fixado em modo headless.
