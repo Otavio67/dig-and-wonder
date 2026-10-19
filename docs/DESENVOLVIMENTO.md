@@ -125,3 +125,11 @@ Camadas mostradas no terreno e camadas usadas na escavação agora compartilham 
 - Toque, proporções de tela, pausa/retomada, memória e desempenho em Android real.
 
 Registrar quais verificações foram executadas e os resultados. O primeiro marco exige protótipo executável e testes do seu escopo; publicação exige também validação no aparelho e preparação da loja.
+
+## Incremento 0.0.1 — baús e equipamento
+
+Os baús fechados são achados a cada 24 m; as chaves aparecem 8 m antes de cada baú. A primeira dupla fica em 8/16 m. Ambos são gratuitos e não expiram. Um baú consome uma chave e gera uma recompensa de catálogo. Probabilidades iniciais: Ruim 28%, Boa 36%, Épica 22%, Lendária 9%, Única 3,5%, Mística 1,5%; peso de raridades altas cresce gradualmente com profundidade. O quinto baú sem Épico garante um; o décimo segundo sem Lendário garante um. Repetidos convertem em ouro (5, 9, 18, 34, 60 ou 100 conforme a raridade).
+
+O catálogo traz cinco brocas além da inicial, com padrões de escavação próprios, e seis equipamentos para três encaixes. Os bônus afetam poder e valor por bloco. Save esquema 2 persiste inventário, equipamentos, chaves, baús, garantias e último achado; saves versão 1 migram preservando moedas, escavação e broca Prisma.
+
+A interface oferece a Oficina de Achados no botão de baús do HUD. A oferta mostra raridade, descrição, estado encontrado/equipado, chances iniciais e garantias. Nenhum baú/chave é vendido ou ligado a anúncio. Detalhes de regras e limitação da pesquisa web estão em [REFERENCIAS-DE-DESIGN.md](REFERENCIAS-DE-DESIGN.md).

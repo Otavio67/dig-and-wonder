@@ -27,10 +27,14 @@ func _initialize() -> void:
 	malformed = SaveStore.fresh()
 	malformed.damaged = {"0:1": 0}
 	assert(not SaveStore.save_data(malformed))
-	var legacy := SaveStore.fresh()
-	legacy.erase("damaged")
-	legacy.erase("first_sale_bonus_claimed")
-	assert(SaveStore.save_data(legacy))
-	assert(not SaveStore.load_data().get("first_sale_bonus_claimed", true))
-	print("SAVE_OK valid=20 backup_recovery=42 invalid_version_cells_and_damage_rejected=true legacy_save_migrates=true")
+	var legacy := {"version": 1, "coins": 19, "depth": 11, "inventory": 3, "drill": "prism", "drill_level": 2, "dug": ["0:0"], "damaged": {}, "discoveries": [], "first_sale_bonus_claimed": true}
+	var legacy_file := FileAccess.open(SaveStore.PATH, FileAccess.WRITE)
+	legacy_file.store_string(JSON.stringify(legacy))
+	legacy_file = null
+	var migrated := SaveStore.load_data()
+	assert(migrated.version == SaveStore.VERSION and migrated.coins == 19)
+	assert(migrated.drill_inventory.has("prism") and migrated.equipped_gear.is_empty())
+	assert(migrated.keys == 0 and migrated.chests == 0)
+	assert(SaveStore.save_data(migrated))
+	print("SAVE_OK valid=20 backup_recovery=42 invalid_schema_cells_damage_rejected=true v1_to_v2_preserves_prism=true")
 	quit()

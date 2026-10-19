@@ -8,6 +8,17 @@ export HOME="$PWD/.tools/home"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
-"$engine" --headless --path . --script res://scripts/gameplay/logic_harness.gd
-"$engine" --headless --path . --script res://scripts/gameplay/game_harness.gd
-"$engine" --headless --path . --script res://scripts/save/save_harness.gd
+mkdir -p .tools/logs
+run_harness() {
+  local name="$1"
+  local script="$2"
+  local logfile=".tools/logs/$name.log"
+  timeout 30s "$engine" --headless --path . --script "$script" 2>&1 | tee "$logfile"
+  if grep -Eq 'SCRIPT ERROR:|Parse Error:|Assertion failed|ERROR:' "$logfile"; then
+    echo "Falha no harness: $name"
+    exit 1
+  fi
+}
+run_harness logic res://scripts/gameplay/logic_harness.gd
+run_harness gameplay res://scripts/gameplay/game_harness.gd
+run_harness save res://scripts/save/save_harness.gd

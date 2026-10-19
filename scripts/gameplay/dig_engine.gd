@@ -44,7 +44,7 @@ func layer_for_cell(depth: int, cell_x: int) -> Dictionary:
 			return layers[index]
 	return layers[candidates.back()]
 
-func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int) -> Dictionary:
+func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int, reward_bonus: int = 0) -> Dictionary:
 	var result := {"broken": 0, "coins": 0, "cells": [], "worked": 0}
 	for offset in pattern:
 		var x := center_x + offset.x
@@ -65,7 +65,7 @@ func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int) -> 
 		durability.erase(cell_key)
 		dug[cell_key] = true
 		result.broken += 1
-		result.coins += int(layer.reward)
+		result.coins += int(layer.reward) + maxi(0, reward_bonus)
 		result.cells.append(Vector2i(x, y))
 	return result
 

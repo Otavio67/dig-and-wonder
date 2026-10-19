@@ -22,3 +22,13 @@ Pesquisa em 19/10/2026. As referências servem para observar padrões de experi�
 ## Critérios para anúncios futuros
 
 Sem anúncios em tela de início, durante mineração, nem para bloquear venda, melhoria ou descoberta. Primeiro candidato: bônus opcional pós-venda, em troca explicitamente descrita (adicionar uma quantia igual ao valor-base vendido, sem dobrar o bônus de primeira venda), limitado a uma oferta por venda e concedido somente após confirmação do SDK. Segundo candidato, apenas quando houver progresso offline real: opção para dobrar o ganho offline ao voltar. Não adicionar banner fixo no protótipo sem teste de layout em telefone.
+
+## Baús e equipamentos (versão 0.0.1)
+
+As decisões partem do ciclo de profundidade e das recompensas legíveis documentados acima. O padrão comum de “chave comprada ou espera” foi descartado para este protótipo: cada chave e baú é ganho cavando, surgem em marcos alternados (8 m para a chave e 16 m para o primeiro baú, depois a cada 24 m), e baús podem ficar guardados sem prazo. Isso evita um bloqueio de progressão e não cria moeda paga. Também não há anúncio para obter chave ou abrir baú.
+
+A abertura custa uma chave. As chances começam em Ruim 28%, Boa 36%, Épica 22%, Lendária 9%, Única 3,5% e Mística 1,5%; as categorias altas ganham peso com a profundidade. O painel informa as chances iniciais e a proteção: cinco aberturas sem item Épico levam a um Épico garantido; doze sem Lendário levam a um Lendário garantido. Duplicatas pagam ouro fixo por raridade. As brocas mudam a forma da escavação, e equipamentos têm encaixes próprios com bônus que afetam poder ou valor por bloco.
+
+Não há compra com dinheiro real, recompensa por anúncio ou conteúdo pago aleatório. Caso isso seja considerado no futuro, será necessário mostrar chances antes da compra, revisar classificação/privacidade e políticas vigentes da loja, e preservar uma rota de progressão sem gasto. O sistema atual não depende dessa monetização.
+
+A pesquisa web externa não estava acessível durante esta revisão (proxy respondeu 403). As referências citadas na primeira parte são as já registradas no checkpoint anterior; não foram revalidadas nesta rodada. As porcentagens e regras acima vêm dos catálogos e do código desta versão, não de dados atribuídos a outros jogos.

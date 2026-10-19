@@ -15,7 +15,7 @@ Direção aprovada: escavar, coletar, vender, transformar a broca e descobrir mu
 
 ## Executar e verificar
 
-Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A base atual contém uma tela de abertura estática; ainda não há escavação jogável.
+Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A versão `0.0.1` contém escavação jogável na região Prado Cristalino.
 
 Em Linux x86_64:
 
@@ -36,6 +36,10 @@ No editor, abra `project.godot` com Godot 4.7.2 e rode F6/F5. No desktop, use o 
 GODOT_BIN=.tools/godot/Godot_v4.7.2-stable_linux.x86_64 bash check-project.sh
 GODOT_BIN=.tools/godot/Godot_v4.7.2-stable_linux.x86_64 bash scripts/run-harnesses.sh
 ```
+
+Em `0.0.1`, baús surgem em marcos de profundidade e chaves são encontradas escavando. Um baú consome uma chave; nenhum deles é comprado ou exige anúncio. Recompensas aleatórias podem incluir brocas e equipamentos dos níveis Ruim, Boa, Épica, Lendária, Única e Mística. O painel **Baús** mostra o que cada item faz, permite equipar brocas e até três equipamentos (um por encaixe); duplicatas viram moedas. Há proteção de sorte: depois de quatro baús sem Épico, o próximo garante Épico; após onze sem Lendário, o próximo garante Lendário. As probabilidades iniciais e a evolução por profundidade estão visíveis no painel. Saves antigos do esquema 1 migram para o esquema 2 e preservam a broca Prisma.
+
+Confira o histórico e as notas em [VERSOES.md](docs/VERSOES.md). Conteúdo de brocas, equipamentos e região permanece separado dos sistemas para facilitar novas expansões.
 
 Ainda não foi produzido APK: este ambiente não tem Android SDK, ADB ou templates de exportação configurados. Não foi integrado plugin de anúncios, nem exibido rewarded ad de teste. O Google Mobile Ads oferece IDs de teste Android; validar a chamada, a recompensa e o ciclo do app depende de escolher/instalar uma ponte Godot Android e usar um dispositivo. A meta de 60 FPS também permanece sem medição em aparelho. A revisão visual automática não ficou disponível: o modo de captura do Godot abortou no container sem backend de janela.
 

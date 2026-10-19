@@ -1,4 +1,8 @@
 {
-  "basic": {"name": "Broca Pioneira", "pattern": [[0, 0]], "speed": 1.0, "color": "#fff1c2", "cost": 0},
-  "prism": {"name": "Broca Prisma", "pattern": [[0, 0], [-1, 1], [1, 1]], "speed": 1.0, "color": "#55f0df", "cost": 30}
+  "basic": {"name": "Broca Pioneira", "pattern": [[0, 0]], "color": "#fff1c2", "cost": 0, "rarity": "Simples", "description": "Abre um túnel por vez."},
+  "trinca": {"name": "Broca Trinca", "pattern": [[-1, 0], [0, 0], [1, 0]], "color": "#7fdc94", "cost": 0, "rarity": "Boa", "description": "Escava três blocos de uma vez."},
+  "prism": {"name": "Broca Prisma", "pattern": [[0, 0], [-1, 1], [1, 1]], "color": "#55f0df", "cost": 30, "rarity": "Épica", "description": "Abre um leque de três túneis."},
+  "dynamo": {"name": "Broca Dinamo", "pattern": [[0, 0], [0, 1], [-1, 1], [1, 1], [0, 2]], "color": "#f3ad54", "cost": 0, "rarity": "Lendária", "description": "Desce em pulsos e abre ramificações."},
+  "echo": {"name": "Sonda de Ecos", "pattern": [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]], "color": "#bc91ec", "cost": 0, "rarity": "Única", "description": "Revela um pequeno mapa em cruz."},
+  "aurora": {"name": "Núcleo Aurora", "pattern": [[0, 0], [-1, 0], [1, 0], [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1]], "color": "#ff8dbe", "cost": 0, "rarity": "Mística", "description": "Desenha uma aurora larga sob a broca."}
 }

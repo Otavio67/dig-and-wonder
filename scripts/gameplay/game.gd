@@ -4,6 +4,7 @@ const Economy = preload("res://scripts/progression/economy.gd")
 const DrillSpec = preload("res://scripts/progression/drill.gd")
 const DigEngine = preload("res://scripts/gameplay/dig_engine.gd")
 const SaveStore = preload("res://scripts/save/save_store.gd")
+const EquipmentSystem = preload("res://scripts/progression/equipment_system.gd")
 const BIOME_PATH := "res://content/biomes/prado_cristalino.json"
 
 const BG := Color("#82dfd4")
@@ -14,6 +15,7 @@ var biome: Dictionary
 var state: Dictionary
 var engine := DigEngine.new()
 var drill := DrillSpec.new()
+var equipment := EquipmentSystem.new()
 var cell_size := 54.0
 var camera_depth := 0
 var charge := 0.0
@@ -24,6 +26,7 @@ var fx: Array[Dictionary] = []
 var toast := ""
 var toast_time := 0.0
 var show_album := false
+var show_workshop := false
 var show_start_screen := true
 var has_existing_save := false
 var press_scale := 0.0
@@ -38,10 +41,11 @@ func _ready() -> void:
 	has_existing_save = not state.is_empty()
 	if state.is_empty():
 		state = SaveStore.fresh()
+	if not drill.equip(str(state.get("drill", "basic"))):
+		state.drill = "basic"
+		drill.equip("basic")
 	var dug_cells: Array = state.dug
 	engine.setup(biome, 7042, dug_cells, state.get("damaged", {}))
-	if state.drill == "prism":
-		drill.transform_to_prism()
 	drill.level = maxi(1, int(state.get("drill_level", 1)))
 	camera_depth = maxi(0, int(state.depth) - 8)
 	set_process(true)
@@ -55,6 +59,7 @@ func _commit_save() -> void:
 	state.depth = maxi(int(state.depth), camera_depth)
 	state.drill = drill.id
 	state.drill_level = drill.level
+	state.equipped_gear = state.get("equipped_gear", [])
 	state.dug = engine.dug_keys()
 	state.damaged = engine.durability.duplicate(true)
 	if SaveStore.save_data(state):
@@ -62,7 +67,7 @@ func _commit_save() -> void:
 
 func _process(delta: float) -> void:
 	var changed := false
-	if held and not show_album:
+	if held and not show_album and not show_workshop:
 		charge += delta
 		if charge >= 0.17:
 			charge = 0.0
@@ -91,10 +96,13 @@ func _input(event: InputEvent) -> void:
 				_start_game()
 			get_viewport().set_input_as_handled()
 		return
-	if show_album:
+	if show_album or show_workshop:
 		if event is InputEventScreenTouch and event.pressed or event is InputEventMouseButton and event.pressed:
-			show_album = false
-			queue_redraw()
+			if show_workshop:
+				_workshop_press(event.position)
+			else:
+				show_album = false
+				queue_redraw()
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventScreenTouch:
@@ -115,7 +123,9 @@ func _input(event: InputEvent) -> void:
 
 func _on_press(pos: Vector2) -> void:
 	var size := get_rect().size
-	if pos.y >= size.y - 168.0 and pos.y <= size.y - 108.0:
+	if pos.y >= 122.0 and pos.y <= 152.0 and absf(pos.x - size.x * 0.5) <= 94.0:
+		show_workshop = true
+	elif pos.y >= size.y - 168.0 and pos.y <= size.y - 108.0:
 		_sell()
 	elif pos.y >= size.y - 103.0 and pos.y <= size.y - 53.0:
 		_upgrade()
@@ -137,14 +147,18 @@ func _cell_at(pos: Vector2) -> Vector2i:
 	return Vector2i(clampi(col, -4, 4), row)
 
 func _perform_dig(cell: Vector2i) -> void:
-	var result := engine.dig(drill.pattern, cell.x, cell.y, drill.level)
+	var boosts := equipment.bonuses(state.get("equipped_gear", []))
+	var result := engine.dig(drill.pattern, cell.x, cell.y, drill.level + int(boosts.power), int(boosts.reward))
 	if result.broken <= 0:
 		if result.worked > 0:
 			_commit_save()
 		return
 	state.inventory += int(result.coins)
 	for target in result.cells:
-		state.depth = maxi(int(state.depth), target.y + 1)
+		var old_depth := int(state.depth)
+		state.depth = maxi(old_depth, target.y + 1)
+		if int(state.depth) > old_depth:
+			_check_depth_rewards(int(state.depth))
 		_spawn_particles(_cell_center(target), result.broken)
 		if not state.discoveries.has(biome.discovery.id) and target.y >= int(biome.discovery.depth):
 			state.discoveries.append(biome.discovery.id)
@@ -157,6 +171,69 @@ func _perform_dig(cell: Vector2i) -> void:
 func _start_game() -> void:
 	show_start_screen = false
 	queue_redraw()
+
+func _check_depth_rewards(depth: int) -> void:
+	while depth >= 4 + int(state.get("key_milestones", 0)) * 12:
+		state.keys = int(state.get("keys", 0)) + 1
+		state.key_milestones = int(state.get("key_milestones", 0)) + 1
+		_toast("Você achou uma chave antiga! 🔑")
+	while depth >= 8 + int(state.get("chest_milestones", 0)) * 12:
+		state.chests = int(state.get("chests", 0)) + 1
+		state.chest_milestones = int(state.get("chest_milestones", 0)) + 1
+		_toast("Baú selado encontrado! Abra no botão Baús.")
+
+func _workshop_press(pos: Vector2) -> void:
+	var s := size
+	if pos.y >= s.y - 170.0 and pos.y <= s.y - 108.0:
+		if int(state.get("chests", 0)) < 1:
+			_toast("Continue escavando para encontrar um baú.")
+		elif int(state.get("keys", 0)) < 1:
+			_toast("Baú guardado! Encontre uma chave para abrir.")
+		else:
+			var result: Dictionary = equipment.open_chest(state, int(state.depth), 7042)
+			if result.ok:
+				var loot: Dictionary = result.item
+				if loot.duplicate:
+					_toast("%s repetido · +%d moedas" % [loot.name, loot.coins])
+				else:
+					_toast("%s: %s!" % [loot.rarity, loot.name])
+			_commit_save()
+	elif pos.y >= s.y - 96.0:
+		show_workshop = false
+	else:
+		var drill_row := floori((pos.y - 316.0) / 36.0)
+		if drill_row >= 0 and drill_row < equipment.drills.size():
+			var drill_ids: Array = equipment.drills.keys()
+			drill_ids.sort()
+			var drill_id := str(drill_ids[drill_row])
+			if state.drill_inventory.has(drill_id) and drill.equip(drill_id):
+				state.drill = drill_id
+				_toast("Equipado: %s" % drill.title)
+				_commit_save()
+		else:
+			var gear_start := 542.0
+			var gear_row := floori((pos.y - gear_start) / 36.0)
+			var gear_ids: Array = equipment.gear.keys()
+			gear_ids.sort()
+			if gear_row >= 0 and gear_row < gear_ids.size():
+				var gear_id := str(gear_ids[gear_row])
+				if state.gear_inventory.has(gear_id):
+					_equip_gear(gear_id)
+	queue_redraw()
+
+func _equip_gear(gear_id: String) -> void:
+	var spec: Dictionary = equipment.gear[gear_id]
+	var equipped: Array = state.get("equipped_gear", []).duplicate()
+	if equipped.has(gear_id):
+		equipped.erase(gear_id)
+	else:
+		for current_id in equipped.duplicate():
+			if str(equipment.gear.get(current_id, {}).get("slot", "")) == str(spec.slot):
+				equipped.erase(current_id)
+		equipped.append(gear_id)
+	state.equipped_gear = equipped
+	_toast("Equipamento atualizado: %s" % spec.name)
+	_commit_save()
 
 func _cell_center(cell: Vector2i) -> Vector2:
 	return Vector2(size.x * 0.5 + cell.x * cell_size, grid_origin_y + (cell.y - camera_depth + 0.5) * cell_size)
@@ -183,12 +260,20 @@ func _sell() -> void:
 
 func _upgrade() -> void:
 	if drill.id == "basic":
+		if state.get("drill_inventory", []).has("prism"):
+			drill.equip("prism")
+			state.drill = drill.id
+			_toast("Broca Prisma equipada! Agora abre 3 túneis.")
+			_commit_save()
+			return
 		var cost := 30
 		if not Economy.can_afford(int(state.coins), cost):
 			_toast("Faltam %d moedas para a Broca Prisma." % (cost - int(state.coins)))
 			return
 		state.coins = Economy.buy(int(state.coins), cost)
 		drill.transform_to_prism()
+		state.drill_inventory.append("prism")
+		state.drill = drill.id
 		_toast("Broca Prisma! Agora abre 3 túneis.")
 	else:
 		var cost := 18 + (drill.level - 1) * 16
@@ -209,6 +294,8 @@ func _draw() -> void:
 	_draw_background(s)
 	if show_album:
 		_draw_album(s)
+	elif show_workshop:
+		_draw_workshop(s)
 	elif show_start_screen:
 		_draw_start_screen(s)
 	else:
@@ -241,6 +328,8 @@ func _draw_hud(s: Vector2) -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "PRADO CRISTALINO  ·  %dm" % (state.depth * 2), HORIZONTAL_ALIGNMENT_CENTER, s.x - 50, 14, INK)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 92), _goal_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 44, 12, Color("#416878"))
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "TOQUE E SEGURE PARA ESCAVAR", HORIZONTAL_ALIGNMENT_CENTER, s.x - 30, 12, Color("#416878"))
+	_draw_pill(Rect2(s.x * 0.5 - 92, 123, 184, 28), Color("#e6f4db"), 11)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 143), "BAÚS %d   ·   CHAVES %d" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, 172, 12, INK)
 
 func _goal_text() -> String:
 	if drill.id == "basic":
@@ -309,7 +398,7 @@ func _draw_world(s: Vector2) -> void:
 
 func _draw_drill(center: Vector2) -> void:
 	var color := drill.accent
-	if drill.id == "prism":
+	if drill.id in ["prism", "trinca"]:
 		for x_offset in [-21.0, 21.0]:
 			draw_colored_polygon(PackedVector2Array([center + Vector2(x_offset, 15), center + Vector2(x_offset - 9, 32), center + Vector2(x_offset + 10, 31)]), color.darkened(0.08))
 	# Cápsula principal e faixas metálicas.
@@ -319,8 +408,10 @@ func _draw_drill(center: Vector2) -> void:
 	draw_rect(Rect2(center.x - 5, center.y + 14, 10, 18), Color("#fff4cd"))
 	var tip := PackedVector2Array([center + Vector2(-12, 27), center + Vector2(12, 27), center + Vector2(0, 44)])
 	draw_colored_polygon(tip, Color("#3e5d71"))
-	if drill.id == "prism":
+	if drill.id in ["prism", "dynamo", "echo", "aurora"]:
 		draw_line(center + Vector2(-30, 4), center + Vector2(30, 4), Color("#ffffff"), 2.0, true)
+	if drill.id == "aurora":
+		draw_circle(center, 7, Color("#fff7d0"))
 
 func _draw_controls(s: Vector2) -> void:
 	draw_rect(Rect2(0, s.y - 168, s.x, 168), Color("#fff9e8"))
@@ -331,8 +422,9 @@ func _draw_controls(s: Vector2) -> void:
 	var upgrade_text: String
 	var cost: int
 	if drill.id == "basic":
-		upgrade_text = "BROCA PRISMA  ·  30 ◉"
-		cost = 30
+		var has_prism: bool = state.get("drill_inventory", []).has("prism")
+		upgrade_text = "EQUIPAR PRISMA" if has_prism else "BROCA PRISMA  ·  30 ◉"
+		cost = 0 if has_prism else 30
 	else:
 		cost = 18 + (drill.level - 1) * 16
 		upgrade_text = "REFORÇAR NV.%d  ·  %d ◉" % [drill.level, cost]
@@ -349,6 +441,55 @@ func _draw_album(s: Vector2) -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 408), biome.discovery.name if found else "Descoberta oculta", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 18, INK)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 441), biome.discovery.description if found else "Continue escavando para encontrar algo.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 13, Color("#66808a"))
 	_draw_button(Rect2(35, s.y - 87, s.x - 70, 48), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
+
+func _draw_workshop(s: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, s), Color("#82dfd4"))
+	draw_rect(Rect2(14, 164, s.x - 28, s.y - 184), Color("#fff9e8"), true, 22)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 202), "OFICINA DE ACHADOS", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 21, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 230), "%d baú(s)  ·  %d chave(s)" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 14, Color("#55707a"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 248), "1 chave abre cada baú · ambos vêm apenas escavando", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 10, Color("#55707a"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 263), _chest_rule_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 10, Color("#55707a"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 278), "Chances iniciais: Ruim 28% · Boa 36% · Épica 22% · Lendária 9%", HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 9, Color("#55707a"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 292), "Única 3,5% · Mística 1,5% · as melhores sobem com profundidade", HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 9, Color("#55707a"))
+	draw_string(ThemeDB.fallback_font, Vector2(28, 310), "BROCAS  ·  toque para equipar achados", HORIZONTAL_ALIGNMENT_LEFT, s.x - 56, 12, INK)
+	var drill_ids: Array = equipment.drills.keys()
+	drill_ids.sort()
+	for i in range(drill_ids.size()):
+		var id := str(drill_ids[i])
+		var spec: Dictionary = equipment.drills[id]
+		var owned: bool = state.get("drill_inventory", []).has(id)
+		var equipped: bool = state.get("drill", "basic") == id
+		var y := 316.0 + float(i) * 36.0
+		_draw_item_row(Rect2(22, y, s.x - 44, 31), str(spec.name), "%s · %s" % [spec.rarity, spec.description], owned, equipped, Color(str(spec.color)))
+	draw_string(ThemeDB.fallback_font, Vector2(28, 535), "EQUIPAMENTOS  ·  até um por encaixe", HORIZONTAL_ALIGNMENT_LEFT, s.x - 56, 12, INK)
+	var gear_ids: Array = equipment.gear.keys()
+	gear_ids.sort()
+	for i in range(gear_ids.size()):
+		var id := str(gear_ids[i])
+		var spec: Dictionary = equipment.gear[id]
+		var owned: bool = state.get("gear_inventory", []).has(id)
+		var equipped: bool = state.get("equipped_gear", []).has(id)
+		var y := 542.0 + float(i) * 36.0
+		_draw_item_row(Rect2(22, y, s.x - 44, 31), str(spec.name), "%s · %s" % [spec.rarity, spec.description], owned, equipped, Color(str(spec.color)))
+	var can_open := int(state.get("chests", 0)) > 0 and int(state.get("keys", 0)) > 0
+	_draw_button(Rect2(22, s.y - 164, s.x - 44, 54), Color("#efb950") if can_open else Color("#d7d9c5"), "ABRIR BAÚ  ·  1 CHAVE" if can_open else "BAÚ SELADO  ·  PRECISA DE CHAVE", Color("#4b3822"))
+	_draw_button(Rect2(40, s.y - 92, s.x - 80, 48), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
+
+func _draw_item_row(rect: Rect2, title: String, detail: String, owned: bool, equipped: bool, tint: Color) -> void:
+	draw_rect(rect, tint.lightened(0.76) if owned else Color("#eee9d9"), true, 8)
+	draw_rect(Rect2(rect.position.x, rect.position.y, 5, rect.size.y), tint, true, 3)
+	var marker := "EQUIPADO" if equipped else ("ENCONTRADO" if owned else "???")
+	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 12, rect.position.y + 13), title, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 112, 12, INK if owned else Color("#899394"))
+	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 12, rect.position.y + 27), detail, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 112, 10, Color("#607a7b"))
+	draw_string(ThemeDB.fallback_font, Vector2(rect.end.x - 92, rect.position.y + 20), marker, HORIZONTAL_ALIGNMENT_RIGHT, 82, 9, Color("#287d6d") if equipped else Color("#718082"))
+
+func _chest_rule_text() -> String:
+	if int(state.get("below_legendary_streak", 0)) >= 11:
+		return "LENDÁRIO GARANTIDO NO PRÓXIMO BAÚ · sem compras ou anúncios"
+	if int(state.get("below_epic_streak", 0)) >= 4:
+		return "ÉPICO GARANTIDO NO PRÓXIMO BAÚ · sem compras ou anúncios"
+	var remaining := 5 - int(state.get("below_epic_streak", 0))
+	return "Chaves e baús vêm escavando · Épico garantido em até %d baú(s)" % remaining
 
 func _draw_pill(rect: Rect2, color: Color, radius: float) -> void:
 	draw_rect(rect, Color("#314c59"), true)

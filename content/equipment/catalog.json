@@ -1,0 +1,56 @@
+{
+  "luvas_couro": {
+    "name": "Luvas de Escavação",
+    "rarity": "Ruim",
+    "slot": "mãos",
+    "power": 1,
+    "reward": 0,
+    "color": "#bd896e",
+    "description": "Dá +1 de poder, mas não aumenta as moedas."
+  },
+  "peneira": {
+    "name": "Peneira de Bolso",
+    "rarity": "Boa",
+    "slot": "ferramenta",
+    "power": 0,
+    "reward": 1,
+    "color": "#7fdc94",
+    "description": "+1 moeda por bloco quebrado."
+  },
+  "lampiao": {
+    "name": "Lampião de Cristal",
+    "rarity": "Épica",
+    "slot": "luz",
+    "power": 1,
+    "reward": 1,
+    "color": "#55d9cb",
+    "description": "+1 poder e +1 moeda por bloco."
+  },
+  "manopla": {
+    "name": "Manopla do Trovão",
+    "rarity": "Lendária",
+    "slot": "mãos",
+    "power": 2,
+    "reward": 0,
+    "color": "#f3ad54",
+    "description": "+2 de poder de escavação."
+  },
+  "relogio": {
+    "name": "Relógio de Âmbar",
+    "rarity": "Única",
+    "slot": "luz",
+    "power": 0,
+    "reward": 3,
+    "color": "#bc91ec",
+    "description": "+3 moedas por bloco quebrado."
+  },
+  "fragmento": {
+    "name": "Fragmento Celeste",
+    "rarity": "Mística",
+    "slot": "ferramenta",
+    "power": 1,
+    "reward": 2,
+    "color": "#ff8dbe",
+    "description": "+1 poder e +2 moedas por bloco."
+  }
+}

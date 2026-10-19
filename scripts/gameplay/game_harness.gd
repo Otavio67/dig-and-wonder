@@ -31,6 +31,24 @@ func _initialize() -> void:
 	assert(game._goal_text().contains("TRANSFORME A BROCA"))
 	game._upgrade()
 	assert(game.drill.id == "prism" and game.drill.pattern.size() == 3 and game.state.coins == 0)
+	game._check_depth_rewards(4)
+	assert(game.state.keys == 1 and game.state.chests == 0)
+	game._check_depth_rewards(8)
+	assert(game.state.keys == 1 and game.state.chests == 1)
+	game._on_press(Vector2(270, 140))
+	assert(game.show_workshop)
+	game._workshop_press(Vector2(270, 800))
+	assert(game.state.keys == 0 and game.state.chests == 0 and not game.state.last_loot.is_empty())
+	if game.state.last_loot.kind == "drill":
+		assert(game.state.drill_inventory.has(game.state.last_loot.id))
+	else:
+		assert(game.state.gear_inventory.has(game.state.last_loot.id))
+	game._workshop_press(Vector2(270, 364))
+	assert(game.drill.id == "basic")
+	game._workshop_press(Vector2(270, 472))
+	assert(game.drill.id == "prism")
+	game._workshop_press(Vector2(270, 880))
+	assert(not game.show_workshop)
 	assert(game._goal_text().contains("VEIO BRILHANTE"))
 	game.drill.level = 100
 	for depth in range(17):
@@ -40,9 +58,13 @@ func _initialize() -> void:
 	assert(game.camera_depth > 0)
 	assert(game._goal_text().contains("REFORÇAR"))
 	game.drill.level = 3
+	game.state.gear_inventory.append("peneira")
+	game._equip_gear("peneira")
+	assert(game.state.equipped_gear.has("peneira"))
+	assert(game.equipment.bonuses(game.state.equipped_gear).reward == 1)
 	game._commit_save()
 	var saved := SaveStore.load_data()
-	assert(saved.drill_level == 3)
+	assert(saved.drill_level == 3 and saved.keys == 1 and saved.chests == 0 and saved.chest_open_count == 1)
 	game.engine.setup(game.biome, 7042, [])
 	game.drill.id = "basic"
 	var basic_pattern: Array[Vector2i] = [Vector2i.ZERO]
