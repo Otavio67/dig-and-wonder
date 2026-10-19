@@ -24,6 +24,8 @@ var fx: Array[Dictionary] = []
 var toast := ""
 var toast_time := 0.0
 var show_album := false
+var show_start_screen := true
+var has_existing_save := false
 var press_scale := 0.0
 var grid_origin_y := 154.0
 var world_bottom := 0.0
@@ -33,10 +35,11 @@ func _ready() -> void:
 	var biome_file := FileAccess.open(BIOME_PATH, FileAccess.READ)
 	biome = JSON.parse_string(biome_file.get_as_text())
 	state = SaveStore.load_data()
+	has_existing_save = not state.is_empty()
 	if state.is_empty():
 		state = SaveStore.fresh()
 	var dug_cells: Array = state.dug
-	engine.setup(biome, 7042, dug_cells)
+	engine.setup(biome, 7042, dug_cells, state.get("damaged", {}))
 	if state.drill == "prism":
 		drill.transform_to_prism()
 	drill.level = maxi(1, int(state.get("drill_level", 1)))
@@ -53,7 +56,9 @@ func _commit_save() -> void:
 	state.drill = drill.id
 	state.drill_level = drill.level
 	state.dug = engine.dug_keys()
-	SaveStore.save_data(state)
+	state.damaged = engine.durability.duplicate(true)
+	if SaveStore.save_data(state):
+		has_existing_save = true
 
 func _process(delta: float) -> void:
 	var changed := false
@@ -79,6 +84,13 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _input(event: InputEvent) -> void:
+	if show_start_screen:
+		if event is InputEventScreenTouch and event.pressed or event is InputEventMouseButton and event.pressed:
+			var start_top := size.y - 168.0
+			if event.position.y >= start_top and event.position.y <= size.y - 104.0 and event.position.x >= 30.0 and event.position.x <= size.x - 30.0:
+				_start_game()
+			get_viewport().set_input_as_handled()
+		return
 	if show_album:
 		if event is InputEventScreenTouch and event.pressed or event is InputEventMouseButton and event.pressed:
 			show_album = false
@@ -127,6 +139,8 @@ func _cell_at(pos: Vector2) -> Vector2i:
 func _perform_dig(cell: Vector2i) -> void:
 	var result := engine.dig(drill.pattern, cell.x, cell.y, drill.level)
 	if result.broken <= 0:
+		if result.worked > 0:
+			_commit_save()
 		return
 	state.inventory += int(result.coins)
 	for target in result.cells:
@@ -138,6 +152,10 @@ func _perform_dig(cell: Vector2i) -> void:
 	var visible_rows := maxi(1, floori((world_bottom - grid_origin_y) / cell_size))
 	camera_depth = maxi(camera_depth, state.depth - visible_rows + 2)
 	_commit_save()
+	queue_redraw()
+
+func _start_game() -> void:
+	show_start_screen = false
 	queue_redraw()
 
 func _cell_center(cell: Vector2i) -> Vector2:
@@ -186,6 +204,8 @@ func _draw() -> void:
 	_draw_background(s)
 	if show_album:
 		_draw_album(s)
+	elif show_start_screen:
+		_draw_start_screen(s)
 	else:
 		_draw_hud(s)
 		_draw_world(s)
@@ -215,6 +235,19 @@ func _draw_hud(s: Vector2) -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(s.x - 122, 43), "ÁLBUM  ✦ %d/1" % state.discoveries.size(), HORIZONTAL_ALIGNMENT_CENTER, 92, 14, INK)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "PRADO CRISTALINO  ·  %dm" % (state.depth * 2), HORIZONTAL_ALIGNMENT_CENTER, s.x - 50, 14, INK)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "TOQUE E SEGURE PARA ESCAVAR", HORIZONTAL_ALIGNMENT_CENTER, s.x - 30, 12, Color("#416878"))
+
+func _draw_start_screen(s: Vector2) -> void:
+	draw_circle(Vector2(s.x * 0.5, 286), 88, Color("#b8efdb"))
+	draw_circle(Vector2(s.x * 0.5, 279), 68, Color("#d5f2dd"))
+	_draw_drill(Vector2(s.x * 0.5, 257))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 402), "DIG & WONDER", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 36, Color("#3d5c6d"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 438), "O que será que existe logo abaixo?", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 16, Color("#416878"))
+	_draw_pill(Rect2(28, 478, s.x - 56, 66), PANEL, 18)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 505), "PRADO CRISTALINO", HORIZONTAL_ALIGNMENT_CENTER, s.x - 84, 16, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 528), "Escave · colete · descubra", HORIZONTAL_ALIGNMENT_CENTER, s.x - 84, 12, Color("#66808a"))
+	var button_label := "CONTINUAR" if has_existing_save else "INICIAR ESCAVAÇÃO"
+	_draw_button(Rect2(28, s.y - 168, s.x - 56, 58), Color("#37cbb9"), button_label, Color("#173d4b"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 77), "PROGRESSO SALVO AUTOMATICAMENTE", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 11, Color("#55707a"))
 
 func _draw_world(s: Vector2) -> void:
 	var top := 154.0

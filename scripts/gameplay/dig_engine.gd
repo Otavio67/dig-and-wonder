@@ -8,13 +8,14 @@ var dug := {}
 var durability := {}
 var seed_value := 0
 
-func setup(data: Dictionary, seed_value: int, dug_cells: Array) -> void:
+func setup(data: Dictionary, seed_value: int, dug_cells: Array, damaged_cells: Dictionary = {}) -> void:
 	biome = data
 	self.seed_value = seed_value
 	dug.clear()
 	durability.clear()
 	for cell in dug_cells:
 		dug[str(cell)] = true
+	durability = damaged_cells.duplicate(true)
 
 func is_dug(x: int, y: int) -> bool:
 	return dug.has(_key(x, y))
@@ -34,7 +35,7 @@ func _layer_for_depth(depth: int) -> Dictionary:
 	return layers.back()
 
 func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int) -> Dictionary:
-	var result := {"broken": 0, "coins": 0, "cells": []}
+	var result := {"broken": 0, "coins": 0, "cells": [], "worked": 0}
 	for offset in pattern:
 		var x := center_x + offset.x
 		var y := center_y + offset.y
@@ -49,6 +50,7 @@ func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int) -> 
 		var remaining: int = int(durability.get(cell_key, int(layer.hardness))) - maxi(1, power)
 		if remaining > 0:
 			durability[cell_key] = remaining
+			result.worked += 1
 			continue
 		dug[cell_key] = true
 		result.broken += 1

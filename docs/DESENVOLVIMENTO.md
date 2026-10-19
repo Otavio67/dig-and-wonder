@@ -107,6 +107,8 @@ Verificações executadas com Godot 4.7.2: importação e boot headless; economi
 
 Corrigidos input que minerava ao tocar fora da área de terreno, alinhamento de hit test com a grade, retomada da profundidade e nível salvo da broca, scroll que tornava a descoberta inalcançável e valor dos veios ignorado na venda. Harnesses confirmam coordenada central, HUD não minera, descoberta/scroll, valor maior do padrão prisma e nível da broca salvo. Continuam pendentes contraste/tipografia vistos em celular, validação visual, Android, anúncios e FPS.
 
+Adicionada tela inicial com Iniciar/Continuar. O autosave persiste também dano parcial em pedra, além de moedas, mochila, profundidade, broca, células quebradas e descobertas. Mantido em `user://` persistente com backup: cache do Android pode ser limpo pelo sistema e não deve ser o único armazenamento de progresso.
+
 ## Verificação
 
 - Importação e análise de scripts no editor fixado em modo headless.

@@ -10,6 +10,7 @@ func _initialize() -> void:
 	var data := SaveStore.fresh()
 	data.coins = 42
 	data.dug = ["0:0"]
+	data.damaged = {"0:1": 1}
 	assert(SaveStore.save_data(data))
 	var next := data.duplicate(true)
 	next.coins = 20
@@ -23,5 +24,8 @@ func _initialize() -> void:
 	var malformed := SaveStore.fresh()
 	malformed.dug = [42]
 	assert(not SaveStore.save_data(malformed))
-	print("SAVE_OK valid=20 backup_recovery=42 invalid_version_and_cells_rejected=true")
+	malformed = SaveStore.fresh()
+	malformed.damaged = {"0:1": 0}
+	assert(not SaveStore.save_data(malformed))
+	print("SAVE_OK valid=20 backup_recovery=42 invalid_version_cells_and_damage_rejected=true")
 	quit()

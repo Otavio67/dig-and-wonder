@@ -6,7 +6,7 @@ const BACKUP := "user://dig_wonder.save.bak.json"
 const VERSION := 1
 
 static func fresh() -> Dictionary:
-	return {"version": VERSION, "coins": 0, "depth": 0, "inventory": 0, "drill": "basic", "drill_level": 1, "dug": [], "discoveries": []}
+	return {"version": VERSION, "coins": 0, "depth": 0, "inventory": 0, "drill": "basic", "drill_level": 1, "dug": [], "damaged": {}, "discoveries": []}
 
 static func _valid(data: Variant) -> bool:
 	if not data is Dictionary or int(data.get("version", -1)) != VERSION:
@@ -25,6 +25,17 @@ static func _valid(data: Variant) -> bool:
 			return false
 	for discovery_id in data.discoveries:
 		if not discovery_id is String or discovery_id.is_empty() or discovery_id.length() > 64:
+			return false
+	var damaged: Variant = data.get("damaged", {})
+	if not damaged is Dictionary:
+		return false
+	for cell_key in damaged:
+		var remaining: Variant = damaged[cell_key]
+		if not cell_key is String or cell_key.is_empty() or cell_key.length() > 16:
+			return false
+		if not remaining is int and not remaining is float:
+			return false
+		if int(remaining) <= 0 or float(remaining) != int(remaining):
 			return false
 	return true
 
@@ -47,6 +58,8 @@ static func load_data() -> Dictionary:
 static func save_data(data: Dictionary) -> bool:
 	var copy := data.duplicate(true)
 	copy["version"] = VERSION
+	if not copy.has("damaged"):
+		copy["damaged"] = {}
 	if not _valid(copy):
 		return false
 	var temp := PATH + ".tmp"
