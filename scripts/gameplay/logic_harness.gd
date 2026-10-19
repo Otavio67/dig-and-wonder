@@ -43,6 +43,19 @@ func _initialize() -> void:
 	assert(resumed.broken == 1)
 	print("LOGIC_OK economy=pass insufficient_funds=pass basic_pattern=1 prism_pattern=3 broken=%d/%d value=%d/%d partial_damage_resume=true" % [basic_result.broken, prism_result.broken, basic_result.coins, prism_result.coins])
 	var equipment := EquipmentSystem.new()
+	for rarity in EquipmentSystem.TIERS:
+		assert(equipment.gear_ids_for_rarity(rarity).size() == 10)
+	assert(equipment.skins.size() == 13)
+	var normal_rank := 0
+	var lucky_rank := 0
+	for sample in range(512):
+		var normal_rng := RandomNumberGenerator.new()
+		normal_rng.seed = sample + 17
+		var lucky_rng := RandomNumberGenerator.new()
+		lucky_rng.seed = sample + 17
+		normal_rank += EquipmentSystem.TIERS.find(equipment._roll_rarity(normal_rng, 0, 0, 0, 0))
+		lucky_rank += EquipmentSystem.TIERS.find(equipment._roll_rarity(lucky_rng, 0, 0, 0, 12))
+	assert(lucky_rank > normal_rank)
 	var state := SaveStore.fresh()
 	state.chests = 1
 	state.keys = 1
@@ -50,20 +63,23 @@ func _initialize() -> void:
 	var legendary := equipment.open_chest(state, 120, 321)
 	assert(legendary.ok and legendary.item.rarity == "Lendária")
 	assert(state.chests == 0 and state.keys == 0)
-	assert(legendary.item.kind in ["drill", "gear"])
-	var boosts := equipment.bonuses(["manopla", "peneira"])
-	assert(boosts.power == 2 and boosts.reward == 1)
+	assert(legendary.item.kind in ["drill", "gear", "skin"])
+	var boosts := equipment.bonuses(["manopla", "peneira"], "safira_veloz")
+	assert(boosts.power == 1 and boosts.reward == 1 and is_equal_approx(boosts.speed, 0.08) and boosts.luck == 2)
 	state = SaveStore.fresh()
 	state.chests = 1
 	state.keys = 1
 	state.below_legendary_streak = 11
+	state.gear_inventory = equipment.gear_ids_for_rarity("Lendária")
 	state.drill_inventory.append("dynamo")
-	state.gear_inventory.append("manopla")
+	for skin_id in equipment.skin_ids():
+		if str(equipment.skins[skin_id].rarity) == "Lendária":
+			state.skin_inventory.append(skin_id)
 	var duplicate := equipment.open_chest(state, 120, 321)
 	assert(duplicate.ok and duplicate.item.duplicate and duplicate.item.coins == 34)
 	assert(state.coins == 34)
 	var trinca := DrillSpec.new()
 	assert(trinca.equip("trinca") and trinca.pattern.size() == 3)
 	assert(trinca.equip("aurora") and trinca.pattern.size() == 8)
-	print("CHEST_OK key_cost=1 pity_legendary=true duplicate_gold=34 gear_power_and_reward=true drills=3/8 patterns")
+	print("CHEST_OK rarities=6 equipment_per_rarity=10 pity_legendary=true luck=raises_tier duplicate_gold=34 skin_passives=true drills=3/8 patterns")
 	quit()

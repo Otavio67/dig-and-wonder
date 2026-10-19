@@ -32,3 +32,11 @@ A abertura custa uma chave. As chances começam em Ruim 28%, Boa 36%, Épica 22%
 Não há compra com dinheiro real, recompensa por anúncio ou conteúdo pago aleatório. Caso isso seja considerado no futuro, será necessário mostrar chances antes da compra, revisar classificação/privacidade e políticas vigentes da loja, e preservar uma rota de progressão sem gasto. O sistema atual não depende dessa monetização.
 
 A pesquisa web externa não estava acessível durante esta revisão (proxy respondeu 403). As referências citadas na primeira parte são as já registradas no checkpoint anterior; não foram revalidadas nesta rodada. As porcentagens e regras acima vêm dos catálogos e do código desta versão, não de dados atribuídos a outros jogos.
+
+## Companheira-broca e coleção (versão 0.0.2)
+
+A broca foi escolhida como personagem para manter a leitura visual ligada à ação principal e evitar um avatar que não participa da escavação. O rosto deixa sua presença explícita. Os modelos mudam o padrão espacial de mineração; skins mudam cor e habilidade passiva, incluindo combinações com bônus e penalidades. Assim a escolha visual também influencia como jogar, mas o modelo inicial e a skin Pioneira permitem começar sem depender de baús.
+
+Os seis níveis de raridade são compartilhados pelos equipamentos. Cada nível contém dez itens com nomes, encaixes, habilidade descrita e combinação de poder, valor, velocidade ou sorte. Três encaixes evitam somar o catálogo inteiro ao personagem; o painel mantém itens não encontrados visíveis como silhuetas com efeito e raridade, para dar metas de coleção. As probabilidades de baú e a conversão de duplicatas continuam explícitas e sem compra ou anúncio.
+
+A pesquisa externa desta implementação também retornou 403 no proxy; portanto, esta classificação, as passivas e o tamanho de catálogo são decisões de design do projeto, não alegações sobre práticas pesquisadas em jogos concorrentes. A revisão manual em celular ainda deve confirmar se os nomes, efeitos, legibilidade e quantidade de opções cabem bem no controle por toque.

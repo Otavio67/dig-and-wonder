@@ -15,7 +15,7 @@ Direção aprovada: escavar, coletar, vender, transformar a broca e descobrir mu
 
 ## Executar e verificar
 
-Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A versão `0.0.1` contém escavação jogável na região Prado Cristalino.
+Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A versão `0.0.2` contém escavação jogável na região Prado Cristalino.
 
 Em Linux x86_64:
 
@@ -37,7 +37,7 @@ GODOT_BIN=.tools/godot/Godot_v4.7.2-stable_linux.x86_64 bash check-project.sh
 GODOT_BIN=.tools/godot/Godot_v4.7.2-stable_linux.x86_64 bash scripts/run-harnesses.sh
 ```
 
-Em `0.0.1`, baús surgem em marcos de profundidade e chaves são encontradas escavando. Um baú consome uma chave; nenhum deles é comprado ou exige anúncio. Recompensas aleatórias podem incluir brocas e equipamentos dos níveis Ruim, Boa, Épica, Lendária, Única e Mística. O painel **Baús** mostra o que cada item faz, permite equipar brocas e até três equipamentos (um por encaixe); duplicatas viram moedas. Há proteção de sorte: depois de quatro baús sem Épico, o próximo garante Épico; após onze sem Lendário, o próximo garante Lendário. As probabilidades iniciais e a evolução por profundidade estão visíveis no painel. Saves antigos do esquema 1 migram para o esquema 2 e preservam a broca Prisma.
+Em `0.0.2`, o HUD abre três menus: **Baús**, **Equipamentos** e **Personagem**. Os 60 equipamentos ficam em grupos de dez nas raridades Ruim, Boa, Épica, Lendária, Única e Mística. Baús também podem liberar brocas e skins. A broca é uma companheira com rosto, modelos de escavação próprios e skins equipáveis com habilidade inata; bônus e penalidades alteram força, velocidade, moedas por bloco e sorte. Cada encaixe aceita um equipamento. Baús e chaves continuam vindo da escavação, sem compra nem anúncio. O save esquema 3 migra os esquemas 1 e 2 e preserva itens já adquiridos.
 
 Confira o histórico e as notas em [VERSOES.md](docs/VERSOES.md). Conteúdo de brocas, equipamentos e região permanece separado dos sistemas para facilitar novas expansões.
 

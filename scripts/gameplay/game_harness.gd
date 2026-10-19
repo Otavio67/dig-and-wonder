@@ -10,6 +10,8 @@ func _initialize() -> void:
 	var biome_file := FileAccess.open("res://content/biomes/prado_cristalino.json", FileAccess.READ)
 	game.biome = JSON.parse_string(biome_file.get_as_text())
 	game.state = SaveStore.fresh()
+	game.drill.equip("basic")
+	game.drill.level = 1
 	game.engine.setup(game.biome, 7042, [])
 	game.grid_origin_y = 154.0
 	game.world_bottom = 786.0
@@ -35,19 +37,31 @@ func _initialize() -> void:
 	assert(game.state.keys == 1 and game.state.chests == 0)
 	game._check_depth_rewards(8)
 	assert(game.state.keys == 1 and game.state.chests == 1)
-	game._on_press(Vector2(270, 140))
-	assert(game.show_workshop)
-	game._workshop_press(Vector2(270, 800))
+	game._on_press(Vector2(90, 140))
+	assert(game.show_workshop and game.menu_tab == "chests")
+	game._menu_press(Vector2(270, 800))
 	assert(game.state.keys == 0 and game.state.chests == 0 and not game.state.last_loot.is_empty())
 	if game.state.last_loot.kind == "drill":
 		assert(game.state.drill_inventory.has(game.state.last_loot.id))
+	elif game.state.last_loot.kind == "skin":
+		assert(game.state.skin_inventory.has(game.state.last_loot.id))
 	else:
 		assert(game.state.gear_inventory.has(game.state.last_loot.id))
-	game._workshop_press(Vector2(270, 364))
+	game._menu_press(Vector2(100, 880))
+	game._on_press(Vector2(450, 140))
+	assert(game.menu_tab == "character")
+	game._menu_press(Vector2(100, 420))
+	game._menu_press(Vector2(270, 504))
 	assert(game.drill.id == "basic")
-	game._workshop_press(Vector2(270, 472))
+	game._menu_press(Vector2(270, 630))
 	assert(game.drill.id == "prism")
-	game._workshop_press(Vector2(270, 880))
+	game._menu_press(Vector2(400, 420))
+	game._menu_press(Vector2(270, 462))
+	assert(game.state.equipped_skin == "pioneira")
+	game._menu_press(Vector2(100, 880))
+	game._on_press(Vector2(270, 140))
+	assert(game.menu_tab == "equipment")
+	game._menu_press(Vector2(100, 880))
 	assert(not game.show_workshop)
 	assert(game._goal_text().contains("VEIO BRILHANTE"))
 	game.drill.level = 100
@@ -58,13 +72,16 @@ func _initialize() -> void:
 	assert(game.camera_depth > 0)
 	assert(game._goal_text().contains("REFORÇAR"))
 	game.drill.level = 3
+	game.state.skin_inventory.append("safira_veloz")
+	game._equip_skin("safira_veloz")
 	game.state.gear_inventory.append("peneira")
 	game._equip_gear("peneira")
 	assert(game.state.equipped_gear.has("peneira"))
-	assert(game.equipment.bonuses(game.state.equipped_gear).reward == 1)
+	var active_bonuses: Dictionary = game.equipment.bonuses(game.state.equipped_gear, game.state.equipped_skin)
+	assert(active_bonuses.reward == 1 and active_bonuses.power == -1 and is_equal_approx(active_bonuses.speed, 0.06))
 	game._commit_save()
 	var saved := SaveStore.load_data()
-	assert(saved.drill_level == 3 and saved.keys == 1 and saved.chests == 0 and saved.chest_open_count == 1)
+	assert(saved.drill_level == 3 and saved.keys == 1 and saved.chests == 0 and saved.chest_open_count == 1 and saved.equipped_skin == "safira_veloz")
 	game.engine.setup(game.biome, 7042, [])
 	game.drill.id = "basic"
 	var basic_pattern: Array[Vector2i] = [Vector2i.ZERO]

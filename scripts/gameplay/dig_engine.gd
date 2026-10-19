@@ -65,7 +65,7 @@ func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int, rew
 		durability.erase(cell_key)
 		dug[cell_key] = true
 		result.broken += 1
-		result.coins += int(layer.reward) + maxi(0, reward_bonus)
+		result.coins += maxi(0, int(layer.reward) + reward_bonus)
 		result.cells.append(Vector2i(x, y))
 	return result
 

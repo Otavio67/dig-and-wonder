@@ -36,5 +36,17 @@ func _initialize() -> void:
 	assert(migrated.drill_inventory.has("prism") and migrated.equipped_gear.is_empty())
 	assert(migrated.keys == 0 and migrated.chests == 0)
 	assert(SaveStore.save_data(migrated))
-	print("SAVE_OK valid=20 backup_recovery=42 invalid_schema_cells_damage_rejected=true v1_to_v2_preserves_prism=true")
+	var prior_v2 := SaveStore.fresh()
+	prior_v2.version = 2
+	prior_v2.gear_inventory = ["peneira"]
+	prior_v2.equipped_gear = ["peneira"]
+	prior_v2.erase("skin_inventory")
+	prior_v2.erase("equipped_skin")
+	var v2_file := FileAccess.open(SaveStore.PATH, FileAccess.WRITE)
+	v2_file.store_string(JSON.stringify(prior_v2))
+	v2_file = null
+	var migrated_v2 := SaveStore.load_data()
+	assert(migrated_v2.version == 3 and migrated_v2.gear_inventory == ["peneira"])
+	assert(migrated_v2.equipped_gear == ["peneira"] and migrated_v2.equipped_skin == "pioneira")
+	print("SAVE_OK valid=20 backup_recovery=42 invalid_schema_cells_damage_rejected=true v1_and_v2_migrate=true legacy_drills_and_gear_preserved=true")
 	quit()

@@ -27,6 +27,10 @@ var toast := ""
 var toast_time := 0.0
 var show_album := false
 var show_workshop := false
+var menu_tab := "chests"
+var gear_rarity := "Ruim"
+var character_view := "models"
+var skin_page := 0
 var show_start_screen := true
 var has_existing_save := false
 var press_scale := 0.0
@@ -44,6 +48,9 @@ func _ready() -> void:
 	if not drill.equip(str(state.get("drill", "basic"))):
 		state.drill = "basic"
 		drill.equip("basic")
+	if not equipment.skins.has(str(state.get("equipped_skin", "pioneira"))):
+		state.equipped_skin = "pioneira"
+	_apply_drill_skin()
 	var dug_cells: Array = state.dug
 	engine.setup(biome, 7042, dug_cells, state.get("damaged", {}))
 	drill.level = maxi(1, int(state.get("drill_level", 1)))
@@ -68,9 +75,11 @@ func _commit_save() -> void:
 func _process(delta: float) -> void:
 	var changed := false
 	if held and not show_album and not show_workshop:
+		var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
+		var dig_interval := clampf(0.17 - float(boosts.speed), 0.07, 0.42)
 		charge += delta
-		if charge >= 0.17:
-			charge = 0.0
+		if charge >= dig_interval:
+			charge -= dig_interval
 			_perform_dig(mine_target)
 			changed = true
 	if toast_time > 0.0:
@@ -99,7 +108,7 @@ func _input(event: InputEvent) -> void:
 	if show_album or show_workshop:
 		if event is InputEventScreenTouch and event.pressed or event is InputEventMouseButton and event.pressed:
 			if show_workshop:
-				_workshop_press(event.position)
+				_menu_press(event.position)
 			else:
 				show_album = false
 				queue_redraw()
@@ -123,8 +132,9 @@ func _input(event: InputEvent) -> void:
 
 func _on_press(pos: Vector2) -> void:
 	var size := get_rect().size
-	if pos.y >= 122.0 and pos.y <= 152.0 and absf(pos.x - size.x * 0.5) <= 94.0:
+	if pos.y >= 122.0 and pos.y <= 152.0 and pos.x >= 14.0 and pos.x <= size.x - 14.0:
 		show_workshop = true
+		menu_tab = ["chests", "equipment", "character"][clampi(floori((pos.x - 18.0) / ((size.x - 36.0) / 3.0)), 0, 2)]
 	elif pos.y >= size.y - 168.0 and pos.y <= size.y - 108.0:
 		_sell()
 	elif pos.y >= size.y - 103.0 and pos.y <= size.y - 53.0:
@@ -147,8 +157,8 @@ func _cell_at(pos: Vector2) -> Vector2i:
 	return Vector2i(clampi(col, -4, 4), row)
 
 func _perform_dig(cell: Vector2i) -> void:
-	var boosts := equipment.bonuses(state.get("equipped_gear", []))
-	var result := engine.dig(drill.pattern, cell.x, cell.y, drill.level + int(boosts.power), int(boosts.reward))
+	var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
+	var result := engine.dig(drill.pattern, cell.x, cell.y, maxi(1, drill.level + int(boosts.power)), int(boosts.reward))
 	if result.broken <= 0:
 		if result.worked > 0:
 			_commit_save()
@@ -182,44 +192,87 @@ func _check_depth_rewards(depth: int) -> void:
 		state.chest_milestones = int(state.get("chest_milestones", 0)) + 1
 		_toast("Baú selado encontrado! Abra no botão Baús.")
 
-func _workshop_press(pos: Vector2) -> void:
+func _apply_drill_skin() -> void:
+	var skin_id := str(state.get("equipped_skin", "pioneira"))
+	if equipment.skins.has(skin_id):
+		drill.accent = Color(str(equipment.skins[skin_id].color))
+
+func _menu_press(pos: Vector2) -> void:
 	var s := size
-	if pos.y >= s.y - 170.0 and pos.y <= s.y - 108.0:
-		if int(state.get("chests", 0)) < 1:
-			_toast("Continue escavando para encontrar um baú.")
-		elif int(state.get("keys", 0)) < 1:
-			_toast("Baú guardado! Encontre uma chave para abrir.")
-		else:
-			var result: Dictionary = equipment.open_chest(state, int(state.depth), 7042)
-			if result.ok:
-				var loot: Dictionary = result.item
-				if loot.duplicate:
-					_toast("%s repetido · +%d moedas" % [loot.name, loot.coins])
-				else:
-					_toast("%s: %s!" % [loot.rarity, loot.name])
-			_commit_save()
+	if pos.y >= 168.0 and pos.y <= 211.0:
+		menu_tab = ["chests", "equipment", "character"][clampi(floori((pos.x - 20.0) / ((s.x - 40.0) / 3.0)), 0, 2)]
 	elif pos.y >= s.y - 96.0:
 		show_workshop = false
-	else:
-		var drill_row := floori((pos.y - 316.0) / 36.0)
-		if drill_row >= 0 and drill_row < equipment.drills.size():
-			var drill_ids: Array = equipment.drills.keys()
-			drill_ids.sort()
-			var drill_id := str(drill_ids[drill_row])
-			if state.drill_inventory.has(drill_id) and drill.equip(drill_id):
-				state.drill = drill_id
-				_toast("Equipado: %s" % drill.title)
-				_commit_save()
-		else:
-			var gear_start := 542.0
-			var gear_row := floori((pos.y - gear_start) / 36.0)
-			var gear_ids: Array = equipment.gear.keys()
-			gear_ids.sort()
-			if gear_row >= 0 and gear_row < gear_ids.size():
-				var gear_id := str(gear_ids[gear_row])
+	elif menu_tab == "chests":
+		if pos.y >= s.y - 170.0 and pos.y <= s.y - 108.0:
+			_open_chest()
+	elif menu_tab == "equipment":
+		if pos.y >= 252.0 and pos.y < 320.0:
+			var rarity_index := floori((pos.y - 252.0) / 34.0) * 3 + floori(pos.x / (s.x / 3.0))
+			var rarities: Array[String] = ["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"]
+			if rarity_index >= 0 and rarity_index < rarities.size():
+				gear_rarity = rarities[rarity_index]
+		elif pos.y >= 358.0 and pos.y < 358.0 + 10.0 * 39.0:
+			var gear_ids := equipment.gear_ids_for_rarity(gear_rarity)
+			var row := floori((pos.y - 358.0) / 39.0)
+			if row >= 0 and row < gear_ids.size():
+				var gear_id := gear_ids[row]
 				if state.gear_inventory.has(gear_id):
 					_equip_gear(gear_id)
+				else:
+					_toast("Esse achado ainda está escondido em um baú.")
+	elif menu_tab == "character":
+		if pos.y >= 402.0 and pos.y <= 442.0:
+			character_view = "models" if pos.x < s.x * 0.5 else "skins"
+			skin_page = 0
+		elif character_view == "models" and pos.y >= 452.0 and pos.y < 452.0 + equipment.drills.size() * 42.0:
+			var drill_ids: Array = equipment.drills.keys()
+			drill_ids.sort()
+			var drill_row := floori((pos.y - 452.0) / 42.0)
+			if drill_row >= 0 and drill_row < drill_ids.size():
+				_equip_drill(str(drill_ids[drill_row]))
+		elif character_view == "skins":
+			if pos.y >= 452.0 and pos.y < 452.0 + 6.0 * 42.0:
+				var skin_ids := equipment.skin_ids()
+				var skin_index := skin_page * 6 + floori((pos.y - 452.0) / 42.0)
+				if skin_index >= 0 and skin_index < skin_ids.size():
+					_equip_skin(skin_ids[skin_index])
+			elif pos.y >= 708.0 and pos.y <= 752.0:
+				skin_page = clampi(skin_page + (1 if pos.x >= s.x * 0.5 else -1), 0, 2)
 	queue_redraw()
+
+func _open_chest() -> void:
+	if int(state.get("chests", 0)) < 1:
+		_toast("Continue escavando para encontrar um baú.")
+		return
+	if int(state.get("keys", 0)) < 1:
+		_toast("Baú guardado! Encontre uma chave para abrir.")
+		return
+	var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
+	var result: Dictionary = equipment.open_chest(state, int(state.depth), 7042, int(boosts.luck))
+	if result.ok:
+		var loot: Dictionary = result.item
+		if loot.duplicate:
+			_toast("%s repetido · +%d moedas" % [loot.name, loot.coins])
+		else:
+			_toast("%s: %s!" % [loot.rarity, loot.name])
+		_commit_save()
+
+func _equip_drill(drill_id: String) -> void:
+	if state.drill_inventory.has(drill_id) and drill.equip(drill_id):
+		state.drill = drill_id
+		_apply_drill_skin()
+		_toast("Broca-personagem equipada: %s" % drill.title)
+		_commit_save()
+
+func _equip_skin(skin_id: String) -> void:
+	if state.skin_inventory.has(skin_id) and equipment.skins.has(skin_id):
+		state.equipped_skin = skin_id
+		_apply_drill_skin()
+		_toast("Nova aparência e habilidade: %s" % equipment.skins[skin_id].name)
+		_commit_save()
+	else:
+		_toast("Essa aparência pode aparecer em um baú.")
 
 func _equip_gear(gear_id: String) -> void:
 	var spec: Dictionary = equipment.gear[gear_id]
@@ -272,6 +325,7 @@ func _upgrade() -> void:
 			return
 		state.coins = Economy.buy(int(state.coins), cost)
 		drill.transform_to_prism()
+		_apply_drill_skin()
 		state.drill_inventory.append("prism")
 		state.drill = drill.id
 		_toast("Broca Prisma! Agora abre 3 túneis.")
@@ -328,8 +382,11 @@ func _draw_hud(s: Vector2) -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "PRADO CRISTALINO  ·  %dm" % (state.depth * 2), HORIZONTAL_ALIGNMENT_CENTER, s.x - 50, 14, INK)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 92), _goal_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 44, 12, Color("#416878"))
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "TOQUE E SEGURE PARA ESCAVAR", HORIZONTAL_ALIGNMENT_CENTER, s.x - 30, 12, Color("#416878"))
-	_draw_pill(Rect2(s.x * 0.5 - 92, 123, 184, 28), Color("#e6f4db"), 11)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 143), "BAÚS %d   ·   CHAVES %d" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, 172, 12, INK)
+	var menu_width := (s.x - 36.0) / 3.0
+	var labels := ["BAÚS %d · 🔑%d" % [state.get("chests", 0), state.get("keys", 0)], "EQUIPAMENTOS", "PERSONAGEM"]
+	for i in range(3):
+		var rect := Rect2(18.0 + float(i) * menu_width, 123, menu_width - 6, 28)
+		_draw_button(rect, Color("#e6f4db"), str(labels[i]), INK)
 
 func _goal_text() -> String:
 	if drill.id == "basic":
@@ -405,6 +462,10 @@ func _draw_drill(center: Vector2) -> void:
 	draw_circle(center + Vector2(0, 9), 23, Color("#33516a"))
 	draw_circle(center, 19, color)
 	draw_circle(center + Vector2(-5, -5), 5, Color("#ffffff"))
+	# A broca também é a companheira: olhos e sorriso permanecem legíveis em tamanho pequeno.
+	draw_circle(center + Vector2(-6, 2), 2.5, Color("#294456"))
+	draw_circle(center + Vector2(6, 2), 2.5, Color("#294456"))
+	draw_arc(center + Vector2(0, 3), 7, 0.35, 2.79, 12, Color("#294456"), 1.6, true)
 	draw_rect(Rect2(center.x - 5, center.y + 14, 10, 18), Color("#fff4cd"))
 	var tip := PackedVector2Array([center + Vector2(-12, 27), center + Vector2(12, 27), center + Vector2(0, 44)])
 	draw_colored_polygon(tip, Color("#3e5d71"))
@@ -445,35 +506,104 @@ func _draw_album(s: Vector2) -> void:
 func _draw_workshop(s: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, s), Color("#82dfd4"))
 	draw_rect(Rect2(14, 164, s.x - 28, s.y - 184), Color("#fff9e8"), true, 22)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 202), "OFICINA DE ACHADOS", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 21, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 230), "%d baú(s)  ·  %d chave(s)" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 14, Color("#55707a"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 248), "1 chave abre cada baú · ambos vêm apenas escavando", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 10, Color("#55707a"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 263), _chest_rule_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 10, Color("#55707a"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 278), "Chances iniciais: Ruim 28% · Boa 36% · Épica 22% · Lendária 9%", HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 9, Color("#55707a"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 292), "Única 3,5% · Mística 1,5% · as melhores sobem com profundidade", HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 9, Color("#55707a"))
-	draw_string(ThemeDB.fallback_font, Vector2(28, 310), "BROCAS  ·  toque para equipar achados", HORIZONTAL_ALIGNMENT_LEFT, s.x - 56, 12, INK)
-	var drill_ids: Array = equipment.drills.keys()
-	drill_ids.sort()
-	for i in range(drill_ids.size()):
-		var id := str(drill_ids[i])
-		var spec: Dictionary = equipment.drills[id]
-		var owned: bool = state.get("drill_inventory", []).has(id)
-		var equipped: bool = state.get("drill", "basic") == id
-		var y := 316.0 + float(i) * 36.0
-		_draw_item_row(Rect2(22, y, s.x - 44, 31), str(spec.name), "%s · %s" % [spec.rarity, spec.description], owned, equipped, Color(str(spec.color)))
-	draw_string(ThemeDB.fallback_font, Vector2(28, 535), "EQUIPAMENTOS  ·  até um por encaixe", HORIZONTAL_ALIGNMENT_LEFT, s.x - 56, 12, INK)
-	var gear_ids: Array = equipment.gear.keys()
-	gear_ids.sort()
-	for i in range(gear_ids.size()):
-		var id := str(gear_ids[i])
-		var spec: Dictionary = equipment.gear[id]
-		var owned: bool = state.get("gear_inventory", []).has(id)
-		var equipped: bool = state.get("equipped_gear", []).has(id)
-		var y := 542.0 + float(i) * 36.0
-		_draw_item_row(Rect2(22, y, s.x - 44, 31), str(spec.name), "%s · %s" % [spec.rarity, spec.description], owned, equipped, Color(str(spec.color)))
+	_draw_menu_tabs(s)
+	match menu_tab:
+		"equipment":
+			_draw_equipment_menu(s)
+		"character":
+			_draw_character_menu(s)
+		_:
+			_draw_chest_menu(s)
+	_draw_button(Rect2(40, s.y - 92, s.x - 80, 48), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
+
+func _draw_menu_tabs(s: Vector2) -> void:
+	var width := (s.x - 42.0) / 3.0
+	var names := ["BAÚS", "EQUIPAMENTOS", "PERSONAGEM"]
+	var ids := ["chests", "equipment", "character"]
+	for i in range(3):
+		var color := Color("#37cbb9") if menu_tab == ids[i] else Color("#e8f2d7")
+		_draw_button(Rect2(20 + float(i) * width, 171, width - 6, 34), color, names[i], INK)
+
+func _draw_chest_menu(s: Vector2) -> void:
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 244), "BAÚS DE DESCOBERTA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 21, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 278), "%d baú(s) guardado(s)  ·  %d chave(s)" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 15, Color("#55707a"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 313), "Chaves e baús aparecem cavando. Nada expira.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 12, Color("#55707a"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 351), _chest_rule_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 11, Color("#287d6d"))
+	draw_string(ThemeDB.fallback_font, Vector2(42, 402), "CHANCES INICIAIS", HORIZONTAL_ALIGNMENT_LEFT, s.x - 84, 13, INK)
+	var odds := ["Ruim 28%", "Boa 36%", "Épica 22%", "Lendária 9%", "Única 3,5%", "Mística 1,5%"]
+	for i in range(odds.size()):
+		var y := 432.0 + float(i / 2) * 43.0
+		var x := 40.0 + float(i % 2) * (s.x * 0.5)
+		_draw_pill(Rect2(x, y, s.x * 0.5 - 56, 34), _rarity_color(["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"][i]).lightened(0.66), 11)
+		draw_string(ThemeDB.fallback_font, Vector2(x + 8, y + 22), odds[i], HORIZONTAL_ALIGNMENT_CENTER, s.x * 0.5 - 72, 12, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(42, 583), "ÚLTIMO ACHADO", HORIZONTAL_ALIGNMENT_LEFT, s.x - 84, 13, INK)
+	var loot: Dictionary = state.get("last_loot", {})
+	var loot_name := str(loot.get("name", "Ainda nenhum · o próximo pode ser seu!"))
+	var loot_detail := "%s · %s" % [loot.get("rarity", "Baú"), loot.get("kind", "equipamento")]
+	if bool(loot.get("duplicate", false)):
+		loot_detail += " · repetido: +%d moedas" % int(loot.get("coins", 0))
+	_draw_item_row(Rect2(28, 601, s.x - 56, 52), loot_name, loot_detail, not loot.is_empty(), false, _rarity_color(str(loot.get("rarity", "Boa"))))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 693), "Baús podem trazer equipamentos, brocas ou skins.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 12, Color("#55707a"))
 	var can_open := int(state.get("chests", 0)) > 0 and int(state.get("keys", 0)) > 0
 	_draw_button(Rect2(22, s.y - 164, s.x - 44, 54), Color("#efb950") if can_open else Color("#d7d9c5"), "ABRIR BAÚ  ·  1 CHAVE" if can_open else "BAÚ SELADO  ·  PRECISA DE CHAVE", Color("#4b3822"))
-	_draw_button(Rect2(40, s.y - 92, s.x - 80, 48), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
+
+func _draw_equipment_menu(s: Vector2) -> void:
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 240), "EQUIPAMENTOS  ·  %d/60" % state.get("gear_inventory", []).size(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 19, INK)
+	var rarities: Array[String] = ["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"]
+	for i in range(rarities.size()):
+		var x := 19.0 + float(i % 3) * 169.0
+		var y := 254.0 + float(i / 3) * 36.0
+		var selected := rarities[i] == gear_rarity
+		_draw_button(Rect2(x, y, 160, 31), Color("#37cbb9") if selected else _rarity_color(rarities[i]).lightened(0.55), "%s · %d" % [rarities[i], equipment.gear_ids_for_rarity(rarities[i]).size()], INK)
+	var gear_ids := equipment.gear_ids_for_rarity(gear_rarity)
+	draw_string(ThemeDB.fallback_font, Vector2(29, 347), "%s · toque em um item encontrado para equipar" % gear_rarity.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, s.x - 58, 11, INK)
+	for i in range(gear_ids.size()):
+		var id := gear_ids[i]
+		var spec: Dictionary = equipment.gear[id]
+		var owned: bool = state.gear_inventory.has(id)
+		var equipped: bool = state.equipped_gear.has(id)
+		var y := 358.0 + float(i) * 39.0
+		_draw_item_row(Rect2(22, y, s.x - 44, 35), str(spec.name), "%s · %s · %s" % [spec.slot, spec.skill, spec.description], owned, equipped, Color(str(spec.color)))
+
+func _draw_character_menu(s: Vector2) -> void:
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 237), "MINHA BROCA É MINHA COMPANHEIRA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 46, 16, INK)
+	_draw_drill(Vector2(s.x * 0.5, 280))
+	var skin: Dictionary = equipment.skins.get(str(state.get("equipped_skin", "pioneira")), equipment.skins.get("pioneira", {}))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 338), "%s · skin %s" % [drill.title, skin.get("name", "Pioneira")], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 13, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 359), "Inata: %s — %s" % [skin.get("skill", "Curiosa"), skin.get("description", "")], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 10, Color("#55707a"))
+	var stats := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 380), "Força %+d · moedas/bloco %+d · velocidade %+d%% · sorte %+d" % [stats.power, stats.reward, roundi(float(stats.speed) * 100.0), stats.luck], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 10, Color("#287d6d"))
+	var models_selected := character_view == "models"
+	_draw_button(Rect2(20, 400, (s.x - 48) * 0.5, 36), Color("#37cbb9") if models_selected else Color("#e8f2d7"), "MODELOS", INK)
+	_draw_button(Rect2(s.x * 0.5 + 4, 400, (s.x - 48) * 0.5, 36), Color("#37cbb9") if not models_selected else Color("#e8f2d7"), "SKINS  %d/13" % state.get("skin_inventory", []).size(), INK)
+	if models_selected:
+		var drill_ids: Array = equipment.drills.keys()
+		drill_ids.sort()
+		for i in range(drill_ids.size()):
+			var id := str(drill_ids[i])
+			var spec: Dictionary = equipment.drills[id]
+			var owned: bool = state.drill_inventory.has(id)
+			var equipped: bool = state.drill == id
+			var y := 452.0 + float(i) * 42.0
+			_draw_item_row(Rect2(22, y, s.x - 44, 38), str(spec.name), "%s · %d blocos · %s" % [spec.rarity, spec.pattern.size(), spec.description], owned, equipped, Color(str(spec.color)))
+	else:
+		var skin_ids := equipment.skin_ids()
+		for i in range(6):
+			var skin_index := skin_page * 6 + i
+			if skin_index >= skin_ids.size():
+				break
+			var id := skin_ids[skin_index]
+			var spec: Dictionary = equipment.skins[id]
+			var owned: bool = state.skin_inventory.has(id)
+			var equipped: bool = state.equipped_skin == id
+			var y := 452.0 + float(i) * 42.0
+			_draw_item_row(Rect2(22, y, s.x - 44, 38), str(spec.name), "%s · %s · %s" % [spec.rarity, spec.skill, spec.description], owned, equipped, Color(str(spec.color)))
+		_draw_button(Rect2(35, 710, 165, 36), Color("#e8f2d7"), "◀ ANTERIORES" if skin_page > 0 else "INÍCIO", INK)
+		_draw_button(Rect2(s.x - 200, 710, 165, 36), Color("#e8f2d7"), "MAIS SKINS ▶" if skin_page < 2 else "FIM", INK)
+
+func _rarity_color(rarity: String) -> Color:
+	var colors := {"Ruim": "#bd896e", "Boa": "#7fdc94", "Épica": "#55d9cb", "Lendária": "#f3ad54", "Única": "#bc91ec", "Mística": "#ff8dbe"}
+	return Color(str(colors.get(rarity, "#fff1c2")))
 
 func _draw_item_row(rect: Rect2, title: String, detail: String, owned: bool, equipped: bool, tint: Color) -> void:
 	draw_rect(rect, tint.lightened(0.76) if owned else Color("#eee9d9"), true, 8)

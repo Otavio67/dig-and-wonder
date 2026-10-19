@@ -1,0 +1,15 @@
+{
+  "pioneira": {"name": "Pioneira", "rarity": "Inicial", "color": "#fff1c2", "power": 0, "reward": 0, "speed": 0.0, "luck": 0, "skill": "Aprendiz Curiosa", "description": "Sem bônus ou penalidade. A primeira forma da sua companheira."},
+  "casca_remendada": {"name": "Casca Remendada", "rarity": "Ruim", "color": "#bd896e", "power": 1, "reward": 0, "speed": -0.03, "luck": 0, "skill": "Reforço Improvisado", "description": "+1 poder · −3% velocidade."},
+  "lata_barulhenta": {"name": "Lata Barulhenta", "rarity": "Ruim", "color": "#888b82", "power": 0, "reward": 1, "speed": 0.0, "luck": -2, "skill": "Eco de Lata", "description": "+1 moeda/bloco · −2 sorte."},
+  "broto_solar": {"name": "Broto Solar", "rarity": "Boa", "color": "#f6d56e", "power": 0, "reward": -1, "speed": 0.04, "luck": 1, "skill": "Fotossíntese Mineral", "description": "+4% velocidade · −1 moeda/bloco · +1 sorte."},
+  "musgo_amigo": {"name": "Musgo Amigo", "rarity": "Boa", "color": "#71c985", "power": 1, "reward": 0, "speed": -0.01, "luck": 2, "skill": "Raiz Persistente", "description": "+1 poder · +2 sorte · −1% velocidade."},
+  "prisma_lunar": {"name": "Prisma Lunar", "rarity": "Épica", "color": "#55d9cb", "power": 1, "reward": 1, "speed": -0.02, "luck": 2, "skill": "Refração da Lua", "description": "+1 poder, +1 moeda/bloco e +2 sorte · −2% velocidade."},
+  "safira_veloz": {"name": "Safira Veloz", "rarity": "Épica", "color": "#638eee", "power": -1, "reward": 0, "speed": 0.06, "luck": 2, "skill": "Faísca Azul", "description": "+6% velocidade e +2 sorte · −1 poder."},
+  "coracao_vulcanico": {"name": "Coração Vulcânico", "rarity": "Lendária", "color": "#f0784f", "power": 2, "reward": 1, "speed": -0.04, "luck": 2, "skill": "Calor de Forja", "description": "+2 poder, +1 moeda/bloco e +2 sorte · −4% velocidade."},
+  "cometa_mecanico": {"name": "Cometa Mecânico", "rarity": "Lendária", "color": "#f2b956", "power": -1, "reward": 2, "speed": 0.08, "luck": 3, "skill": "Rastro Incandescente", "description": "+8% velocidade, +2 moedas/bloco e +3 sorte · −1 poder."},
+  "espectro_quartzo": {"name": "Espectro de Quartzo", "rarity": "Única", "color": "#b58fe8", "power": -1, "reward": 2, "speed": 0.04, "luck": 6, "skill": "Passagem Fantasma", "description": "+4% velocidade, +2 moedas/bloco e +6 sorte · −1 poder."},
+  "miragem_iridescente": {"name": "Miragem Iridescente", "rarity": "Única", "color": "#dc7cd0", "power": 1, "reward": 3, "speed": -0.02, "luck": 5, "skill": "Reflexo Impossível", "description": "+1 poder, +3 moedas/bloco e +5 sorte · −2% velocidade."},
+  "aurora_viva": {"name": "Aurora Viva", "rarity": "Mística", "color": "#83e9dc", "power": 2, "reward": 2, "speed": -0.02, "luck": 7, "skill": "Dança Boreal", "description": "+2 poder, +2 moedas/bloco e +7 sorte · −2% velocidade."},
+  "singularidade": {"name": "Singularidade", "rarity": "Mística", "color": "#e1a0ef", "power": 3, "reward": -1, "speed": 0.05, "luck": 8, "skill": "Dobra do Espaço", "description": "+3 poder, +5% velocidade e +8 sorte · −1 moeda/bloco."}
+}

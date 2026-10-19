@@ -133,3 +133,13 @@ Os baús fechados são achados a cada 24 m; as chaves aparecem 8 m antes de cada
 O catálogo traz cinco brocas além da inicial, com padrões de escavação próprios, e seis equipamentos para três encaixes. Os bônus afetam poder e valor por bloco. Save esquema 2 persiste inventário, equipamentos, chaves, baús, garantias e último achado; saves versão 1 migram preservando moedas, escavação e broca Prisma.
 
 A interface oferece a Oficina de Achados no botão de baús do HUD. A oferta mostra raridade, descrição, estado encontrado/equipado, chances iniciais e garantias. Nenhum baú/chave é vendido ou ligado a anúncio. Detalhes de regras e limitação da pesquisa web estão em [REFERENCIAS-DE-DESIGN.md](REFERENCIAS-DE-DESIGN.md).
+
+## Incremento 0.0.2 — companheira-broca e menus
+
+O HUD agora separa Baús, Equipamentos e Personagem; a oficina reaproveita os mesmos três botões como navegação interna. O catálogo contém exatamente dez equipamentos em cada uma das seis raridades já definidas (60 no total), com três encaixes e quatro atributos aplicados à escavação: poder, moedas por bloco, velocidade e sorte para baús. A sorte desloca o peso de raridade; os valores dos itens e skins são limitados por raridade e mostram seus efeitos e contrapartidas.
+
+A broca ganha rosto e passa a ser apresentada como companheira. Seis modelos mantêm seus padrões próprios. Treze skins (uma inicial e doze encontráveis em baús, duas por raridade) alteram a cor e aplicam uma habilidade passiva feita dos mesmos atributos, incluindo bônus e penalidades. O save esquema 3 registra coleção/equipamento de skins e migra esquemas 1 e 2, preservando brocas, equipamentos e progresso existentes.
+
+## Fontes e limitações de pesquisa
+
+Esta rodada tentou consulta web, mas o proxy do ambiente devolveu 403. Não atribuí regras novas a outros jogos. A expansão segue as referências já registradas e adota como decisões próprias efeitos legíveis, catálogo separado, skins que mudam números além da aparência e proteção contra duplicatas/sorte ruim. Retomar uma pesquisa atualizada de modelos de coleção e regras de divulgação antes de qualquer monetização com itens aleatórios.
