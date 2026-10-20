@@ -71,3 +71,10 @@ Tag: `v0.0.5` no checkpoint deste marco.
 - Importação, boot e harnesses de lógica, gameplay e save passaram. O harness Android falhou na asserção de toque em `y=229`: a grade está em `y=300` após a alteração local de layout. FPS Android, toque em aparelho e acessibilidade não foram medidos.
 
 Revisão visual/feedback sem nova versão ou tag.
+
+## Revisão dos mineiros — 20/10/2026
+
+- Lia e Bento redesenhados com proporções compactas, rostos maiores, contornos escuros e roupas simplificadas para os tamanhos usados no jogo. Mantidos os caminhos `assets/characters/miner_lia.png` e `assets/characters/miner_bento.png` e a transparência PNG.
+- Gerados com a ferramenta integrada de imagens. Direção dos prompts: cartoon 2D com aparência vetorial, cabeça grande, cores sólidas, sombras definidas, poucos detalhes e fundo transparente; Lia segura um cristal, Bento acena e segura uma chave de oficina. Os originais anteriores ficam apenas no backup local ignorado em `.tools/art-backup/miners-20261020/`.
+- Importação e sete capturas reais no Godot 4.7.2 Windows concluídas; início, escavação e personagem inspecionados. A revisão é visual, sem nova versão/tag. Não foram medidos FPS ou toque em Android.
+- Os arquivos continuam sendo poses estáticas inteiras. Animação por esqueleto no Blender depende de preparar peças separadas ou um modelo; ainda não existe rig ou animação exportada.
