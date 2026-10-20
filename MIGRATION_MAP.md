@@ -152,8 +152,8 @@ No fechamento da Fase 1 a tabela exigida deve trazer, para cada valor efetivamen
 
 ## 8. Ambiguidades para aprovação antes da Fase 1
 
-1. **Qual gameplay e números são a fonte de verdade?** A entrada Godot 0.0.6 é defesa por camadas/carrinho/Pioneira/Torrão. O modo de escavação contínua, padrões de broca, equipamento, chaves/baús e fases catalogadas são legados/inativos. O objetivo novo “Idle RPG / Auto-Battler” pede um loop diferente. A Fase 1 deve partir dos números de `prototype.json`, dos valores antigos de mineração, ou de uma lista sua de quais grupos permanecem ativos?
-2. **Papel da broca:** na defesa atual a Pioneira é um projétil/unidade descartável com 4 impactos; no jogo antigo ela é protagonista persistente de uma grade. No Auto-Battler ela deve ser o avatar persistente que ataca automaticamente? O carrinho permanece, vira base fora da arena ou sai por completo?
+1. **Fonte dos números ainda precisa de regra de conversão:** a entrada Godot 0.0.6 é defesa por camadas/carrinho/Pioneira/Torrão. O objetivo agora é combate automático lateral. Os valores ativos do combate antigo serão referência para atributos que tenham equivalência direta; valores sem equivalente serão mapeados como legado e não reaproveitados à força. Valores novos necessários serão marcados como decisões de design antes de balancear.
+2. **Papel da broca e do carrinho — direção esclarecida:** a broca passa a ser a personagem persistente, avançando automaticamente e lutando; o carrinho deixa de ser protagonista e não deve ser mantido na arena por padrão. O visual, a paleta e a identidade subterrânea existentes continuam como base.
 3. **Escopo visual/unidades:** “manter apenas a broca e o visual” significa manter a identidade (paleta/fundos/terreno/UI/atlas) e substituir personagens, ou manter também carrinho, Torrão e Escavador? `Lia/Bento` estão ocultos; sprites legacy diferem dos atlas pintados atuais.
 4. **Progressão ativa:** a entrada atual tem ouro e upgrades permanentes de Dano/Vida; sistema antigo tem moedas, 60 equipamentos, skins, 6 brocas, chaves/baús e descoberta. Quais desses sistemas entram no novo loop e quais devem ser apenas dados disponíveis?
 5. **Inatividade/offline:** “Idle RPG” pode significar luta automática apenas com app aberto ou avanço/recompensa offline. Godot atual não calcula renda/combate offline. Definir isso antes de criar valores, save e comportamento de retomada.
@@ -161,6 +161,20 @@ No fechamento da Fase 1 a tabela exigida deve trazer, para cada valor efetivamen
 7. **Colisores:** nenhum collider existe na origem; alvos usam posição/IDs. Confirmar se os colliders Unity necessários serão hurtboxes para consultas/FX sem governar o combate, ou se física passa a determinar hits.
 8. **Ambiente de compilação:** o projeto remoto não tem Unity Editor/CLI e não tem projeto Unity. Como a validação exige Unity 6 em batchmode a cada fase, o editor precisa estar disponível neste ambiente ou deve ser compilado no PC do usuário/runner. Também será necessário obter/importar DOTween; ele não está versionado.
 9. **Alvo Android:** preservar pacote `com.otavio67.digandwonder`, ARM64, retrato, API mínima 24/alvo 36 e modo offline do preset atual? Unity/URP e SDKs podem alterar manifesto e requisitos; resolver isso antes da Fase 3.
+
+### Direção de jogo definida pelo pedido após o inventário
+
+O vídeo enviado (`WhatsApp Video 2026-10-20 at 00.22.57.mp4`) é uma **referência visual/de ritmo**, não documentação de regras para copiar. Nele se vê jogo mobile em retrato, combate e avanço automáticos em uma arena lateral, barras/indicadores de progresso, recompensas e uma área inferior dedicada a atributos e melhorias. A solicitação do usuário define a adaptação para Dig & Wonder:
+
+- Loop principal: a broca caminha/avança sozinha; inimigos surgem e são combatidos automaticamente. O jogador investe recursos em atributos e equipamentos entre ações, sem controle de movimento manual.
+- A interface reserva a parte inferior para menus e melhorias da broca, incluindo Vida, Dano, Especial e Crítico. Ataque rápido, defesa e recarga de especial são candidatos adicionais, sujeitos à paridade com os dados e à aprovação de balanceamento.
+- A progressão principal é por fases/biomas, com inimigos progressivamente mais fortes e um boss como requisito para avançar. Coletáveis opcionais não bloqueiam o boss.
+- Escavação fica como evento/fase especial, com padrão de perfuração e coleta de minério próprios; não substitui o loop principal de combate.
+- Ideias para diferenciar: módulos instalados na própria broca (ponta, motor, núcleo), que mudam comportamento/ataque além de apenas aumentar número; eventos de escavação com objetivo curto; recompensas de baú por chaves obtidas jogando, com duplicatas convertidas em material de melhoria. São propostas, ainda não implementação ou balanceamento aprovado.
+- Monetização, se adicionada depois, deve ser voluntária e fora do combate: por exemplo, recompensa opcional ao final de uma fase ou bônus de retorno offline. Nenhum anúncio interrompe luta ou é necessário para vencer. A viabilidade SDK/teste continua pendente da configuração Unity.
+- Progresso offline é uma decisão separada: não aparece como regra confirmada do vídeo nem existe no combate Godot atual. Definir limite e fórmula antes de implementá-lo.
+
+O jogo de referência não determina valores, taxas de loot, duração de fase ou frequência de anúncios. Esses dados serão rastreados à origem Godot ou explicitamente marcados como novos quando aprovados.
 
 ## Situação da Fase 0
 
