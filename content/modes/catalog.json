@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "content_status": "future_catalog",
+  "modes": [
+    {
+      "id": "campaign",
+      "name": "Campanha",
+      "implemented": true,
+      "unlock": "initial",
+      "fantasy": "A broca anda para a direita, enfrenta ondas e derrota o guardião da fase.",
+      "core_loop": ["iniciar", "lutar", "coletar_ouro", "melhorar", "derrotar_boss", "desbloquear_broca"],
+      "reward": "progresso_permanente"
+    },
+    {
+      "id": "deep_dig_tower",
+      "name": "Escavação Profunda",
+      "implemented": false,
+      "unlock": "phase_20",
+      "fantasy": "Uma torre invertida: cada andar é uma camada de chão quebrável e a descida nunca mostra o próximo perigo inteiro.",
+      "core_loop": ["escolher_caminho", "quebrar_chao", "decidir_risco", "abrir_bau", "descer"],
+      "rules": {"floors_per_run": 20, "checkpoints": [5,10,15], "one_life": true, "branching_paths": 2, "boss_floor": 20},
+      "reward": "fragmentos_de_equipamento_e_materiais",
+      "signature": "o jogador escolhe entre uma rota segura e uma rota rica em minério"
+    },
+    {
+      "id": "underworld_expedition",
+      "name": "Expedição do Submundo",
+      "implemented": false,
+      "unlock": "phase_50",
+      "fantasy": "Mineiros perdidos pedem ajuda e abrem túneis curtos que mudam o caminho.",
+      "core_loop": ["resgatar_mineiros", "desviar_de_magma", "coletar_carvao", "escolher_atalho"],
+      "rules": {"attempt_duration_minutes": 5, "hazards_per_run": 3, "rescues_are_optional": true},
+      "reward": "petes_do_submundo_e_chaves_de_bau"
+    },
+    {
+      "id": "rift_hunt",
+      "name": "Caçada às Fendas",
+      "implemented": false,
+      "unlock": "phase_80",
+      "fantasy": "O portal abre um mapa impossível; cada vitória estabiliza uma pequena parte da dimensão.",
+      "core_loop": ["selecionar_fenda", "ler_sinais", "lutar_com_regra_mutada", "fechar_portal"],
+      "rules": {"mutators_per_run": 2, "reroll_limit": 1, "boss_at_end": true},
+      "mutators": ["inimigos_refletem_o_primeiro_impacto", "tempo_de_telegraph_reduzido", "baus_tem_duas_recompensas", "gravidade_alterna"],
+      "reward": "fragmentos_de_brocas_unicas"
+    },
+    {
+      "id": "boss_rush",
+      "name": "Galeria dos Guardiões",
+      "implemented": false,
+      "unlock": "phase_40",
+      "fantasy": "Uma sequência curta de bosses conhecidos, sem ondas comuns entre eles.",
+      "core_loop": ["escolher_guardiao", "aprender_padrao", "vencer_sem_reiniciar_combo"],
+      "rules": {"bosses_per_run": 3, "healing_between_bosses": "partial", "weekly_best_score": true},
+      "reward": "moedas_de_guardiao_e_materiais_de_upgrade"
+    },
+    {
+      "id": "treasure_sprint",
+      "name": "Corrida do Baú",
+      "implemented": false,
+      "unlock": "phase_10",
+      "fantasy": "Uma fase curta em que o perigo vem do relógio e os baús ficam visíveis desde o começo.",
+      "core_loop": ["avancar_rapido", "escolher_bau", "sair_antes_do_colapso"],
+      "rules": {"attempt_duration_seconds": 90, "chest_choices": 3, "combat_is_optional": true},
+      "reward": "chaves_e_materiais_de_bau"
+    },
+    {
+      "id": "pet_expedition",
+      "name": "Expedição dos Pets",
+      "implemented": false,
+      "unlock": "phase_30",
+      "fantasy": "Um pet acompanha uma missão curta e volta com uma história, mesmo quando falha.",
+      "core_loop": ["escolher_pet", "escolher_missao", "aguardar_resultado", "resgatar_recompensa"],
+      "rules": {"offline_progress": "limited_and_capped", "one_active_expedition": true},
+      "reward": "fragmentos_de_pet_e_album"
+    },
+    {
+      "id": "weekly_depth",
+      "name": "Profundidade da Semana",
+      "implemented": false,
+      "unlock": "phase_50",
+      "fantasy": "Uma semente semanal muda o tipo de terreno, o boss e a ordem das recompensas.",
+      "core_loop": ["ver_regra_da_semana", "montar_broca", "descer", "pontuar"],
+      "rules": {"seed_changes_each_week": true, "leaderboard": "local_first", "no_paid_power_required": true},
+      "reward": "cosmeticos_e_titulos"
+    }
+  ]
+}

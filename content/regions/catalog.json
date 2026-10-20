@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "content_status": "design_catalog",
+  "note": "Conteúdo separado dos sistemas Unity. As regiões 3 e 4 ainda não alteram a apresentação em runtime.",
+  "transitions": [
+    {
+      "id": "underworld_gate",
+      "from_region": "deep_caverns",
+      "to_region": "underworld",
+      "after_phase": 50,
+      "presentation": "O chefe da fase 50 quebra o piso e revela uma escada de lava azul. A próxima tentativa começa no Submundo.",
+      "reward": "descoberta_portal_submundo"
+    },
+    {
+      "id": "fractured_portal",
+      "from_region": "underworld",
+      "to_region": "fractured_dimension",
+      "after_phase": 80,
+      "presentation": "O chefe da fase 80 deixa um portal ciano flutuando. O jogador toca no portal para ver a transição e entrar na dimensão fraturada.",
+      "reward": "descoberta_portal_fraturado"
+    }
+  ],
+  "regions": [
+    {
+      "id": "surface_camp",
+      "name": "Camadas do Acampamento",
+      "phase_start": 1,
+      "phase_end": 20,
+      "implemented": true,
+      "fantasy": "Terra quente, madeira, lanternas e os primeiros veios de cristal.",
+      "palette": {"sky": "#92E4DE", "rock": "#BD805D", "accent": "#FFB703", "energy": "#00F5D4"},
+      "layers": ["terra_macia", "argila_rosada", "pedra_azul", "veio_cristal"],
+      "hazards": ["pedra_solta"],
+      "music_tag": "curiosa_e_mecanica",
+      "boss_id": "prado_cristalino_boss"
+    },
+    {
+      "id": "deep_caverns",
+      "name": "Grutas Profundas",
+      "phase_start": 21,
+      "phase_end": 50,
+      "implemented": true,
+      "fantasy": "Basalto, fósseis e veios que exigem mais força da broca.",
+      "palette": {"sky": "#586A7E", "rock": "#354B63", "accent": "#E89B53", "energy": "#54D9CB"},
+      "layers": ["cascalho_vulcanico", "basalto", "ferro_azul", "ambar_fossil"],
+      "hazards": ["vapor_quente", "teto_instavel"],
+      "music_tag": "eco_e_metal",
+      "boss_id": "gruta_basaltica_boss"
+    },
+    {
+      "id": "underworld",
+      "name": "Submundo Ferrífero",
+      "phase_start": 51,
+      "phase_end": 80,
+      "implemented": false,
+      "fantasy": "Um mundo sob as cavernas: rios de magma frio, raízes negras e máquinas abandonadas de uma civilização mineradora.",
+      "palette": {"sky": "#241B35", "rock": "#35253D", "accent": "#FF595E", "energy": "#FFB703"},
+      "layers": ["cinza_vulcanica", "obsidiana_riscada", "ferro_sangrento", "geodo_de_brasa"],
+      "hazards": ["bolha_de_magma", "correnteza_de_cinzas", "trilho_quebrado"],
+      "music_tag": "peso_e_percussao",
+      "boss_id": "rei_carvao",
+      "signature_event": "mineiros_perdidos_pedem_ajuda_e_abrem_atalhos_temporarios"
+    },
+    {
+      "id": "fractured_dimension",
+      "name": "Dimensão Fraturada",
+      "phase_start": 81,
+      "phase_end": 100,
+      "implemented": false,
+      "fantasy": "Um espaço impossível onde a caverna se dobra, os veios flutuam e cada impacto deixa uma janela para outro lugar.",
+      "palette": {"sky": "#101B3D", "rock": "#283A70", "accent": "#C77DFF", "energy": "#00F5D4"},
+      "layers": ["poeira_de_espelho", "rocha_invertida", "cristal_nulo", "fragmento_de_portal"],
+      "hazards": ["gravidade_trocada", "eco_temporal", "fenda_de_teleporte"],
+      "music_tag": "sintese_flutuante",
+      "boss_id": "oraculo_fraturado",
+      "signature_event": "o_portal_reorganiza_o_cenario_antes_da_ultima_onda"
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "content_status": "future_catalog",
+  "design_rules": {
+    "pets_do_not_create_independent_combat_units": true,
+    "passives_are_event_driven": true,
+    "one_active_pet_at_a_time_in_first_release": true,
+    "paid_pets_are_cosmetic_or_sidegrade": true
+  },
+  "pets": [
+    {
+      "id": "carvao",
+      "name": "Carvõezinho",
+      "rarity": "Comum",
+      "acquisition": "first_underworld_mission",
+      "region_id": "underworld",
+      "implemented": false,
+      "personality": "Medroso, mas sempre volta quando ouve uma picareta.",
+      "visual": "Bola de carvão com duas perninhas e uma faísca na testa.",
+      "passive": {"id":"warm_paws","description":"reduz o primeiro dano de lava de cada tentativa","trigger":"first_hazard"}
+    },
+    {
+      "id": "morceguinho",
+      "name": "Morceguinho Mapa",
+      "rarity": "Comum",
+      "acquisition": "chest_common",
+      "region_id": "surface_camp",
+      "implemented": false,
+      "personality": "Curioso e incapaz de voar em linha reta.",
+      "visual": "Morcego azul com uma mini bússola pendurada.",
+      "passive": {"id":"echo_ping","description":"revela uma surpresa próxima ao entrar em uma fase","trigger":"stage_start"}
+    },
+    {
+      "id": "geodinha",
+      "name": "Geodinha",
+      "rarity": "Raro",
+      "acquisition": "chest_rare",
+      "region_id": "deep_caverns",
+      "implemented": false,
+      "personality": "Coleciona pedras e julga silenciosamente as escolhas do jogador.",
+      "visual": "Pequeno geodo que abre e fecha como uma boca sorridente.",
+      "passive": {"id":"ore_spark","description":"pequena chance de duplicar ouro de um minério raro","trigger":"rare_ore_collected"}
+    },
+    {
+      "id": "fagulha",
+      "name": "Fagulha",
+      "rarity": "Raro",
+      "acquisition": "underworld_event",
+      "region_id": "underworld",
+      "implemented": false,
+      "personality": "Competitiva; comemora até quando o jogador desvia.",
+      "visual": "Faísca laranja com capa de cinza e olhos grandes.",
+      "passive": {"id":"heat_up","description":"carrega um pequeno bônus de dano depois de três impactos consecutivos","trigger":"combo_three_hits"}
+    },
+    {
+      "id": "relogio",
+      "name": "Reloginho Torto",
+      "rarity": "Épico",
+      "acquisition": "event_time_rift",
+      "region_id": "fractured_dimension",
+      "implemented": false,
+      "personality": "Vive cinco segundos atrasado e acha isso muito elegante.",
+      "visual": "Relógio de bolso flutuante com ponteiros desencontrados.",
+      "passive": {"id":"second_chance","description":"uma vez por tentativa, converte uma derrota em uma pausa curta com pouca vida","trigger":"lethal_damage"}
+    },
+    {
+      "id": "mini_golem",
+      "name": "Golem de Bolso",
+      "rarity": "Épico",
+      "acquisition": "boss_collection",
+      "region_id": "deep_caverns",
+      "implemented": false,
+      "personality": "Fala pouco e entrega pedras que parecem importantes.",
+      "visual": "Golem quadrado menor que uma roda da broca.",
+      "passive": {"id":"stone_skin","description":"aumenta levemente a vida máxima durante fases de pedra","trigger":"region_layer_match"}
+    },
+    {
+      "id": "vaga_lume_nulo",
+      "name": "Vaga-lume Nulo",
+      "rarity": "Lendário",
+      "acquisition": "fractured_dimension_discovery",
+      "region_id": "fractured_dimension",
+      "implemented": false,
+      "personality": "Apaga a própria luz para fazer uma entrada dramática.",
+      "visual": "Vaga-lume ciano com uma cauda que deixa pixels no ar.",
+      "passive": {"id":"rift_luck","description":"aumenta a chance de evento surpresa sem aumentar a dificuldade","trigger":"portal_roll"}
+    },
+    {
+      "id": "chaveiro",
+      "name": "Chaveiro Falante",
+      "rarity": "Lendário",
+      "acquisition": "chest_legendary",
+      "region_id": "underworld",
+      "implemented": false,
+      "personality": "Sabe abrir tudo, mas reclama de cada fechadura.",
+      "visual": "Molho de chaves com olhos e uma capa minúscula.",
+      "passive": {"id":"key_saver","description":"chance baixa de devolver a chave usada em um baú","trigger":"chest_opened"}
+    },
+    {
+      "id": "orbe_aurora",
+      "name": "Orbe Aurora",
+      "rarity": "Único",
+      "acquisition": "phase_100_collection",
+      "region_id": "fractured_dimension",
+      "implemented": false,
+      "personality": "Calmo, brilhante e sempre aponta para a próxima descoberta.",
+      "visual": "Orbe de cristal com uma aurora minúscula dentro.",
+      "passive": {"id":"finale_glow","description":"melhora a leitura dos sinais de boss e dá uma pequena recompensa de conclusão","trigger":"boss_phase_started"}
+    },
+    {
+      "id": "parafuso_real",
+      "name": "Parafuso Real",
+      "rarity": "Místico",
+      "acquisition": "premium_cosmetic_or_event",
+      "region_id": "surface_camp",
+      "implemented": false,
+      "personality": "Age como rei, mas perde a coroa quando fica animado.",
+      "visual": "Parafuso dourado com capa azul-petróleo e coroa torta.",
+      "passive": {"id":"royal_wave","description":"apenas cosmético na primeira versão; em versões futuras pode alterar uma animação de vitória","trigger":"stage_clear"},
+      "monetization_guardrail": "não dá dano, vida ou chance de baú maior"
+    }
+  ]
+}

@@ -2,6 +2,8 @@
 
 Este marco transforma a campanha de 60 para 100 fases. A fase da campanha e o nível da broca continuam sendo progressos separados: a vitória de uma fase libera a recompensa correspondente, mas a broca recebida começa com XP 0, nível 0 e poderes vazios.
 
+O plano de regiões, inimigos, pets, brocas futuras e modos adicionais está em [CONTENT-BIBLE-ENDGAME.md](CONTENT-BIBLE-ENDGAME.md). Os catálogos ainda não são carregados pela cena Unity.
+
 ## Recompensas de fase
 
 | Vitória | Broca | ATQ base | PV base | Padrão principal |

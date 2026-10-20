@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "content_status": "active_and_future_catalog",
+  "rarities": ["Simples", "Boa", "Épica", "Lendária", "Única", "Mística"],
+  "active_unity_roster": [
+    {"id":"pioneer","name":"Broca Pioneira","rarity":"Simples","unlock":"initial","implemented":true,"pattern":"dois impactos concentrados","identity":"começo fraco e confiável"},
+    {"id":"rivet","name":"Broca Rebite","rarity":"Boa","unlock":"phase_10","implemented":true,"pattern":"dois impactos reforçados","identity":"primeira troca segura"},
+    {"id":"spark","name":"Broca Centelha","rarity":"Boa","unlock":"phase_20","implemented":true,"pattern":"três tiros leves e rápidos","identity":"cadência"},
+    {"id":"bastion","name":"Broca Bastião","rarity":"Épica","unlock":"phase_30","implemented":true,"pattern":"dois tiros pesados","identity":"blindagem e impacto"},
+    {"id":"prism","name":"Broca Prisma","rarity":"Épica","unlock":"phase_40","implemented":true,"pattern":"estilhaço em alvo secundário","identity":"dano espalhado"},
+    {"id":"seismic","name":"Broca Sísmica","rarity":"Lendária","unlock":"phase_50","implemented":true,"pattern":"especial em três alvos","identity":"entrada no Submundo"},
+    {"id":"aurora","name":"Broca Aurora","rarity":"Lendária","unlock":"phase_60","implemented":true,"pattern":"três tiros, especial duplo e ricochete","identity":"luz concentrada"},
+    {"id":"cobalt","name":"Broca Cobalto","rarity":"Lendária","unlock":"phase_70","implemented":true,"pattern":"tiros perfurantes","identity":"minério cristalino"},
+    {"id":"nova","name":"Broca Nova","rarity":"Única","unlock":"phase_80","implemented":true,"pattern":"rajada tripla e estilhaço","identity":"portal para outra dimensão"},
+    {"id":"titan","name":"Broca Titã","rarity":"Única","unlock":"phase_90","implemented":true,"pattern":"impactos pesados e especial amplo","identity":"força para a reta final"},
+    {"id":"singularity","name":"Broca Singular","rarity":"Mística","unlock":"phase_100","implemented":true,"pattern":"três tiros, especial triplo e estilhaço","identity":"fim da campanha atual"}
+  ],
+  "future_roster": [
+    {"id":"geode","name":"Broca Geodo","rarity":"Épica","acquisition":"chest_rare","implemented":false,"pattern":"cria um escudo quando encontra minério raro","innate_skill":"casco_de_geodo","tradeoff":"ataque básico mais lento"},
+    {"id":"forge","name":"Broca Forja","rarity":"Lendária","acquisition":"chest_epic","implemented":false,"pattern":"cada terceiro impacto aquece o próximo","innate_skill":"metal_vivo","tradeoff":"perde bônus se ficar sem atacar"},
+    {"id":"abyss","name":"Broca Abissal","rarity":"Única","acquisition":"chest_legendary","implemented":false,"pattern":"perfura o alvo e deixa uma marca","innate_skill":"fenda_profunda","tradeoff":"cura recebida reduzida"},
+    {"id":"cartographer","name":"Broca Cartógrafa","rarity":"Única","acquisition":"event_expedition","implemented":false,"pattern":"revela tesouros e escolhe uma rota","innate_skill":"mapa_vivo","tradeoff":"dano direto menor"},
+    {"id":"ember","name":"Broca Braseiro","rarity":"Lendária","acquisition":"event_underworld","implemented":false,"pattern":"acumula calor e explode em área","innate_skill":"nucleo_de_brasa","tradeoff":"recebe mais dano de gelo"},
+    {"id":"rift","name":"Broca Fenda","rarity":"Mística","acquisition":"event_portal","implemented":false,"pattern":"alterna entre dois padrões a cada fase","innate_skill":"salto_fraturado","tradeoff":"padrão exige leitura do jogador"},
+    {"id":"workshop","name":"Broca Oficina","rarity":"Boa","acquisition":"premium_cosmetic_bundle","implemented":false,"pattern":"parafusos orbitais que dão pequenos bônus de utilidade","innate_skill":"manutencao_amiga","tradeoff":"sem vantagem direta de dano"},
+    {"id":"comet","name":"Broca Cometa","rarity":"Épica","acquisition":"premium_event_pass","implemented":false,"pattern":"avanço veloz com rastro de energia","innate_skill":"rastro_estelar","tradeoff":"vida máxima menor"},
+    {"id":"crown","name":"Broca Coroa","rarity":"Mística","acquisition":"premium_cosmetic_bundle","implemented":false,"pattern":"convoca um anel de cristais em torno do alvo","innate_skill":"coroa_de_luz","tradeoff":"poder também disponível em skin não paga"},
+    {"id":"mosaic","name":"Broca Mosaico","rarity":"Única","acquisition":"album_completion","implemented":false,"pattern":"combina o último efeito de uma broca anterior","innate_skill":"memoria_de_pecas","tradeoff":"não pode copiar padrões de boss"}
+  ],
+  "acquisition_guardrails": {
+    "paid_items_are_not_required_for_campaign": true,
+    "paid_drills_must_have_a_non_paid_sidegrade": true,
+    "duplicate_drill_reward": "fragmentos_da_mesma_broca_ou_reembolso_de_materiais",
+    "chest_pity": "aumenta a chance da raridade alvo sem apagar o histórico do jogador"
+  }
+}

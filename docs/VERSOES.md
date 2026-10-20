@@ -307,3 +307,15 @@ Tag: `v0.0.18`.
 Detalhes de conteúdo, compatibilidade e limites: [ENDGAME-100.md](ENDGAME-100.md).
 
 Tag: `v0.0.19`.
+
+## 0.0.20 — bíblia de conteúdo e catálogos futuros
+
+- Regiões planejadas para a passagem ao Submundo Ferrífero depois da fase 50 e à Dimensão Fraturada depois da fase 80, incluindo o portal ciano e suas regras de leitura visual.
+- Catálogo separado de inimigos e bosses com personalidade, função, ataques em preparação/ação/recuperação, telegraph, fraqueza e faixa de aparecimento.
+- Roster Unity documentado com as 11 brocas atuais e IDs futuros para recompensas de baús, eventos, álbum e pacotes cosméticos. Pets e modos também têm catálogos separados, todos com `implemented: false` enquanto não houver sistema e arte.
+- Escavação Profunda foi escolhida como próximo modo adicional: torre para baixo, caminhos de risco, checkpoints e boss no último andar.
+- O runtime jogável continua sendo o `0.0.19`; este checkpoint não ativa automaticamente portal, inimigos futuros, pets, equipamentos ou modos novos.
+
+Catálogos e regras de conteúdo: [CONTENT-BIBLE-ENDGAME.md](CONTENT-BIBLE-ENDGAME.md).
+
+Tag: `v0.0.20`.
