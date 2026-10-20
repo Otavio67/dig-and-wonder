@@ -39,3 +39,12 @@ solo-torroes-raizes.png: imagem gerada pela ferramenta integrada imagegen para e
 
 ## Folha da Broca Pioneira — 20/10/2026
 `UnityProject/Assets/_Game/Resources/Art/Drill/drill_pioneira.png`: folha RGBA 4 × 3 gerada pela ferramenta integrada de imagens a partir da referência enviada pelo usuário, com fundo removido e células normalizadas para o protótipo Unity. O arquivo não foi extraído de jogo ou biblioteca de terceiros e ainda precisa de revisão no Unity Editor antes de ser tratado como arte final.
+
+## Oficina Unity — 0.0.15
+
+As 18 peças PNG em `UnityProject/Assets/_Game/Resources/Art/Workshop/` foram desenhadas proceduralmente para este projeto com `scripts/create-workshop-art.py`, usando a paleta e o briefing enviados pelo usuário. São formas e ícones originais, sem extração da interface de jogos de referência. A Pioneira reutiliza a folha já registrada acima.
+
+- Titan One Regular: [Google Fonts / Titan One](https://github.com/google/fonts/tree/main/ofl/titanone), SIL Open Font License 1.1. Fonte original em `Resources/Fonts/Workshop/TitanOne-Regular.ttf`; licença integral `TitanOne-OFL.txt`. SHA-256 `563ff6de179bbd44bcd7d2a6c448d6dc3bf935834237cf1250e506e65cd86ff1`.
+- DW Rounded ExtraBold: derivação estática de [Nunito](https://github.com/google/fonts/tree/main/ofl/nunito), peso 800 da variável `Nunito[wght].ttf`, instanciada com fontTools. Família renomeada para **DW Rounded**, preservando créditos e licença OFL; fonte `DWRounded-ExtraBold.ttf`, licença integral `Nunito-OFL.txt`. SHA-256 `db1629b7a12d0f28142b0a2016f02cc410afb14e33eb20e6b199eb02dddb3e43`.
+
+As fontes podem ser redistribuídas com o aplicativo sob a OFL; as licenças e créditos acompanham o projeto. A captura em `docs/design/` é uma composição de design externa ao Unity, renderizada com esses ativos; não constitui evidência de execução do jogo.

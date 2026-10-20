@@ -56,20 +56,14 @@ namespace DigAndWonder
         private RectTransform hubEnterCaveButton;
         private RectTransform hubReturnButton;
         private TextMeshProUGUI hubStageLabel;
+        private TextMeshProUGUI hubDrillStats;
         private TextMeshProUGUI hubWalletLabel;
         private TextMeshProUGUI hubMissionLabel;
         private TextMeshProUGUI hubLockLabel;
         private TextMeshProUGUI hubEnterCaveButtonLabel;
         private DrillSpriteSheetPlayer2D hubDrillFrames;
-        private TextMeshProUGUI progressionWalletLabel;
-        private TextMeshProUGUI progressionPowerLabel;
-        private TextMeshProUGUI progressionStatusLabel;
-        private TextMeshProUGUI progressionAttackValue;
-        private TextMeshProUGUI progressionHealthValue;
-        private TextMeshProUGUI progressionAttackButtonLabel;
-        private TextMeshProUGUI progressionHealthButtonLabel;
-        private Button progressionAttackButton;
-        private Button progressionHealthButton;
+        private CharacterWorkshopView workshop;
+        private bool workshopOpenedFromCombat;
         private bool inGame;
         private bool saveWasBlocked;
         private string currentTab = "MELHORIAS";
@@ -167,13 +161,13 @@ namespace DigAndWonder
                 new Vector2(0.06f, 0.235f), new Vector2(0.94f, 0.275f), TextAlignmentOptions.Center);
 
             bottomBar = MakePanel("Bottom navigation", combatRoot, new Color(0.04f, 0.13f, 0.16f), new Vector2(0.02f, 0.025f), new Vector2(0.98f, 0.125f), Vector2.zero, Vector2.zero);
-            string[] tabs = { "MINA", "MELHORIAS", "BROCAS", "BAÚS", "PERFIL" };
+            string[] tabs = { "MINA", "MELHORIAS", "PERSONAGEM", "BAÚS", "PERFIL" };
             for (int i = 0; i < tabs.Length; i++)
             {
                 string tab = tabs[i];
                 float left = i / 5f;
                 RectTransform tabButton = MakeButton("Tab " + tab, bottomBar, tab, 18, left + 0.006f, 0.04f, left + 0.194f, 0.96f,
-                    () => SelectTab(tab), tab == currentTab ? Sand : White);
+                    () => { if (tab == "PERSONAGEM") OpenProgression(); else SelectTab(tab); }, tab == currentTab ? Sand : White);
                 tabButtonImages.Add(tab, tabButton.GetComponent<Image>());
             }
 
@@ -230,7 +224,7 @@ namespace DigAndWonder
                 new Vector2(0.06f, 0.49f), new Vector2(0.94f, 0.77f), Vector2.zero, Vector2.zero);
             MakeLabel("Hub drill title", drillCard, "BROCA PIONEIRA", 18, Sand,
                 new Vector2(0.52f, 0.72f), new Vector2(0.96f, 0.92f), TextAlignmentOptions.Center);
-            MakeLabel("Hub drill stats", drillCard, "NÍVEL 1\nATQ 6  •  VIDA 120", 17, White,
+            hubDrillStats = MakeLabel("Hub drill stats", drillCard, "BROCA PIONEIRA", 17, White,
                 new Vector2(0.52f, 0.28f), new Vector2(0.96f, 0.7f), TextAlignmentOptions.Center);
             var hubDrillObject = new GameObject("Hub Drill Visual", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             hubDrillObject.transform.SetParent(drillCard, false);
@@ -252,47 +246,8 @@ namespace DigAndWonder
 
         private void BuildProgressionInterface(RectTransform panel)
         {
-            MakeLabel("Progression title", panel, "OFICINA DA BROCA", 34, Sand,
-                new Vector2(0.06f, 0.91f), new Vector2(0.68f, 0.98f), TextAlignmentOptions.Left);
-            progressionWalletLabel = MakeLabel("Progression wallet", panel, "⚙ 0", 27, Sand,
-                new Vector2(0.69f, 0.92f), new Vector2(0.94f, 0.98f), TextAlignmentOptions.Right);
-            MakeLabel("Progression drill", panel, "BROCA PIONEIRA  •  PERSONAGEM PRINCIPAL", 18, White,
-                new Vector2(0.06f, 0.84f), new Vector2(0.7f, 0.9f), TextAlignmentOptions.Left);
-            progressionPowerLabel = MakeLabel("Progression power", panel, "PODER 6,0", 20, Mint,
-                new Vector2(0.7f, 0.84f), new Vector2(0.94f, 0.9f), TextAlignmentOptions.Right);
-
-            RectTransform attackRow = MakePanel("Attack upgrade row", panel, new Color(0.24f, 0.35f, 0.45f),
-                new Vector2(0.04f, 0.68f), new Vector2(0.96f, 0.82f), Vector2.zero, Vector2.zero);
-            MakeLabel("Attack icon", attackRow, "⚔", 39, Sand, new Vector2(0.03f, 0.12f), new Vector2(0.15f, 0.88f), TextAlignmentOptions.Center);
-            progressionAttackValue = MakeLabel("Attack value", attackRow, "ATQ\nNv. 0\n6,0", 18, White,
-                new Vector2(0.17f, 0.14f), new Vector2(0.48f, 0.9f), TextAlignmentOptions.Left);
-            progressionAttackButton = MakeButton("Progression attack", attackRow, "MELHORAR", 17, 0.57f, 0.12f, 0.96f, 0.88f,
-                () => PurchaseFromProgression(UpgradeKind.Attack), Mint).GetComponent<Button>();
-            progressionAttackButtonLabel = progressionAttackButton.gameObject.GetComponentInChildren<TextMeshProUGUI>();
-
-            RectTransform healthRow = MakePanel("Health upgrade row", panel, new Color(0.27f, 0.36f, 0.44f),
-                new Vector2(0.04f, 0.53f), new Vector2(0.96f, 0.67f), Vector2.zero, Vector2.zero);
-            MakeLabel("Health icon", healthRow, "♥", 39, Coral, new Vector2(0.03f, 0.12f), new Vector2(0.15f, 0.88f), TextAlignmentOptions.Center);
-            progressionHealthValue = MakeLabel("Health value", healthRow, "PV\nNv. 0\n120", 18, White,
-                new Vector2(0.17f, 0.14f), new Vector2(0.48f, 0.9f), TextAlignmentOptions.Left);
-            progressionHealthButton = MakeButton("Progression health", healthRow, "MELHORAR", 17, 0.57f, 0.12f, 0.96f, 0.88f,
-                () => PurchaseFromProgression(UpgradeKind.Health), Sand).GetComponent<Button>();
-            progressionHealthButtonLabel = progressionHealthButton.gameObject.GetComponentInChildren<TextMeshProUGUI>();
-
-            MakeLockedProgressionRow(panel, "🔧  RECUPERAÇÃO DE PV", "Requer VIDA Nv. 10  •  EM BALANCEAMENTO", new Vector2(0.04f, 0.39f), new Vector2(0.96f, 0.52f));
-            MakeLockedProgressionRow(panel, "🎯  CHANCE DE CRÍTICO", "Requer ATQ Nv. 10  •  EM BALANCEAMENTO", new Vector2(0.04f, 0.25f), new Vector2(0.96f, 0.38f));
-            MakeLockedProgressionRow(panel, "🔥  DANO CRÍTICO / ESPECIAL", "Requer FASE 2  •  EM BALANCEAMENTO", new Vector2(0.04f, 0.11f), new Vector2(0.96f, 0.24f));
-            progressionStatusLabel = MakeLabel("Progression status", panel, "Melhorias são salvas automaticamente", 15, White,
-                new Vector2(0.05f, 0.05f), new Vector2(0.58f, 0.1f), TextAlignmentOptions.Left);
-            MakeButton("Back to hub", panel, "VOLTAR AO ACAMPAMENTO", 15, 0.6f, 0.04f, 0.95f, 0.11f,
-                ShowHub, new Color(0.16f, 0.35f, 0.36f));
-        }
-
-        private void MakeLockedProgressionRow(RectTransform parent, string title, string body, Vector2 min, Vector2 max)
-        {
-            RectTransform row = MakePanel("Locked progression row", parent, new Color(0.12f, 0.19f, 0.25f), min, max, Vector2.zero, Vector2.zero);
-            MakeLabel("Locked title", row, title, 17, White, new Vector2(0.04f, 0.48f), new Vector2(0.58f, 0.92f), TextAlignmentOptions.Left);
-            MakeLabel("Locked body", row, body, 13, new Color(0.72f, 0.76f, 0.78f), new Vector2(0.04f, 0.08f), new Vector2(0.94f, 0.48f), TextAlignmentOptions.Left);
+            workshop = panel.gameObject.AddComponent<CharacterWorkshopView>();
+            workshop.Initialize(panel, driver, CloseProgression);
         }
 
         private void MakeHubCard(RectTransform parent, string title, string body, Vector2 min, Vector2 max, Color color)
@@ -311,48 +266,20 @@ namespace DigAndWonder
 
         private void OpenProgression()
         {
+            workshopOpenedFromCombat = inGame;
+            driver.SetMenuPaused(true);
             inGame = false;
             StopCaveMotion();
             hubPanel.gameObject.SetActive(false);
             combatRoot.gameObject.SetActive(false);
-            progressionPanel.gameObject.SetActive(true);
-            RefreshProgression();
+            workshop.Show();
         }
 
-        private void PurchaseFromProgression(UpgradeKind kind)
+        private void CloseProgression()
         {
-            bool purchased = driver.TryPurchaseUpgradeAtBase(kind);
-            progressionStatusLabel.text = purchased ? "MELHORIA COMPRADA — PROGRESSO SALVO" : "OURO INSUFICIENTE OU NÍVEL MÁXIMO";
-            RefreshProgression();
-        }
-
-        private void RefreshProgression()
-        {
-            IdleCombatSimulation sim = driver.Simulation;
-            if (sim == null)
-            {
-                progressionWalletLabel.text = "⚙ 0";
-                progressionPowerLabel.text = "PODER —";
-                progressionAttackValue.text = "ATQ\nINICIE A EXPEDIÇÃO";
-                progressionHealthValue.text = "PV\nINICIE A EXPEDIÇÃO";
-                progressionStatusLabel.text = "Inicie a expedição para desbloquear compras";
-                progressionAttackButton.interactable = false;
-                progressionHealthButton.interactable = false;
-                return;
-            }
-
-            int attackCost = sim.Profile.AttackLevel < driver.CurrentAttackMaximum ? driver.GetAttackUpgradeCost() : -1;
-            int healthCost = sim.Profile.HealthLevel < driver.CurrentHealthMaximum ? driver.GetHealthUpgradeCost() : -1;
-            progressionWalletLabel.text = "⚙ " + sim.Gold;
-            progressionPowerLabel.text = "PODER " + driver.CurrentAttackDamage.ToString("0.0");
-            progressionAttackValue.text = "ATQ\nNv. " + sim.Profile.AttackLevel + "/" + driver.CurrentAttackMaximum +
-                "\n" + driver.CurrentAttackDamage.ToString("0.0");
-            progressionHealthValue.text = "PV\nNv. " + sim.Profile.HealthLevel + "/" + driver.CurrentHealthMaximum +
-                "\n" + sim.PlayerMaximumHealth.ToString("0");
-            progressionAttackButtonLabel.text = attackCost < 0 ? "ATQ  MÁXIMO" : "MELHORAR\n⚙ " + attackCost;
-            progressionHealthButtonLabel.text = healthCost < 0 ? "PV  MÁXIMO" : "MELHORAR\n⚙ " + healthCost;
-            progressionAttackButton.interactable = attackCost >= 0 && !driver.IsSaveBlocked;
-            progressionHealthButton.interactable = healthCost >= 0 && !driver.IsSaveBlocked;
+            driver.SetMenuPaused(false);
+            if (workshopOpenedFromCombat) EnterGame(true);
+            else ShowHub();
         }
 
         private void ShowHub()
@@ -373,6 +300,7 @@ namespace DigAndWonder
             if (driver == null || driver.Simulation == null)
             {
                 hubStageLabel.text = "NOVA EXPEDIÇÃO";
+                hubDrillStats.text = "Abra a Oficina\npara conhecer sua broca";
                 hubWalletLabel.text = "◉ 0";
                 hubMissionLabel.text = "Inicie a escavação para construir seu acampamento";
                 hubLockLabel.text = "Equipamentos e álbum desbloqueiam na Fase 2";
@@ -384,6 +312,7 @@ namespace DigAndWonder
             string stageName = sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant();
             hubStageLabel.text = "EXPEDIÇÃO " + stageNumber.ToString("00") + "  •  " + stageName;
             hubWalletLabel.text = "◉ " + sim.Gold;
+            hubDrillStats.text = "ATQ " + driver.CurrentAttackDamage.ToString("0.##") + "\nVIDA " + sim.PlayerMaximumHealth.ToString("0");
             hubMissionLabel.text = sim.Run.IsPlayerDefeated ? "Tentativa encerrada — melhore a broca e retorne" :
                 sim.Run.IsStageCleared ? "Guardião derrotado — próxima fase disponível" : "Derrote o guardião para avançar";
             hubLockLabel.text = stageNumber < 2 ? "Equipamentos e álbum  🔒  desbloqueiam na Fase 2" : "Equipamentos e álbum  •  sistema em breve";
@@ -392,6 +321,7 @@ namespace DigAndWonder
         private void EnterGame(bool resumed)
         {
             if (driver.Simulation == null) return;
+            driver.SetMenuPaused(false);
             inGame = true;
             hubPanel.gameObject.SetActive(false);
             progressionPanel.gameObject.SetActive(false);
@@ -409,8 +339,20 @@ namespace DigAndWonder
             else statusLabel.text = "A broca começou a avançar!";
             drillAnimator.ResetForRun();
             drillFrames.ResetForRun();
+            drillMotion.ResetForRun();
             hubDrillFrames.ResetForRun();
-            StartCaveMotion();
+            if (driver.Simulation.IsActive && !driver.IsSaveBlocked)
+                StartCaveMotion();
+            else
+            {
+                StopCaveMotion();
+                if (driver.Simulation.Run.IsPlayerDefeated)
+                {
+                    drillAnimator.PlayDeath();
+                    drillMotion.PlayDeath();
+                    drillFrames.PlayDeath();
+                }
+            }
             Refresh();
         }
 

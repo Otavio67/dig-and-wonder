@@ -12,7 +12,7 @@ A amostra visual da Broca Pioneira agora tem locomoção de chão separada da l�
 
 O Acampamento é uma tela de hub separada do HUD de combate: oficina, garagem, baús, álbum e bloqueios de fase ficam na base; a escavação mantém apenas informações e controles da tentativa.
 
-A Oficina agora abre uma tela de personagem própria, com ATQ/PV, poder, custos em engrenagens e melhorias bloqueadas por nível/fase.
+A Oficina abre uma tela de personagem com a Pioneira no pedestal ciano, quatro slots de peças, módulos/passivos e abas Oficina, Peças e Drones. Mostra ATQ/VIDA reais, custos e reforços comprados. Pode ser acessada também pela aba **Personagem** no combate; a expedição pausa enquanto o menu está aberto. Direção visual, testes e limitações em [OFICINA-PERSONAGEM.md](docs/OFICINA-PERSONAGEM.md).
 
 Um smoke test em Play Mode passou no Unity 6000.0.23f1: a luta simulou 10 segundos, com sete ataques automáticos, sete de ouro, 112/120 de vida e nenhum erro ou exceção de runtime. Isso não valida interação física, aparência final ou desempenho no Android; veja os detalhes em [revisão de combate e save](docs/UNITY-REVISAO-COMBATE-SAVE.md).
 

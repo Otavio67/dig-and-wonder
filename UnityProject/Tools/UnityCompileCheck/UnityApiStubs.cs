@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace UnityEngine
 {
-    public class Object { public static void DontDestroyOnLoad(Object target) { } public static T FindFirstObjectByType<T>() where T : Object => null; }
+    public class Object { public static void DontDestroyOnLoad(Object target) { } public static void Destroy(Object target) { } public static T FindFirstObjectByType<T>() where T : Object => null; }
     public class ScriptableObject : Object
     {
         public static T CreateInstance<T>() where T : ScriptableObject => (T)Activator.CreateInstance(typeof(T));
@@ -28,6 +28,14 @@ namespace UnityEngine
     public class Transform : Component { public Vector3 localPosition, localScale; public void SetParent(Transform parent, bool worldPositionStays) { } }
     public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta; }
     public class Sprite : Object { public string name; }
+    public class Font : Object { }
+    public class Texture2D : Object { }
+    public class Material : Object
+    {
+        public void SetFloat(string name, float value) { }
+        public void SetColor(string name, Color value) { }
+        public void EnableKeyword(string name) { }
+    }
     public class Camera : Component { public static Camera main; public bool orthographic; public Color backgroundColor; }
     public class CanvasRenderer : Component { }
     public enum ScreenOrientation { Portrait }
@@ -83,6 +91,10 @@ namespace UnityEngine.SceneManagement { public struct Scene { } }
 namespace UnityEngine.EventSystems
 {
     public class EventSystem : UnityEngine.Component { }
+    public class PointerEventData { }
+    public interface IPointerDownHandler { void OnPointerDown(PointerEventData eventData); }
+    public interface IPointerUpHandler { void OnPointerUp(PointerEventData eventData); }
+    public interface IPointerExitHandler { void OnPointerExit(PointerEventData eventData); }
 }
 
 namespace UnityEngine.InputSystem.UI
@@ -102,9 +114,9 @@ namespace UnityEngine.UI
     }
     public class GraphicRaycaster : UnityEngine.Component { }
     public class Graphic : UnityEngine.Component { public UnityEngine.Color color; public bool raycastTarget; public UnityEngine.RectTransform rectTransform; }
-    public class Image : Graphic { public UnityEngine.Sprite sprite; public bool preserveAspect; }
+    public class Image : Graphic { public enum Type { Simple, Sliced } public Type type; public UnityEngine.Sprite sprite; public bool preserveAspect; }
     public class CanvasGroup : UnityEngine.Component { public float alpha; public bool interactable, blocksRaycasts; }
-    public class Button : UnityEngine.Component { public bool interactable = true; public ButtonClickedEvent onClick = new ButtonClickedEvent(); public sealed class ButtonClickedEvent { public void AddListener(UnityAction action) { } } }
+    public class Button : UnityEngine.Component { public Graphic targetGraphic; public bool interactable = true; public ButtonClickedEvent onClick = new ButtonClickedEvent(); public sealed class ButtonClickedEvent { public void AddListener(UnityAction action) { } } }
 }
 
 namespace UnityEngine.Events { public delegate void UnityAction(); }
@@ -115,11 +127,21 @@ namespace TMPro
     public enum TextAlignmentOptions { Left, Right, Center }
     public enum TextWrappingModes { Normal }
     public enum FontStyles { Normal, Bold }
+    public class TMP_FontAsset : UnityEngine.ScriptableObject
+    {
+        public UnityEngine.Material material;
+        public UnityEngine.Texture2D[] atlasTextures;
+        public bool TryAddCharacters(string characters) => true;
+        public static TMP_FontAsset CreateFontAsset(UnityEngine.Font font, int size, int padding, UnityEngine.TextCore.LowLevel.GlyphRenderMode renderMode, int atlasWidth, int atlasHeight) => null;
+    }
     public class TextMeshProUGUI : Graphic
     {
+        public TMP_FontAsset font;
         public string text; public int fontSize; public TextAlignmentOptions alignment; public TextWrappingModes textWrappingMode; public FontStyles fontStyle;
     }
 }
+
+namespace UnityEngine.TextCore.LowLevel { public enum GlyphRenderMode { SDFAA } }
 
 namespace DG.Tweening
 {

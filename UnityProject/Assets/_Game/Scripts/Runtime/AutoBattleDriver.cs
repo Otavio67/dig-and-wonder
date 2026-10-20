@@ -13,13 +13,14 @@ namespace DigAndWonder
         public string LastSaveError { get; private set; }
         public bool IsSaveBlocked => !string.IsNullOrEmpty(LastSaveError);
         public bool IsReady => !startupBlocked && !IsSaveBlocked && balance != null && saveRepository != null;
+        public GameSaveData Profile => Simulation != null ? Simulation.Profile : loadedProfile;
 
         public int CurrentAttackMaximum => balance != null && balance.progression != null && balance.progression.attackUpgrade != null
             ? balance.progression.attackUpgrade.maxLevel : 0;
         public int CurrentHealthMaximum => balance != null && balance.progression != null && balance.progression.healthUpgrade != null
             ? balance.progression.healthUpgrade.maxLevel : 0;
-        public float CurrentAttackDamage => balance == null || balance.progression == null || balance.progression.attackUpgrade == null || Simulation == null
-            ? 0f : balance.drillAttackDamage * (1f + Simulation.Profile.AttackLevel * balance.progression.attackUpgrade.additiveBonus);
+        public float CurrentAttackDamage => balance == null || balance.progression == null || balance.progression.attackUpgrade == null || Profile == null
+            ? 0f : balance.drillAttackDamage * (1f + Profile.AttackLevel * balance.progression.attackUpgrade.additiveBonus);
 
         private AtomicSaveRepository saveRepository;
         private GameSaveData loadedProfile;
@@ -28,6 +29,7 @@ namespace DigAndWonder
         private bool startupBlocked;
         private bool saveRequested;
         private bool applicationPaused;
+        private bool menuPaused;
 
         private void Awake()
         {
@@ -105,6 +107,7 @@ namespace DigAndWonder
                 if (saveTimer >= periodicSaveSeconds) SaveNow();
                 return;
             }
+            if (menuPaused) return;
             if (!Simulation.IsActive) return;
             accumulator += Time.deltaTime;
             float maxCatchUp = balance.maximumFrameCatchUp;
@@ -165,6 +168,13 @@ namespace DigAndWonder
 
         public int GetAttackUpgradeCost() => balance.progression.attackUpgrade.GetCost(Simulation.Profile.AttackLevel);
         public int GetHealthUpgradeCost() => balance.progression.healthUpgrade.GetCost(Simulation.Profile.HealthLevel);
+        public void SetMenuPaused(bool paused)
+        {
+            menuPaused = paused;
+            accumulator = 0f;
+            if (paused) SaveNow();
+        }
+
         public bool TryPurchaseUpgrade(UpgradeKind kind)
         {
             if (Simulation == null || !Simulation.IsActive || IsSaveBlocked || applicationPaused) return false;

@@ -1,6 +1,6 @@
 # Versões do Dig & Wonder
 
-Versões seguem `0.0.patch` durante o protótipo. Cada checkpoint funcional recebe tag Git `v<versão>`; ajustes locais não devem trocar o número até outro marco verificável. O número também fica em `VERSION` e `project.godot`.
+Versões seguem `0.0.patch` durante o protótipo. Cada checkpoint recebe tag Git `v<versão>`; ajustes locais são agrupados até outro marco verificável. Na direção Unity ativa, o número fica em `VERSION`, `UnityProject/GAME_VERSION.txt` e nas configurações de Player. `project.godot` permanece como histórico.
 
 ## 0.0.1 — Baús e oficina
 
@@ -241,3 +241,17 @@ Tag: `v0.0.13`.
 Checks de domínio, compilação dos scripts e compilação contra DLLs reais do Unity passaram.
 
 Tag: `v0.0.14`.
+
+## 0.0.15 — identidade visual da personagem
+
+- Nova composição de Oficina com a paleta petróleo/teal/âmbar/ciano/coral/creme enviada pelo usuário, vitrine da Pioneira, pedestal, quatro slots hexagonais e módulos/passivos em cartucho.
+- 18 peças gráficas modulares originais, fontes Titan One e DW Rounded ExtraBold (derivação OFL de Nunito), contorno e sombra compartilhados nos materiais TMP.
+- Abas Oficina, Peças e Drones funcionam como navegação de consulta. ATQ/VIDA continuam compráveis; saldo insuficiente, máximo e falha de save ficam visíveis. Peças, passivos e drones não implementados continuam identificados como conteúdo em preparação.
+- Barra de reforços usa a soma das melhorias compradas, sem inventar XP/maestria. Removido o rótulo que confundia dano por tiro com poder total.
+- Acesso pela aba Personagem no combate: pausa e snapshot seguros, retorno à mesma tentativa sem simular o tempo do menu. Novo feedback visual abaixa a face do botão sem mover a área de toque.
+- Cartão da Pioneira no hub consulta atributos atuais. Reinício restaura também o movimento de chão após derrota.
+- 21 checks de domínio aprovados; compilação com stubs e DLLs reais sem erros/avisos. Editor batch novamente bloqueado por licença antes da importação. Prévia de composição revisada em Chromium, explicitamente fora do Unity.
+
+Detalhes e roteiro pendente de Play Mode/aparelho: [OFICINA-PERSONAGEM.md](OFICINA-PERSONAGEM.md). Nenhum APK novo ou medição de desempenho Android.
+
+Tag: `v0.0.15`.
