@@ -5,7 +5,7 @@ source "$root/scripts/unity-env.sh"
 cd "$root"
 command -v dotnet >/dev/null || { echo "Prepare o .NET com scripts/setup-unity-cloud.py" >&2; exit 127; }
 dotnet run --project UnityProject/Tools/DomainChecks/DomainChecks.csproj
-dotnet build UnityProject/Tools/UnityCompileCheck/UnityCompileCheck.csproj --no-restore
+dotnet build UnityProject/Tools/UnityCompileCheck/UnityCompileCheck.csproj
 dotnet build UnityProject/Tools/UnityApiCompileCheck/UnityApiCompileCheck.csproj -p:UnityRoot="$UNITY_PATH"
 echo "Checks .NET concluídos. Eles não substituem a importação no Unity."
 mkdir -p .tools/logs

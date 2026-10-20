@@ -10,7 +10,9 @@ namespace DigAndWonder
 
         public IdleCombatSimulation Simulation { get; private set; }
         public event Action<CombatEvent> CombatEventRaised;
-        public bool IsReady => !startupBlocked && balance != null && saveRepository != null;
+        public string LastSaveError { get; private set; }
+        public bool IsSaveBlocked => !string.IsNullOrEmpty(LastSaveError);
+        public bool IsReady => !startupBlocked && !IsSaveBlocked && balance != null && saveRepository != null;
 
         public int CurrentAttackMaximum => balance != null && balance.progression != null && balance.progression.attackUpgrade != null
             ? balance.progression.attackUpgrade.maxLevel : 0;
@@ -22,6 +24,8 @@ namespace DigAndWonder
         private float accumulator;
         private float saveTimer;
         private bool startupBlocked;
+        private bool saveRequested;
+        private bool applicationPaused;
 
         private void Awake()
         {
@@ -85,26 +89,32 @@ namespace DigAndWonder
             uint seed = (uint)DateTime.UtcNow.Ticks;
             Simulation = new IdleCombatSimulation(config, profile, stageId, seed);
             Simulation.EventRaised += OnSimulationEvent;
+            accumulator = 0f;
+            saveTimer = 0f;
         }
 
         private void Update()
         {
-            if (Simulation == null || !Simulation.IsActive) return;
+            if (Simulation == null || applicationPaused) return;
+            saveTimer += Time.unscaledDeltaTime;
+            if (IsSaveBlocked)
+            {
+                // Uma falha de disco pausa a tentativa; a próxima escrita tenta preservar o mesmo estado.
+                if (saveTimer >= periodicSaveSeconds) SaveNow();
+                return;
+            }
+            if (!Simulation.IsActive) return;
             accumulator += Time.deltaTime;
             float maxCatchUp = balance.maximumFrameCatchUp;
             if (accumulator > maxCatchUp) accumulator = maxCatchUp;
-            while (accumulator >= balance.simulationStep)
+            while (accumulator >= balance.simulationStep && Simulation.IsActive)
             {
                 Simulation.Step(balance.simulationStep);
                 accumulator -= balance.simulationStep;
             }
 
-            saveTimer += Time.unscaledDeltaTime;
-            if (saveTimer >= periodicSaveSeconds)
-            {
-                SaveNow();
-                saveTimer = 0f;
-            }
+            // Eventos podem ocorrer no meio de um golpe. Só persistimos depois do passo completo.
+            if (saveRequested || saveTimer >= periodicSaveSeconds) SaveNow();
         }
 
         private void OnSimulationEvent(CombatEvent combatEvent)
@@ -115,13 +125,14 @@ namespace DigAndWonder
                 combatEvent.Type == CombatEventType.BossSpawned ||
                 combatEvent.Type == CombatEventType.StageCleared ||
                 combatEvent.Type == CombatEventType.PlayerDefeated)
-                SaveNow();
+                saveRequested = true;
         }
 
         private void OnApplicationPause(bool paused)
         {
+            applicationPaused = paused;
+            accumulator = 0f;
             if (paused) SaveNow();
-            else accumulator = 0f;
         }
 
         private void OnApplicationQuit() => SaveNow();
@@ -138,18 +149,23 @@ namespace DigAndWonder
             {
                 if (Simulation.IsActive) Simulation.Profile.ActiveRun = Simulation.CaptureRun();
                 saveRepository.Save(Simulation.Profile);
+                LastSaveError = null;
+                saveRequested = false;
             }
             catch (Exception exception)
             {
-                Debug.LogError("Não foi possível salvar o progresso. " + exception.Message, this);
+                if (!IsSaveBlocked) Debug.LogError("Não foi possível salvar o progresso. O combate foi pausado. " + exception.Message, this);
+                LastSaveError = "NÃO FOI POSSÍVEL SALVAR — COMBATE PAUSADO. TENTANDO NOVAMENTE.";
+                accumulator = 0f;
             }
+            saveTimer = 0f;
         }
 
         public int GetAttackUpgradeCost() => balance.progression.attackUpgrade.GetCost(Simulation.Profile.AttackLevel);
         public int GetHealthUpgradeCost() => balance.progression.healthUpgrade.GetCost(Simulation.Profile.HealthLevel);
         public bool TryPurchaseUpgrade(UpgradeKind kind)
         {
-            if (Simulation == null || !Simulation.IsActive) return false;
+            if (Simulation == null || !Simulation.IsActive || IsSaveBlocked || applicationPaused) return false;
             bool purchased = Simulation.TryPurchaseUpgrade(kind);
             if (purchased) SaveNow();
             return purchased;

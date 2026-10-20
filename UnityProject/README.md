@@ -20,6 +20,8 @@ Este é o primeiro protótipo de combate automático lateral. O projeto Godot pe
 
 O save fica em `Application.persistentDataPath`, não no cache temporário que o Android pode limpar. Ele grava em gatilhos de recompensa/melhoria/chefes, a cada 5 s e ao suspender/fechar; o arquivo é validado por checksum e recupera backup. Esse protótipo ainda não importa automaticamente o save Godot.
 
+O checkpoint de correções posterior à 0.0.7 limpa ações ao encerrar a luta, salva ao fim do passo e recupera também temporário válido quando principal/backup não podem ser lidos. Falha de escrita pausa o combate e tenta novamente. Veja [correções, 20 checks e roteiro pendente no Editor](../docs/UNITY-REVISAO-COMBATE-SAVE.md).
+
 ## Toolchain na nuvem
 
 O Unity 6000.0.23f1 com módulo Android está instalado no ambiente remoto. Para reproduzir a instalação Linux x86_64 e habilitar os comandos:
@@ -32,6 +34,8 @@ bash scripts/check-unity.sh
 ```
 
 O Editor fornece a interface de linha de comando, incluindo `-batchmode`; não é necessário um CLI Unity separado. A tentativa real de importação parou por falta de licença Unity ativada nesta máquina. O registro `packages.unity.com` também está bloqueado pela política de rede. Detalhes, fontes e resultados em [UNITY-NUVEM.md](../docs/UNITY-NUVEM.md).
+
+O comando `unity` criado por `scripts/unity-env.sh` é um wrapper do executável do Editor. Ele não é o produto Unity CLI e não aceita comandos como `unity auth login` ou `unity license activate`.
 
 O servidor Coplay MCP 10.0.0 está preparado e registrado no Codex CLI remoto. O protocolo respondeu, mas a consulta encontrou zero Editores conectados. A ponte foi declarada no manifesto; sua importação e a ativação Personal aguardam autenticação/rede. Comandos e evidências em [UNITY-MCP.md](../docs/UNITY-MCP.md).
 

@@ -46,6 +46,7 @@ namespace DigAndWonder
         private RectTransform worldPanel;
         private RectTransform bottomBar;
         private bool inGame;
+        private bool saveWasBlocked;
         private string currentTab = "MELHORIAS";
         private float refreshTimer;
         private int displayedGold = -1;
@@ -245,6 +246,17 @@ namespace DigAndWonder
             {
                 statusLabel.text = "GUARDIÃO DERROTADO — FASE CONCLUÍDA!";
             }
+            if (driver.IsSaveBlocked)
+            {
+                if (!saveWasBlocked) StopCaveMotion();
+                statusLabel.text = driver.LastSaveError;
+            }
+            else if (saveWasBlocked && sim.IsActive)
+            {
+                StartCaveMotion();
+                statusLabel.text = "PROGRESSO SALVO — COMBATE RETOMADO";
+            }
+            saveWasBlocked = driver.IsSaveBlocked;
         }
 
         private void SelectTab(string tab)
@@ -280,11 +292,11 @@ namespace DigAndWonder
             }
             bool defeated = sim.Run.IsPlayerDefeated;
             bool cleared = sim.Run.IsStageCleared;
-            bool upgradesVisible = currentTab == "MELHORIAS" && !defeated && !cleared;
+            bool upgradesVisible = currentTab == "MELHORIAS" && !defeated && !cleared && !driver.IsSaveBlocked;
             attackUpgradeButton.gameObject.SetActive(upgradesVisible);
             healthUpgradeButton.gameObject.SetActive(upgradesVisible);
-            restartButton.gameObject.SetActive(defeated);
-            continueButton.gameObject.SetActive(cleared);
+            restartButton.gameObject.SetActive(defeated && !driver.IsSaveBlocked);
+            continueButton.gameObject.SetActive(cleared && !driver.IsSaveBlocked);
             foreach (KeyValuePair<string, Image> button in tabButtonImages)
                 button.Value.color = button.Key == currentTab ? Sand : new Color(0.14f, 0.34f, 0.36f);
         }

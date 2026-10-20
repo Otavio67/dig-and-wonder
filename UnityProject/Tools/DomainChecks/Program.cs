@@ -1,5 +1,8 @@
 using DigAndWonder;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 var checks = new (string Name, Action Test)[]
 {
@@ -12,6 +15,16 @@ var checks = new (string Name, Action Test)[]
     ("boss libera fase e baú com chaves", BossAloneClearsStage),
     ("retomada restaura combate e projéteis", ResumeRestoresRun),
     ("save usa backup validado após corrupção", SaveRecoversValidatedBackup),
+    ("vitória interrompe dano pendente no mesmo passo", VictoryStopsPendingLethalDamage),
+    ("especial encerra ações ao derrotar o boss", SpecialVictoryStopsFurtherActions),
+    ("derrota limpa ações e reinício preserva perfil", DefeatClearsActionsBeforeRestart),
+    ("evento de boss entrega estado completo de recompensa", BossRewardEventIsConsistent),
+    ("save null válido por checksum recupera backup", NullPayloadRecoversBackup),
+    ("primeira gravação interrompida recupera temporário", InterruptedFirstSaveRecoversTemporary),
+    ("temporário inválido impede reset silencioso", InvalidTemporaryCountsAsExistingSave),
+    ("snapshot inválido é rejeitado antes da escrita", InvalidSnapshotIsRejected),
+    ("save principal válido prevalece sobre temporário", ConfirmedPrimaryWinsOverTemporary),
+    ("arquivos inválidos são preservados sem reset", InvalidCopiesRemainUntouched),
     ("ScriptableObject mapping stays tied to Godot source numbers", GodotNumbersMatchMappedData)
 };
 
@@ -153,6 +166,12 @@ static void ResumeRestoresRun()
     Assert(Math.Abs(resumed.PlayerHealth - first.PlayerHealth) < 0.001f, "PV não foram retomados");
     Assert(resumed.Enemies.Count == first.Enemies.Count, "inimigos não foram retomados");
     Assert(resumed.Run.ElapsedSeconds == first.Run.ElapsedSeconds, "tempo de fase não foi retomado");
+    Assert(expected.PendingHits.Length > 0, "fixture não capturou projétil em voo");
+    Assert(JsonConvert.SerializeObject(resumed.CaptureRun()) == JsonConvert.SerializeObject(expected), "timers, alvos ou projéteis mudaram na retomada");
+    StepFor(first, 5f);
+    StepFor(resumed, 5f);
+    Assert(JsonConvert.SerializeObject(first.CaptureRun()) == JsonConvert.SerializeObject(resumed.CaptureRun()), "combate retomado divergiu da execução contínua");
+    Assert(first.Profile.Gold == resumed.Profile.Gold, "retomada alterou recompensas");
 }
 
 static void SaveRecoversValidatedBackup()
@@ -172,6 +191,168 @@ static void SaveRecoversValidatedBackup()
     {
         if (Directory.Exists(directory)) Directory.Delete(directory, true);
     }
+}
+
+static GameSaveData TerminalFixture(bool special = false)
+{
+    return new GameSaveData
+    {
+        ActiveRun = new ActiveRunSnapshot
+        {
+            StageId = "prado_cristalino", PlayerHealth = 1f, BossSpawned = true,
+            NextEntityId = 3, AttackTimer = special ? 0f : 100f, SpecialCooldown = 100f,
+            SpecialHitsRemaining = special ? 1 : 0, SpecialTargetId = special ? 1 : 0,
+            Enemies = new[]
+            {
+                new EnemySnapshot { Id = 1, Health = 1f, IsBoss = true, GoldReward = 60, AttackTimer = 100f },
+                new EnemySnapshot { Id = 2, Health = 48f, GoldReward = 7, AttackTimer = 100f }
+            },
+            PendingHits = special ? Array.Empty<PendingHitSnapshot>() : new[]
+            {
+                new PendingHitSnapshot { TargetEntityId = 1, Damage = 1f, RemainingTravel = 0.01f },
+                new PendingHitSnapshot { SourceEntityId = 2, TargetsPlayer = true, Damage = 999f, RemainingTravel = 0.01f }
+            }
+        }
+    };
+}
+
+static void VictoryStopsPendingLethalDamage()
+{
+    GameSaveData save = TerminalFixture();
+    IdleCombatSimulation simulation = NewSimulation(save, 100);
+    simulation.Step(0.05f);
+    Assert(simulation.Run.IsStageCleared && !simulation.Run.IsPlayerDefeated, "o dano pendente transformou vitória em derrota");
+    Assert(simulation.Enemies.Count == 0 && simulation.CaptureRun().PendingHits.Length == 0, "ações ficaram ativas após a vitória");
+    int gold = save.Gold;
+    StepFor(simulation, 1f);
+    Assert(save.Gold == gold && save.Keys == 2 && save.Chests == 2, "recompensas repetidas após vitória");
+}
+
+static void SpecialVictoryStopsFurtherActions()
+{
+    IdleCombatSimulation simulation = NewSimulation(TerminalFixture(true), 100);
+    bool finished = false;
+    int actionsAfterFinish = 0;
+    simulation.EventRaised += e =>
+    {
+        if (e.Type == CombatEventType.StageCleared) finished = true;
+        else if (finished && (e.Type == CombatEventType.DrillAttack || e.Type == CombatEventType.ProjectileLaunched || e.Type == CombatEventType.Hit))
+            actionsAfterFinish++;
+    };
+    simulation.Step(0.05f);
+    Assert(finished && actionsAfterFinish == 0, "ataque básico continuou após vitória pelo especial");
+    Assert(simulation.Run.SpecialHitsRemaining == 0, "contador do especial ficou inválido após limpeza terminal");
+}
+
+static void DefeatClearsActionsBeforeRestart()
+{
+    GameSaveData save = TerminalFixture();
+    save.Gold = 18;
+    save.ActiveRun.PendingHits = new[] { new PendingHitSnapshot { SourceEntityId = 2, TargetsPlayer = true, Damage = 999f, RemainingTravel = 0.01f } };
+    IdleCombatSimulation simulation = NewSimulation(save, 100);
+    simulation.Step(0.05f);
+    Assert(simulation.Run.IsPlayerDefeated && !simulation.IsActive && save.ActiveRun == null, "derrota não ficou terminal");
+    Assert(simulation.Enemies.Count == 0 && simulation.CaptureRun().PendingHits.Length == 0, "derrota deixou combate pendente");
+    Assert(!simulation.TryPurchaseUpgrade(UpgradeKind.Attack), "simulação encerrada aceitou compra");
+    IdleCombatSimulation restarted = NewSimulation(save, 100);
+    Assert(restarted.PlayerHealth == 120f && restarted.Profile.Gold == 18, "reinício não restaurou vida ou perdeu ouro");
+    Assert(restarted.Run.SpecialCooldown == 3f && restarted.Enemies.Count == 0, "reinício herdou ações da derrota");
+}
+
+static void BossRewardEventIsConsistent()
+{
+    GameSaveData save = TerminalFixture();
+    IdleCombatSimulation simulation = NewSimulation(save, 100);
+    bool checkedReward = false;
+    simulation.EventRaised += e =>
+    {
+        if (e.Type != CombatEventType.EnemyDefeated) return;
+        checkedReward = true;
+        Assert(save.Gold == 60 && save.Keys == 2 && save.Chests == 2 && save.ActiveRun == null,
+            "evento observou recompensa de boss parcialmente aplicada");
+    };
+    simulation.Step(0.05f);
+    Assert(checkedReward, "evento de recompensa não ocorreu");
+}
+
+static void NullPayloadRecoversBackup() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    repository.Save(new GameSaveData { Gold = 7 });
+    repository.Save(new GameSaveData { Gold = 14 });
+    WriteEnvelope(Path.Combine(directory, "dig-and-wonder.save.json"), "null");
+    Assert(repository.TryLoad(out GameSaveData data, out bool recovered) && recovered && data.Gold == 7,
+        "payload null interrompeu recuperação do backup");
+});
+
+static void InterruptedFirstSaveRecoversTemporary() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    repository.Save(new GameSaveData { Gold = 21 });
+    string primary = Path.Combine(directory, "dig-and-wonder.save.json");
+    File.Move(primary, primary + ".tmp");
+    Assert(repository.HasAnySaveFile, "temporário válido foi ignorado na detecção de progresso");
+    Assert(repository.TryLoad(out GameSaveData data, out _) && data.Gold == 21, "primeiro save interrompido não foi recuperado");
+    Assert(File.Exists(primary), "temporário recuperado não foi promovido a principal");
+});
+
+static void InvalidTemporaryCountsAsExistingSave() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    File.WriteAllText(Path.Combine(directory, "dig-and-wonder.save.json.tmp"), "{interrompido");
+    Assert(repository.HasAnySaveFile && !repository.TryLoad(out _, out _), "temporário inválido permitiria criar perfil por cima do progresso");
+});
+
+static void InvalidSnapshotIsRejected() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    repository.Save(new GameSaveData { Gold = 7 });
+    foreach (GameSaveData invalid in new[]
+    {
+        new GameSaveData { ActiveRun = new ActiveRunSnapshot { StageId = "prado_cristalino", PlayerHealth = float.NaN, NextEntityId = 1 } },
+        new GameSaveData { ActiveRun = new ActiveRunSnapshot { StageId = "prado_cristalino", PlayerHealth = 120f, NextEntityId = 1, Enemies = new EnemySnapshot[] { null } } },
+        new GameSaveData { CriticalChanceLevel = -1 }
+    })
+    {
+        bool rejected = false;
+        try { repository.Save(invalid); }
+        catch (InvalidDataException) { rejected = true; }
+        Assert(rejected, "snapshot inválido foi aceito");
+    }
+    Assert(repository.TryLoad(out GameSaveData preserved, out _) && preserved.Gold == 7, "validação alterou o último save válido");
+});
+
+static void WriteEnvelope(string path, string payload)
+{
+    string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+    File.WriteAllText(path, JsonConvert.SerializeObject(new { SchemaVersion = 1, Payload = payload, Sha256 = hash }));
+}
+
+static void ConfirmedPrimaryWinsOverTemporary() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    repository.Save(new GameSaveData { Gold = 7 });
+    WriteEnvelope(Path.Combine(directory, "dig-and-wonder.save.json.tmp"), JsonConvert.SerializeObject(new GameSaveData { Gold = 999 }));
+    Assert(repository.TryLoad(out GameSaveData data, out bool recovered) && !recovered && data.Gold == 7,
+        "temporário substituiu uma geração já confirmada válida");
+});
+
+static void InvalidCopiesRemainUntouched() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    string primary = Path.Combine(directory, "dig-and-wonder.save.json");
+    string[] paths = { primary, primary + ".bak", primary + ".tmp" };
+    foreach (string path in paths) File.WriteAllText(path, "{inválido:" + Path.GetExtension(path));
+    string[] original = paths.Select(File.ReadAllText).ToArray();
+    Assert(!repository.TryLoad(out _, out _) && repository.HasAnySaveFile, "arquivos inválidos foram tratados como perfil novo");
+    for (int i = 0; i < paths.Length; i++) Assert(File.ReadAllText(paths[i]) == original[i], "leitura alterou arquivo inválido");
+});
+
+static void WithSaveDirectory(Action<string> test)
+{
+    string directory = Path.Combine(Path.GetTempPath(), "dw-regression-" + Guid.NewGuid().ToString("N"));
+    try { Directory.CreateDirectory(directory); test(directory); }
+    finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
 }
 
 static void GodotNumbersMatchMappedData()

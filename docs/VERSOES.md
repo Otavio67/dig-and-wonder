@@ -162,3 +162,12 @@ Checkpoint de preparação, sem nova versão/tag de jogo. Instruções e evidên
 - Não houve edição do gameplay, Play Mode, hierarquia pelo Editor, APK ou ativação de licença confirmada. Sem nova versão/tag de jogo.
 
 Instruções e bloqueios: [UNITY-MCP.md](UNITY-MCP.md).
+
+## Correções de combate/save Unity — após 0.0.7 (20/10/2026)
+
+- Oito falhas reproduzidas e corrigidas: ações após vitória/derrota, recompensa parcial de boss e validação/recuperação de save. Temporários válidos podem ser recuperados; arquivos inválidos são preservados.
+- Autosave solicitado por evento é feito após o passo completo. Falha de escrita pausa combate e compras, informa o erro e tenta novamente. Esse fluxo de UI/lifecycle ainda depende de validação no Editor.
+- Vinte checks C# passaram; compilação com stubs e DLLs reais passou com zero erros/avisos. Adicionado workflow de checks C# independente de licença.
+- A tentativa batch Android continua bloqueada pela licença. Sem novo APK, tag de jogo, Play Mode, vídeo ou alegação de desempenho. Números e schema preservados.
+
+Relatório e passos de teste: [UNITY-REVISAO-COMBATE-SAVE.md](UNITY-REVISAO-COMBATE-SAVE.md).

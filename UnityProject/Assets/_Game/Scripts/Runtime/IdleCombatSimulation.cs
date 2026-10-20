@@ -97,6 +97,7 @@ namespace DigAndWonder
             SpawnTimedWaves(step);
             UpdateEnemyAttacks(step);
             UpdateSpecial(step);
+            if (!IsActive) return;
             UpdateBasicAttack(step);
             UpdatePendingHits(step);
         }
@@ -187,6 +188,7 @@ namespace DigAndWonder
                     while (run.SpecialHitsRemaining > 0 && run.SpecialHitTimer <= 0f)
                     {
                         ApplySpecialHit();
+                        if (!IsActive) return;
                         run.SpecialHitsRemaining--;
                         run.SpecialHitTimer += config.Special.HitInterval;
                     }
@@ -288,6 +290,7 @@ namespace DigAndWonder
                     {
                         run.IsPlayerDefeated = true;
                         profile.ActiveRun = null;
+                        ClearCombatActions();
                         Emit(CombatEventType.PlayerDefeated, hit.SourceEntityId, 0f, currentStage.DisplayName);
                         return;
                     }
@@ -307,6 +310,7 @@ namespace DigAndWonder
                 Emit(CombatEventType.Hit, target.Id, hit.Damage,
                     target.IsBoss ? currentStage.Boss.DisplayName : config.RegularEnemy.DisplayName);
                 if (target.Health <= 0f) DefeatEnemy(target);
+                if (!IsActive) return;
             }
         }
 
@@ -320,16 +324,23 @@ namespace DigAndWonder
         {
             enemies.Remove(enemy);
             profile.Gold += enemy.GoldReward;
+            // Observadores recebem a transação completa, inclusive ao salvar no evento.
+            if (enemy.IsBoss)
+            {
+                profile.Keys += currentStage.KeyCount;
+                profile.Chests += currentStage.ChestCount;
+                profile.UnlockedStageId = GetNextStageId(currentStage.Id);
+                run.IsStageCleared = true;
+                profile.ActiveRun = null;
+                ClearCombatActions();
+            }
             Emit(CombatEventType.EnemyDefeated, enemy.Id, enemy.GoldReward, enemy.IsBoss ? currentStage.Boss.DisplayName : config.RegularEnemy.DisplayName);
             Emit(CombatEventType.GoldAwarded, enemy.Id, enemy.GoldReward, "Ouro por inimigo derrotado");
-            SpawnPendingEnemies();
-
-            if (!enemy.IsBoss) return;
-            profile.Keys += currentStage.KeyCount;
-            profile.Chests += currentStage.ChestCount;
-            profile.UnlockedStageId = GetNextStageId(currentStage.Id);
-            run.IsStageCleared = true;
-            profile.ActiveRun = null;
+            if (!enemy.IsBoss)
+            {
+                SpawnPendingEnemies();
+                return;
+            }
             Emit(CombatEventType.BossDefeated, enemy.Id, enemy.GoldReward, currentStage.Boss.DisplayName);
             Emit(CombatEventType.ChestAwarded, enemy.Id, currentStage.ChestCount, currentStage.DisplayName);
             Emit(CombatEventType.KeyAwarded, enemy.Id, currentStage.KeyCount, currentStage.DisplayName);
@@ -338,6 +349,7 @@ namespace DigAndWonder
 
         public bool TryPurchaseUpgrade(UpgradeKind kind)
         {
+            if (!IsActive) return false;
             UpgradeCombatData upgrade = kind == UpgradeKind.Attack ? config.AttackUpgrade :
                 kind == UpgradeKind.Health ? config.HealthUpgrade :
                 kind == UpgradeKind.CriticalChance ? config.CriticalChanceUpgrade :
@@ -371,6 +383,22 @@ namespace DigAndWonder
 
             Emit(CombatEventType.UpgradePurchased, 0, cost, kind.ToString());
             return true;
+        }
+
+        private void ClearCombatActions()
+        {
+            enemies.Clear();
+            pendingHits.Clear();
+            run.Enemies = Array.Empty<EnemySnapshot>();
+            run.PendingHits = Array.Empty<PendingHitSnapshot>();
+            run.PendingSpawns = 0;
+            run.AttackHitsRemaining = 0;
+            run.AttackTargetId = 0;
+            run.AttackHitTimer = 0f;
+            run.SpecialHitsRemaining = 0;
+            run.SpecialTargetId = 0;
+            run.SpecialTravelTimer = 0f;
+            run.SpecialHitTimer = 0f;
         }
 
         public ActiveRunSnapshot CaptureRun()

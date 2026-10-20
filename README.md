@@ -44,6 +44,8 @@ A fonte Godot desta linha de jogo corresponde ao Marco 2/0.0.6. O checkpoint mai
 
 O Editor Unity e o módulo Android foram instalados na instância remota; a importação aguarda ativação da licença e acesso ao registro de pacotes. Preparação reproduzível em [Unity na nuvem](docs/UNITY-NUVEM.md).
 
+Checkpoint posterior à 0.0.7: [correções de combate e save Unity](docs/UNITY-REVISAO-COMBATE-SAVE.md), com 20 checks C# executados. Importação, Play Mode e APK continuam pendentes; a documentação Godot acima descreve a origem preservada.
+
 ## Evidências e limites
 
 Capturas reais do Marco 1 em `builds/review/marco1-20261020/`, ignoradas pelo Git. `scripts/capture_defense.gd` registra vinte segundos em 12 fps e continua a mesma tentativa por comandos normais até vitória; também verifica derrota por inatividade e reinício. A persistência é desativada somente na instância de captura para não sobrescrever arquivos do jogador. As antigas entradas de captura encaminham para o protótipo atual.

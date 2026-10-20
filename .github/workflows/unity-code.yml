@@ -1,0 +1,24 @@
+name: Validate Unity C# without Editor
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Verify combat, economy, resume and save recovery
+        run: dotnet run --project UnityProject/Tools/DomainChecks/DomainChecks.csproj
+      - name: Compile runtime and editor code against stubs
+        run: dotnet build UnityProject/Tools/UnityCompileCheck/UnityCompileCheck.csproj
+      # Essas etapas não comprovam importação, Play Mode ou build pelo Unity Editor.
