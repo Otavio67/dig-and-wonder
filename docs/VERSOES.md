@@ -185,6 +185,14 @@ Checks estáticos serão executados neste checkpoint. O Editor remoto não tem l
 
 - Gerada uma derivação transparente da referência enviada, preservando a broca, a paleta e as 12 poses em uma folha RGBA de 1680 × 960.
 - A folha foi normalizada em uma grade de 4 × 3 células de 420 × 320 e recebeu pivô provisório próximo ao contato das esteiras.
-- O arquivo está em `UnityProject/Assets/_Game/Art/Drill/drill_pioneira.png`; a ligação ao HUD e a revisão de importação continuam para o Editor local.
+- A folha está versionada; a ligação ao HUD e a revisão de importação continuam para o Editor local.
 
 Tag: `v0.0.9`. A imagem foi revisada visualmente fora do Unity; não há validação de frames, toque ou desempenho Android.
+
+## 0.0.10 — folha conectada ao HUD (20/10/2026)
+
+- A folha foi movida para `Resources/Art/Drill` para ser carregada pelo protótipo sem configuração manual de prefab.
+- Adicionado `DrillSpriteSheetPlayer2D`, que resolve os 12 frames nomeados, alterna idle/caminhada/ataque/impacto e usa o ícone TMP como fallback se o Unity ainda não gerar os sub-sprites.
+- O visual da broca agora é um filho separado do rótulo, mantendo escala, frames e movimento fora da posição funcional.
+
+Tag: `v0.0.10`. Compilação contra stubs e DLLs reais passou; importação pelo Editor, gravação e aparelho Android continuam pendentes.

@@ -14,7 +14,7 @@ namespace UnityEngine
         public bool isActiveAndEnabled => enabled;
     }
     [AttributeUsage(AttributeTargets.Class)] public sealed class DisallowMultipleComponentAttribute : Attribute { }
-    public class Component : Object { public GameObject gameObject; public Transform transform; public T GetComponent<T>() where T : class => null; }
+    public class Component : Object { public GameObject gameObject; public Transform transform; public T GetComponent<T>() where T : class => null; public T GetComponentInParent<T>() where T : class => null; }
     public class GameObject : Object
     {
         public GameObject(string name, params Type[] components) { }
@@ -27,6 +27,7 @@ namespace UnityEngine
     }
     public class Transform : Component { public Vector3 localPosition, localScale; public void SetParent(Transform parent, bool worldPositionStays) { } }
     public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta; }
+    public class Sprite : Object { public string name; }
     public class Camera : Component { public static Camera main; public bool orthographic; public Color backgroundColor; }
     public class CanvasRenderer : Component { }
     public enum ScreenOrientation { Portrait }
@@ -59,6 +60,7 @@ namespace UnityEngine
     public static class Resources
     {
         public static T Load<T>(string path) where T : Object => null;
+        public static T[] LoadAll<T>(string path) where T : Object => Array.Empty<T>();
         public static T[] FindObjectsOfTypeAll<T>() where T : Object => Array.Empty<T>();
     }
     public static class Application
@@ -100,7 +102,7 @@ namespace UnityEngine.UI
     }
     public class GraphicRaycaster : UnityEngine.Component { }
     public class Graphic : UnityEngine.Component { public UnityEngine.Color color; public bool raycastTarget; public UnityEngine.RectTransform rectTransform; }
-    public class Image : Graphic { }
+    public class Image : Graphic { public UnityEngine.Sprite sprite; public bool preserveAspect; }
     public class CanvasGroup : UnityEngine.Component { public float alpha; public bool interactable, blocksRaycasts; }
     public class Button : UnityEngine.Component { public ButtonClickedEvent onClick = new ButtonClickedEvent(); public sealed class ButtonClickedEvent { public void AddListener(UnityAction action) { } } }
 }

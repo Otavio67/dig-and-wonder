@@ -36,6 +36,7 @@ namespace DigAndWonder
         private TextMeshProUGUI drillIcon;
         private ProceduralAnimator2D drillAnimator;
         private GroundDrillMotion2D drillMotion;
+        private DrillSpriteSheetPlayer2D drillFrames;
         private TextMeshProUGUI[] enemyIcons;
         private ProceduralAnimator2D[] enemyAnimators;
         private RectTransform[] caveSeams;
@@ -94,8 +95,17 @@ namespace DigAndWonder
             }
             drillIcon = MakeLabel("Drill", worldPanel, "⛏", 96, Sand,
                 new Vector2(0.09f, 0.35f), new Vector2(0.36f, 0.66f), TextAlignmentOptions.Center);
-            drillAnimator = drillIcon.gameObject.AddComponent<ProceduralAnimator2D>();
-            drillMotion = drillIcon.gameObject.AddComponent<GroundDrillMotion2D>();
+            var drillVisualObject = new GameObject("Drill Visual", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            drillVisualObject.transform.SetParent(drillIcon.transform, false);
+            var drillVisualRect = (RectTransform)drillVisualObject.transform;
+            drillVisualRect.anchorMin = Vector2.zero;
+            drillVisualRect.anchorMax = Vector2.one;
+            drillVisualRect.offsetMin = Vector2.zero;
+            drillVisualRect.offsetMax = Vector2.zero;
+            drillFrames = drillVisualObject.AddComponent<DrillSpriteSheetPlayer2D>();
+            drillAnimator = drillVisualObject.AddComponent<ProceduralAnimator2D>();
+            drillMotion = drillVisualObject.AddComponent<GroundDrillMotion2D>();
+            if (drillFrames.IsReady) drillIcon.text = string.Empty;
             enemyIcons = new TextMeshProUGUI[4];
             enemyAnimators = new ProceduralAnimator2D[4];
             enemyHealth = new TextMeshProUGUI[4];
@@ -193,6 +203,7 @@ namespace DigAndWonder
             if (resumed) statusLabel.text = "PROGRESSO RECUPERADO — CONTINUANDO DA ÚLTIMA POSIÇÃO";
             else statusLabel.text = "A broca começou a avançar!";
             drillAnimator.ResetForRun();
+            drillFrames.ResetForRun();
             StartCaveMotion();
             Refresh();
         }
@@ -322,23 +333,31 @@ namespace DigAndWonder
             {
                 drillAnimator.PlayAttack(false);
                 drillMotion.PlayAttack(false);
+                drillFrames.PlayAttack(false);
             }
             else if (e.Type == CombatEventType.SpecialStarted)
             {
                 drillAnimator.PlayAttack(true);
                 drillMotion.PlayAttack(true);
+                drillFrames.PlayAttack(true);
             }
             else if (e.Type == CombatEventType.PlayerDamaged)
             {
                 drillAnimator.PlayImpact();
                 drillMotion.PlayImpact();
+                drillFrames.PlayImpact();
             }
             else if (e.Type == CombatEventType.PlayerDefeated)
             {
                 drillAnimator.PlayDeath();
                 drillMotion.PlayDeath();
+                drillFrames.PlayDeath();
             }
-            else if (e.Type == CombatEventType.RunStarted) drillAnimator.ResetForRun();
+            else if (e.Type == CombatEventType.RunStarted)
+            {
+                drillAnimator.ResetForRun();
+                drillFrames.ResetForRun();
+            }
             if (e.Type == CombatEventType.RunStarted && inGame) StartCaveMotion();
             else if (e.Type == CombatEventType.PlayerDefeated || e.Type == CombatEventType.StageCleared) StopCaveMotion();
             if (e.Type == CombatEventType.Hit)
@@ -365,6 +384,7 @@ namespace DigAndWonder
                 caveMotionTweens[i] = caveSeams[i].DOAnchorPosX(-1220f, 7.5f + i * 0.18f)
                     .SetEase(Ease.Linear).SetLoops(-1, LoopType.Restart).SetDelay(i * 0.4f);
             drillMotion?.BeginWalk();
+            drillFrames?.BeginWalk();
         }
 
         private void StopCaveMotion()
