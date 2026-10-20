@@ -1,0 +1,1 @@
+This directory is a separate Unity project. Exclude its assets and generated Library from the Godot import scan.

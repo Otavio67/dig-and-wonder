@@ -24,6 +24,8 @@ Clique em **Iniciar tentativa**, lance a Pioneira quando ficar pronta e compre D
 
 Windows: `./check-project.ps1` usa Godot portátil, dados isolados em `.tools/check-windows/` e falha em erros de script/log ou ausência da confirmação de cada harness. Linux: `bash check-project.sh` e `bash scripts/run-harnesses.sh`, após `bash setup-cloud.sh`. Harnesses de catálogo/save antigos permanecem para validar os dados importáveis; gameplay, interação e combate têm cobertura nova. Logs locais em `.tools/logs/`.
 
+Resultados da execução local no Windows e seus limites: [validação local](docs/VALIDACAO-LOCAL-2026-10-20.md).
+
 ## Save e importação
 
 O perfil ativo usa esquema **6**, `user://dig_wonder.defense.v6.json`, com temporário validado e backup. Guarda ouro, níveis de Dano/Vida, três espaços, conclusão e desbloqueio. A tentativa não é retomada ao reabrir: vida, inimigos, brocas, tiros, camadas e cooldown reiniciam. Sem renda offline ou ataques acumulados.
