@@ -50,6 +50,7 @@ namespace DigAndWonder
         private RectTransform menuPanel;
         private RectTransform hubPanel;
         private RectTransform combatRoot;
+        private RectTransform progressionPanel;
         private RectTransform worldPanel;
         private RectTransform bottomBar;
         private RectTransform hubEnterCaveButton;
@@ -60,6 +61,15 @@ namespace DigAndWonder
         private TextMeshProUGUI hubLockLabel;
         private TextMeshProUGUI hubEnterCaveButtonLabel;
         private DrillSpriteSheetPlayer2D hubDrillFrames;
+        private TextMeshProUGUI progressionWalletLabel;
+        private TextMeshProUGUI progressionPowerLabel;
+        private TextMeshProUGUI progressionStatusLabel;
+        private TextMeshProUGUI progressionAttackValue;
+        private TextMeshProUGUI progressionHealthValue;
+        private TextMeshProUGUI progressionAttackButtonLabel;
+        private TextMeshProUGUI progressionHealthButtonLabel;
+        private Button progressionAttackButton;
+        private Button progressionHealthButton;
         private bool inGame;
         private bool saveWasBlocked;
         private string currentTab = "MELHORIAS";
@@ -96,6 +106,8 @@ namespace DigAndWonder
             var background = MakePanel("Background", root, Ink, new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
             hubPanel = MakePanel("Expedition hub", background, new Color(0.055f, 0.17f, 0.2f), new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
             BuildHubInterface(hubPanel);
+            progressionPanel = MakePanel("Progression screen", background, new Color(0.12f, 0.19f, 0.24f), new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
+            BuildProgressionInterface(progressionPanel);
             combatRoot = MakePanel("Combat screen", background, new Color(0, 0, 0, 0), new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
             combatRoot.GetComponent<Image>().raycastTarget = false;
             MakeLabel("Title", combatRoot, "DIG & WONDER", 40, Sand, new Vector2(0.04f, 0.91f), new Vector2(0.7f, 0.975f), TextAlignmentOptions.Left);
@@ -199,6 +211,7 @@ namespace DigAndWonder
             stageLabel.gameObject.SetActive(false);
             walletLabel.gameObject.SetActive(false);
             missionLabel.gameObject.SetActive(false);
+            progressionPanel.gameObject.SetActive(false);
             combatRoot.gameObject.SetActive(false);
         }
 
@@ -237,6 +250,51 @@ namespace DigAndWonder
                 new Vector2(0.06f, 0.12f), new Vector2(0.94f, 0.17f), TextAlignmentOptions.Center);
         }
 
+        private void BuildProgressionInterface(RectTransform panel)
+        {
+            MakeLabel("Progression title", panel, "OFICINA DA BROCA", 34, Sand,
+                new Vector2(0.06f, 0.91f), new Vector2(0.68f, 0.98f), TextAlignmentOptions.Left);
+            progressionWalletLabel = MakeLabel("Progression wallet", panel, "⚙ 0", 27, Sand,
+                new Vector2(0.69f, 0.92f), new Vector2(0.94f, 0.98f), TextAlignmentOptions.Right);
+            MakeLabel("Progression drill", panel, "BROCA PIONEIRA  •  PERSONAGEM PRINCIPAL", 18, White,
+                new Vector2(0.06f, 0.84f), new Vector2(0.7f, 0.9f), TextAlignmentOptions.Left);
+            progressionPowerLabel = MakeLabel("Progression power", panel, "PODER 6,0", 20, Mint,
+                new Vector2(0.7f, 0.84f), new Vector2(0.94f, 0.9f), TextAlignmentOptions.Right);
+
+            RectTransform attackRow = MakePanel("Attack upgrade row", panel, new Color(0.24f, 0.35f, 0.45f),
+                new Vector2(0.04f, 0.68f), new Vector2(0.96f, 0.82f), Vector2.zero, Vector2.zero);
+            MakeLabel("Attack icon", attackRow, "⚔", 39, Sand, new Vector2(0.03f, 0.12f), new Vector2(0.15f, 0.88f), TextAlignmentOptions.Center);
+            progressionAttackValue = MakeLabel("Attack value", attackRow, "ATQ\nNv. 0\n6,0", 18, White,
+                new Vector2(0.17f, 0.14f), new Vector2(0.48f, 0.9f), TextAlignmentOptions.Left);
+            progressionAttackButton = MakeButton("Progression attack", attackRow, "MELHORAR", 17, 0.57f, 0.12f, 0.96f, 0.88f,
+                () => PurchaseFromProgression(UpgradeKind.Attack), Mint).GetComponent<Button>();
+            progressionAttackButtonLabel = progressionAttackButton.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+
+            RectTransform healthRow = MakePanel("Health upgrade row", panel, new Color(0.27f, 0.36f, 0.44f),
+                new Vector2(0.04f, 0.53f), new Vector2(0.96f, 0.67f), Vector2.zero, Vector2.zero);
+            MakeLabel("Health icon", healthRow, "♥", 39, Coral, new Vector2(0.03f, 0.12f), new Vector2(0.15f, 0.88f), TextAlignmentOptions.Center);
+            progressionHealthValue = MakeLabel("Health value", healthRow, "PV\nNv. 0\n120", 18, White,
+                new Vector2(0.17f, 0.14f), new Vector2(0.48f, 0.9f), TextAlignmentOptions.Left);
+            progressionHealthButton = MakeButton("Progression health", healthRow, "MELHORAR", 17, 0.57f, 0.12f, 0.96f, 0.88f,
+                () => PurchaseFromProgression(UpgradeKind.Health), Sand).GetComponent<Button>();
+            progressionHealthButtonLabel = progressionHealthButton.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+
+            MakeLockedProgressionRow(panel, "🔧  RECUPERAÇÃO DE PV", "Requer VIDA Nv. 10  •  EM BALANCEAMENTO", new Vector2(0.04f, 0.39f), new Vector2(0.96f, 0.52f));
+            MakeLockedProgressionRow(panel, "🎯  CHANCE DE CRÍTICO", "Requer ATQ Nv. 10  •  EM BALANCEAMENTO", new Vector2(0.04f, 0.25f), new Vector2(0.96f, 0.38f));
+            MakeLockedProgressionRow(panel, "🔥  DANO CRÍTICO / ESPECIAL", "Requer FASE 2  •  EM BALANCEAMENTO", new Vector2(0.04f, 0.11f), new Vector2(0.96f, 0.24f));
+            progressionStatusLabel = MakeLabel("Progression status", panel, "Melhorias são salvas automaticamente", 15, White,
+                new Vector2(0.05f, 0.05f), new Vector2(0.58f, 0.1f), TextAlignmentOptions.Left);
+            MakeButton("Back to hub", panel, "VOLTAR AO ACAMPAMENTO", 15, 0.6f, 0.04f, 0.95f, 0.11f,
+                ShowHub, new Color(0.16f, 0.35f, 0.36f));
+        }
+
+        private void MakeLockedProgressionRow(RectTransform parent, string title, string body, Vector2 min, Vector2 max)
+        {
+            RectTransform row = MakePanel("Locked progression row", parent, new Color(0.12f, 0.19f, 0.25f), min, max, Vector2.zero, Vector2.zero);
+            MakeLabel("Locked title", row, title, 17, White, new Vector2(0.04f, 0.48f), new Vector2(0.58f, 0.92f), TextAlignmentOptions.Left);
+            MakeLabel("Locked body", row, body, 13, new Color(0.72f, 0.76f, 0.78f), new Vector2(0.04f, 0.08f), new Vector2(0.94f, 0.48f), TextAlignmentOptions.Left);
+        }
+
         private void MakeHubCard(RectTransform parent, string title, string body, Vector2 min, Vector2 max, Color color)
         {
             RectTransform card = MakePanel("Hub card " + title, parent, color, min, max, Vector2.zero, Vector2.zero);
@@ -244,6 +302,62 @@ namespace DigAndWonder
                 new Vector2(0.05f, 0.56f), new Vector2(0.95f, 0.94f), TextAlignmentOptions.Center);
             MakeLabel("Body", card, body, 13, Ink,
                 new Vector2(0.05f, 0.08f), new Vector2(0.95f, 0.56f), TextAlignmentOptions.Center);
+            if (title == "Oficina")
+            {
+                Button button = card.gameObject.AddComponent<Button>();
+                button.onClick.AddListener(OpenProgression);
+            }
+        }
+
+        private void OpenProgression()
+        {
+            if (driver.Simulation == null)
+            {
+                hubMissionLabel.text = "Inicie uma expedição antes de usar a oficina";
+                return;
+            }
+
+            inGame = false;
+            StopCaveMotion();
+            hubPanel.gameObject.SetActive(false);
+            combatRoot.gameObject.SetActive(false);
+            progressionPanel.gameObject.SetActive(true);
+            RefreshProgression();
+        }
+
+        private void PurchaseFromProgression(UpgradeKind kind)
+        {
+            bool purchased = driver.TryPurchaseUpgradeAtBase(kind);
+            progressionStatusLabel.text = purchased ? "MELHORIA COMPRADA — PROGRESSO SALVO" : "OURO INSUFICIENTE OU NÍVEL MÁXIMO";
+            RefreshProgression();
+        }
+
+        private void RefreshProgression()
+        {
+            IdleCombatSimulation sim = driver.Simulation;
+            if (sim == null)
+            {
+                progressionWalletLabel.text = "⚙ 0";
+                progressionPowerLabel.text = "PODER —";
+                progressionAttackValue.text = "ATQ\nINICIE A EXPEDIÇÃO";
+                progressionHealthValue.text = "PV\nINICIE A EXPEDIÇÃO";
+                progressionAttackButton.interactable = false;
+                progressionHealthButton.interactable = false;
+                return;
+            }
+
+            int attackCost = sim.Profile.AttackLevel < driver.CurrentAttackMaximum ? driver.GetAttackUpgradeCost() : -1;
+            int healthCost = sim.Profile.HealthLevel < driver.CurrentHealthMaximum ? driver.GetHealthUpgradeCost() : -1;
+            progressionWalletLabel.text = "⚙ " + sim.Gold;
+            progressionPowerLabel.text = "PODER " + driver.CurrentAttackDamage.ToString("0.0");
+            progressionAttackValue.text = "ATQ\nNv. " + sim.Profile.AttackLevel + "/" + driver.CurrentAttackMaximum +
+                "\n" + driver.CurrentAttackDamage.ToString("0.0");
+            progressionHealthValue.text = "PV\nNv. " + sim.Profile.HealthLevel + "/" + driver.CurrentHealthMaximum +
+                "\n" + sim.PlayerMaximumHealth.ToString("0");
+            progressionAttackButtonLabel.text = attackCost < 0 ? "ATQ  MÁXIMO" : "MELHORAR\n⚙ " + attackCost;
+            progressionHealthButtonLabel.text = healthCost < 0 ? "PV  MÁXIMO" : "MELHORAR\n⚙ " + healthCost;
+            progressionAttackButton.interactable = attackCost >= 0 && !driver.IsSaveBlocked;
+            progressionHealthButton.interactable = healthCost >= 0 && !driver.IsSaveBlocked;
         }
 
         private void ShowHub()
@@ -251,6 +365,7 @@ namespace DigAndWonder
             inGame = false;
             StopCaveMotion();
             hubPanel.gameObject.SetActive(true);
+            progressionPanel.gameObject.SetActive(false);
             combatRoot.gameObject.SetActive(false);
             hubEnterCaveButton.gameObject.SetActive(driver.IsReady);
             if (hubEnterCaveButtonLabel != null)
@@ -284,6 +399,7 @@ namespace DigAndWonder
             if (driver.Simulation == null) return;
             inGame = true;
             hubPanel.gameObject.SetActive(false);
+            progressionPanel.gameObject.SetActive(false);
             combatRoot.gameObject.SetActive(true);
             worldPanel.gameObject.SetActive(true);
             menuPanel.gameObject.SetActive(true);

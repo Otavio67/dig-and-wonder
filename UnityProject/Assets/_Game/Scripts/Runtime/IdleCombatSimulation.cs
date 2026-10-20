@@ -349,7 +349,18 @@ namespace DigAndWonder
 
         public bool TryPurchaseUpgrade(UpgradeKind kind)
         {
-            if (!IsActive) return false;
+            return TryPurchaseUpgradeInternal(kind, true);
+        }
+
+        /// <summary>Compra uma melhoria na base entre tentativas, sem reabrir um combate encerrado.</summary>
+        public bool TryPurchaseUpgradeAtBase(UpgradeKind kind)
+        {
+            return TryPurchaseUpgradeInternal(kind, false);
+        }
+
+        private bool TryPurchaseUpgradeInternal(UpgradeKind kind, bool requireActiveRun)
+        {
+            if (requireActiveRun && !IsActive) return false;
             UpgradeCombatData upgrade = kind == UpgradeKind.Attack ? config.AttackUpgrade :
                 kind == UpgradeKind.Health ? config.HealthUpgrade :
                 kind == UpgradeKind.CriticalChance ? config.CriticalChanceUpgrade :
@@ -371,7 +382,8 @@ namespace DigAndWonder
                     break;
                 case UpgradeKind.Health:
                     profile.HealthLevel++;
-                    run.PlayerHealth = Math.Min(PlayerMaximumHealth, run.PlayerHealth + upgrade.Bonus);
+                    if (run != null && IsActive)
+                        run.PlayerHealth = Math.Min(PlayerMaximumHealth, run.PlayerHealth + upgrade.Bonus);
                     break;
                 case UpgradeKind.CriticalChance:
                     profile.CriticalChanceLevel++;

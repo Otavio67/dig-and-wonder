@@ -9,6 +9,7 @@ var checks = new (string Name, Action Test)[]
     ("economia insuficiente não compra upgrade", InsufficientGoldDoesNotPurchase),
     ("preço e aumento de dano do upgrade", AttackUpgradeUsesGodotFormula),
     ("upgrade de vida aplica valor e custo Godot", HealthUpgradeUsesGodotFormula),
+    ("oficina compra melhoria entre tentativas", BaseUpgradeUsesSameEconomy),
     ("ouro por inimigo só uma vez", EnemyGoldIsAwardedOnce),
     ("projétil respeita viagem e alvo removido", ProjectilesRespectTravelAndTargetIdentity),
     ("especial preserva quatro golpes e dano total", PioneerSpecialKeepsFourStrikes),
@@ -70,6 +71,17 @@ static void HealthUpgradeUsesGodotFormula()
     Assert(simulation.TryPurchaseUpgrade(UpgradeKind.Health), "compra de vida válida falhou");
     Assert(save.Gold == 0 && save.HealthLevel == 1, "custo inicial de vida deveria ser 20");
     Assert(simulation.PlayerMaximumHealth == 155f && simulation.PlayerHealth == 155f, "+35 PV não foi aplicado");
+}
+
+static void BaseUpgradeUsesSameEconomy()
+{
+    GameSaveData save = TerminalFixture();
+    IdleCombatSimulation simulation = NewSimulation(save, 100);
+    simulation.Step(0.05f);
+    Assert(!simulation.IsActive, "fixture não terminou a tentativa");
+    save.Gold = 18;
+    Assert(simulation.TryPurchaseUpgradeAtBase(UpgradeKind.Attack), "oficina recusou compra após derrota");
+    Assert(save.Gold == 0 && save.AttackLevel == 1, "oficina usou custo ou saldo diferente do combate");
 }
 
 static void EnemyGoldIsAwardedOnce()

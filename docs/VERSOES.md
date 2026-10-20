@@ -221,3 +221,14 @@ Tag: `v0.0.11`.
 Checks de domínio, compilação contra stubs e compilação contra DLLs reais do Unity passaram. A tela ainda precisa de revisão no Editor licenciado e teste em aparelho Android; nenhuma alegação de FPS foi feita.
 
 Tag: `v0.0.12`.
+
+## 0.0.13 — tela de personagem e oficina (20/10/2026)
+
+- A Oficina do Acampamento ganhou uma tela própria inspirada na referência: Broca Pioneira, poder total, linhas de ATQ/PV, nível, valor atual, custo em engrenagens e botões verdes de melhoria.
+- Recuperação de PV, Chance de Crítico, Dano Crítico e Especial aparecem em linhas escurecidas com cadeado e requisitos legíveis. Como esses atributos continuam sem balanceamento funcional, permanecem bloqueados.
+- Melhorias de ATQ e PV podem ser compradas na base entre tentativas usando o mesmo ouro e as mesmas curvas já existentes. O save continua sendo feito pelo repositório atômico.
+- O ícone de engrenagem é somente a linguagem visual do ouro; nenhuma moeda premium foi adicionada.
+
+Checks de economia/save, compilação contra stubs e compilação contra DLLs reais do Unity passaram. A revisão visual dentro do Editor e o teste em aparelho Android continuam pendentes.
+
+Tag: `v0.0.13`.

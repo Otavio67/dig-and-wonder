@@ -18,6 +18,8 @@ namespace DigAndWonder
             ? balance.progression.attackUpgrade.maxLevel : 0;
         public int CurrentHealthMaximum => balance != null && balance.progression != null && balance.progression.healthUpgrade != null
             ? balance.progression.healthUpgrade.maxLevel : 0;
+        public float CurrentAttackDamage => balance == null || balance.progression == null || balance.progression.attackUpgrade == null || Simulation == null
+            ? 0f : balance.drillAttackDamage * (1f + Simulation.Profile.AttackLevel * balance.progression.attackUpgrade.additiveBonus);
 
         private AtomicSaveRepository saveRepository;
         private GameSaveData loadedProfile;
@@ -167,6 +169,14 @@ namespace DigAndWonder
         {
             if (Simulation == null || !Simulation.IsActive || IsSaveBlocked || applicationPaused) return false;
             bool purchased = Simulation.TryPurchaseUpgrade(kind);
+            if (purchased) SaveNow();
+            return purchased;
+        }
+
+        public bool TryPurchaseUpgradeAtBase(UpgradeKind kind)
+        {
+            if (Simulation == null || IsSaveBlocked || applicationPaused) return false;
+            bool purchased = Simulation.TryPurchaseUpgradeAtBase(kind);
             if (purchased) SaveNow();
             return purchased;
         }

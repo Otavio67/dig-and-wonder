@@ -11,6 +11,7 @@ Para continuar no seu PC, consulte [transferência e configuração local](../do
 - Em perfil novo, aparece **Iniciar escavação**. Em perfil Unity já salvo, a luta abre direto na última posição segura.
 - A broca e os inimigos lutam automaticamente. A Pioneira faz quatro impactos somando os 32 de dano da fonte Godot. O boss é o único requisito para limpar a fase; ao vencê-lo, o perfil recebe o próximo estágio e os baús/chaves definidos pelo catálogo.
 - Hub de acampamento separado do HUD de combate. O hub em português mostra a broca, Mina, Oficina, Garagem, Baús, Álbum e Perfil. A faixa de missão fica no HUD durante a escavação; a oficina exibe ATQ/VIDA com custo, máximo e melhorias futuras bloqueadas; a garagem agrupa brocas por fase; e Baús mostra a carteira e os módulos bloqueados por progresso. Dano e Vida são compráveis com ouro. Abertura de baús, equipamentos aplicáveis e álbum de descobertas ainda não estão implementados nesta amostra.
+- A Oficina aberta pelo hub usa uma tela de personagem própria: mostra poder, níveis, valores, custos em engrenagens e linhas bloqueadas. As compras de ATQ/PV continuam usando os valores vindos do Godot e podem ocorrer entre tentativas.
 - UI retrato, input de mouse/toque por botões, layout com CanvasScaler e ajuste de área segura.
 - A interface de combate é uma composição provisória feita por código e texto TMP, com ícones provisórios; não é a arte/layout final. O cenário dá movimento de caverna por tween, separado da lógica de combate. A camada visual ainda não muda com a fase.
 - `DrillSpriteSheetPlayer2D` procura a folha RGBA da Pioneira em `Resources/Art/Drill`, escolhe frames por eventos reais e mantém o ícone TMP se a importação ainda não estiver pronta. `ProceduralAnimator2D` anima escala somente no elemento visual e interrompe idle ao atacar/receber impacto/morrer. `GroundDrillMotion2D` cuida do deslocamento cosmético no chão e nunca move a posição funcional. Pools aquecidos de projéteis (24), dano (32), moedas (8) e impactos/partículas (32). Efeitos usam DOTween em tempo não escalado e são limpos em derrota, vitória e suspensão do app. A simulação não instancia objetos visuais por ataque.
@@ -26,7 +27,7 @@ A avaliação e o passo a passo para importar a folha de sprites da Broca Pionei
 
 O save fica em `Application.persistentDataPath`, não no cache temporário que o Android pode limpar. Ele grava em gatilhos de recompensa/melhoria/chefes, a cada 5 s e ao suspender/fechar; o arquivo é validado por checksum e recupera backup. Esse protótipo ainda não importa automaticamente o save Godot.
 
-O checkpoint de correções posterior à 0.0.7 limpa ações ao encerrar a luta, salva ao fim do passo e recupera também temporário válido quando principal/backup não podem ser lidos. Falha de escrita pausa o combate e tenta novamente. Veja [correções, 20 checks e roteiro pendente no Editor](../docs/UNITY-REVISAO-COMBATE-SAVE.md).
+O checkpoint de correções posterior à 0.0.7 limpa ações ao encerrar a luta, salva ao fim do passo e recupera também temporário válido quando principal/backup não podem ser lidos. Falha de escrita pausa o combate e tenta novamente. Veja [correções e roteiro pendente no Editor](../docs/UNITY-REVISAO-COMBATE-SAVE.md).
 
 ## Toolchain na nuvem
 
