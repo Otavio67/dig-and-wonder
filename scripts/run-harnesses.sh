@@ -27,3 +27,4 @@ run_harness defense-save res://scripts/save/defense_save_harness.gd
 run_harness gameplay res://scripts/gameplay/game_harness.gd
 run_harness android res://scripts/gameplay/android_harness.gd
 run_harness characters res://scripts/visual/characters_harness.gd
+run_harness animations res://scripts/visual/animation_harness.gd

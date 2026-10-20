@@ -68,7 +68,7 @@ func launch() -> bool:
 	var unit := {"id": id, "kind": "pioneer", "role": "impact", "age": 0.0, "duration": float(config.pioneer.flight), "layer": layer_index, "enemy": victim, "damage": stats().drill_damage, "hits": 0}
 	units.append(unit)
 	cooldown = float(config.pioneer.cooldown)
-	events.append({"type": "launch"})
+	events.append({"type": "launch", "id": id})
 	return true
 
 func launch_support() -> bool:
@@ -137,7 +137,7 @@ func step(delta: float) -> void:
 		else:
 			if unit.age < unit.duration: continue
 			if int(unit.layer) != layer_index and _enemy(int(unit.enemy)).is_empty() or final_encounter and _enemy(int(unit.enemy)).is_empty():
-				events.append({"type": "drill_break", "x": 270.0})
+				events.append({"type": "drill_break", "id": int(unit.id), "x": 270.0})
 				units.remove_at(i)
 				continue
 			var due := float(unit.duration) + int(unit.hits) * float(config.pioneer.hit_interval)
@@ -146,10 +146,10 @@ func step(delta: float) -> void:
 				var strike_damage := float(unit.damage) / int(config.pioneer.hits)
 				if not _enemy(int(unit.enemy)).is_empty(): _damage_enemy(int(unit.enemy), strike_damage)
 				else: damage_layer(int(unit.layer), strike_damage)
-				events.append({"type": "drill_strike", "x": 270.0})
+				events.append({"type": "drill_strike", "id": int(unit.id), "x": 270.0})
 				if int(unit.hits) >= int(config.pioneer.hits):
 					units.remove_at(i)
-					events.append({"type": "drill_break", "x": 270.0})
+					events.append({"type": "drill_break", "id": int(unit.id), "x": 270.0})
 		if status != "active": return
 	for enemy in enemies:
 		enemy.timer -= dt

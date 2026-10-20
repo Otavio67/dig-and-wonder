@@ -32,7 +32,7 @@ Saves 1–5 são detectados pelo leitor legado, mas **não importados automatica
 
 ## Arte e arquitetura reaproveitadas
 
-Atlas pintados da máquina/terreno, fundos em camadas, paleta petróleo/turquesa/latão/coral, placas com rebites, ícones e superfície de área segura. A carroceria recebe dois canhões de desenho nativo. A Toupeira usa quatro poses pintadas com preparação, arremesso e reação; a Pioneira salta e quebra em peças. Lia e Bento e seus rigs continuam preservados, fora da tela. O polimento completo fica para marcos seguintes.
+Atlas pintados da máquina/terreno, fundos em camadas, paleta petróleo/turquesa/latão/coral, placas com rebites, ícones e superfície de área segura. Nesta amostra o carrinho tem pivô de chassi e dois canhões independentes; a Pioneira separa carcaça, mola e ponta. Animações cosméticas não alteram hit points, cooldown, dano ou alvos. Lia e Bento e seus rigs continuam preservados, fora da tela. Veja a [gravação curta da amostra](docs/evidencias/20261020/amostra-animacoes.mp4).
 
 - [Desenvolvimento e regras atuais](docs/DESENVOLVIMENTO.md)
 - [Catálogo: implementado versus proposto](docs/CATALOGO-DEFESA.md)
@@ -40,7 +40,7 @@ Atlas pintados da máquina/terreno, fundos em camadas, paleta petróleo/turquesa
 - [Histórico de versões](docs/VERSOES.md), [proveniência](assets/LICENCAS.md) e [Android](docs/ANDROID.md)
 - Histórico do modo substituído em `docs/historico/`; a entrada principal não o executa.
 
-A configuração de versão continua 0.0.5; o Marco 1 é um checkpoint de desenvolvimento sem novo APK/tag. Builds anteriores são do modo antigo.
+A versão de protótipo atual é 0.0.6, checkpoint da amostra de animações. Marco 1 e Marco 2 foram checkpoints sem APK próprio; builds anteriores são do modo antigo.
 
 ## Evidências e limites
 

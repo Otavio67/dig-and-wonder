@@ -126,3 +126,12 @@ Checkpoint sem nova versão/tag/APK. Não foram medidos toque, dp, FPS, memória
 
 ## 20/10/2026 — revisão do Marco 1 e Marco 2
 Solo/poço, feedback de Torrão/ouro, comparação de melhorias, espaços bloqueados. Exceção solicitada de 2 ouro no primeiro impacto por tentativa. Pioneira de quatro golpes com mesmos 32 totais, salto e quebra; Torrão em quatro poses; somente o Escavador adicional, gratuito nesta fase de protótipo para manter save/economia. Sem novo número de versão, APK ou tag. Ver MARCO2.md e CONTINUAR-NA-NUVEM.md.
+
+## 0.0.6 — amostra de animações do carrinho e da Pioneira (20/10/2026)
+
+- Chassi com idle sutil, resposta ao dano e pose de derrota prioritária; dois canhões com tubos/pivôs e recuos/clarões independentes ligados aos disparos reais.
+- Pioneira separada em carcaça, mola e ponta; giro no voo, ciclo de preparação/impacto/recuperação sincronizado à idade da unidade e anel de impacto ligado aos contatos da simulação.
+- Interrupção e limpeza em morte, reinício, pausa e remoção. Nenhuma alteração de dano, cooldown, colisão, save ou comportamento de combate.
+- Harnesses e gravação contínua desktop de 9,6 s em `docs/evidencias/20261020/`. Gravação acelerada somente por fixture local; não mede desempenho. Sem teste em aparelho ou novo APK.
+
+Tag: `v0.0.6` no checkpoint deste marco.

@@ -1,9 +1,12 @@
 extends Control
 ## Main entry: defense and excavation. Legacy manual-grid flow is inactive.
+signal combat_event(event: Dictionary)
 const Run = preload("res://scripts/gameplay/defense_run.gd")
 const Store = preload("res://scripts/save/defense_save.gd")
 const Layout = preload("res://scripts/gameplay/defense_layout.gd")
 const Art = preload("res://scripts/visual/art_direction.gd")
+const CartRig = preload("res://scripts/visual/cart_rig.gd")
+const PioneerRig = preload("res://scripts/visual/pioneer_rig.gd")
 const INK := Color("#17303D")
 const CREAM := Color("#FFF4D8")
 const TEAL := Color("#39D4C1")
@@ -20,11 +23,8 @@ var active_touch := -1
 var pointer := Vector2(-999, -999)
 var accumulator := 0.0
 var error := ""
-var recoil := [0.0, 0.0]
-var cart_flash := 0.0
 var layer_flash := 0.0
 var notices: Array[Dictionary] = []
-var machine: Texture2D
 var terrain: Texture2D
 var soil: Texture2D
 var spawn_flash := 0.0
@@ -34,6 +34,8 @@ var effects: Array[Dictionary] = []
 var impact_shake := 0.0
 var icons: Dictionary = {}
 var styles: Dictionary = {}
+var cart_visual: Node2D
+var pioneer_visuals: Dictionary = {}
 var persistence_enabled := true # Captures set false; normal play always persists.
 
 func _ready() -> void:
@@ -41,11 +43,13 @@ func _ready() -> void:
 	get_tree().quit_on_go_back = false
 	custom_minimum_size = Vector2(300, 560)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	machine = load("res://assets/ilustracoes/maquina-baus-atlas.png")
 	terrain = load("res://assets/terreno/materiais-atlas.png")
 	soil = load("res://assets/terreno/solo-torroes-raizes.png")
 	mole_atlas = load("res://assets/characters/torrao-poses.png")
 	robot_atlas = load("res://assets/characters/escavador-poses.png")
+	cart_visual = CartRig.new()
+	cart_visual.position = Vector2(270, 235)
+	add_child(cart_visual)
 	var loaded := Store.load_profile()
 	profile = loaded.profile
 	legacy = loaded.legacy
@@ -60,8 +64,8 @@ func start_run() -> void:
 	if profile.is_empty() or not error.is_empty(): return
 	if sim == null: sim = Run.new(profile)
 	else: sim.restart()
+	_reset_visuals()
 	notices.clear()
-	effects.clear()
 	impact_shake = 0
 	screen = "fight"
 	accumulator = 0
@@ -96,6 +100,9 @@ func _set_app_active(active: bool) -> void:
 	app_suspended = not active
 	_release_pointer()
 	accumulator = 0
+	if is_instance_valid(cart_visual): cart_visual.suspend(not active)
+	for visual in pioneer_visuals.values():
+		if is_instance_valid(visual): visual.suspend(not active)
 	if not active: _save()
 
 func _release_pointer() -> void:
@@ -155,14 +162,12 @@ func _press_at(pos: Vector2) -> void:
 func _process(delta: float) -> void:
 	if app_suspended: return
 	art.update(delta, 0 if sim == null else sim.layer_index * 6, "prado_cristalino")
-	cart_flash = maxf(0, cart_flash - delta)
 	layer_flash = maxf(0, layer_flash - delta)
 	spawn_flash = maxf(0, spawn_flash - delta)
 	impact_shake = maxf(0, impact_shake - delta)
 	for i in range(effects.size() - 1, -1, -1):
 		effects[i].age += delta
 		if effects[i].age > effects[i].duration: effects.remove_at(i)
-	for i in range(2): recoil[i] = maxf(0, float(recoil[i]) - delta)
 	for i in range(notices.size() - 1, -1, -1):
 		notices[i].life -= delta
 		if notices[i].life <= 0: notices.remove_at(i)
@@ -172,35 +177,97 @@ func _process(delta: float) -> void:
 			accumulator -= 0.05
 			sim.step(0.05)
 		_consume_events()
+	_sync_visuals()
 	queue_redraw()
 
 func _consume_events() -> void:
 	var save_needed := false
 	for event in sim.take_events():
+		combat_event.emit(event)
 		match str(event.type):
 			"gold":
 				save_needed = true
 				var source := str(event.source)
 				notices.append({"text": "+%d OURO%s" % [event.amount, " / TORRÃO" if source == "mole" else ""], "life": 1.8, "x": clampf(float(event.get("x", 270)), 125, 415), "y": 512.0})
 			"spawn": spawn_flash = 1.5
-			"drill_strike", "support_hit":
+			"launch": _ensure_pioneer(int(event.id))
+			"drill_strike":
+				var pioneer: Node2D = pioneer_visuals.get(int(event.id))
+				if is_instance_valid(pioneer): pioneer.confirm_impact()
 				impact_shake = 0.16
+			"support_hit":
+				impact_shake = 0.12
 				_add_effect(str(event.type), float(event.x), 0.45)
-			"drill_break", "mole_defeat", "support_end": _add_effect(str(event.type), float(event.x), 0.65)
-			"purchase", "victory", "defeat": save_needed = true
-			"cannon": recoil[int(event.side)] = 0.15
-			"cart_hit": cart_flash = 0.25
+			"drill_break": _remove_pioneer(int(event.id))
+			"mole_defeat", "support_end": _add_effect(str(event.type), float(event.x), 0.65)
+			"purchase": save_needed = true
+			"victory":
+				save_needed = true
+				_clear_pioneer_visuals()
+				cart_visual.stop_attack_responses()
+			"defeat":
+				save_needed = true
+				_clear_pioneer_visuals()
+				effects.clear()
+				cart_visual.defeat()
+			"cannon": cart_visual.fire(int(event.side))
+			"cart_hit":
+				cart_visual.hit()
 			"impact": layer_flash = 0.18
 			"hit": notices.append({"text": "✦", "life": 0.18, "x": event.x, "y": 564.0})
 		if notices.size() > 32: notices.pop_front()
 	if save_needed: _save()
+
+func _sync_visuals() -> void:
+	if is_instance_valid(cart_visual):
+		var target := Vector2(270, 578)
+		if sim != null:
+			var target_id: int = int(sim.cannon_target())
+			if target_id != 0:
+				var enemy: Dictionary = sim._enemy(target_id)
+				if not enemy.is_empty(): target.x = float(enemy.x)
+			cart_visual.aim(target)
+	if sim == null or sim.status != "active": return
+	for unit in sim.units:
+		if str(unit.get("role", "")) != "impact": continue
+		var visual: Node2D = _ensure_pioneer(int(unit.id))
+		visual.sync_unit(unit)
+
+func _ensure_pioneer(unit_id: int) -> Node2D:
+	if pioneer_visuals.has(unit_id) and is_instance_valid(pioneer_visuals[unit_id]):
+		return pioneer_visuals[unit_id]
+	var visual = PioneerRig.new()
+	if sim != null:
+		visual.flight_duration = float(sim.config.pioneer.flight)
+		visual.hit_interval = float(sim.config.pioneer.hit_interval)
+	add_child(visual)
+	pioneer_visuals[unit_id] = visual
+	return visual
+
+func _remove_pioneer(unit_id: int) -> void:
+	var visual: Node2D = pioneer_visuals.get(unit_id)
+	pioneer_visuals.erase(unit_id)
+	if not is_instance_valid(visual): return
+	visual.remove_unit()
+	visual.queue_free()
+
+func _clear_pioneer_visuals() -> void:
+	for visual in pioneer_visuals.values():
+		if not is_instance_valid(visual): continue
+		visual.remove_unit()
+		visual.queue_free()
+	pioneer_visuals.clear()
+
+func _reset_visuals() -> void:
+	_clear_pioneer_visuals()
+	effects.clear()
+	if is_instance_valid(cart_visual): cart_visual.reset_visual()
 
 func _add_effect(kind: String, x: float, duration: float) -> void:
 	effects.append({"kind": kind, "x": x, "age": 0.0, "duration": duration})
 	if effects.size() > 24: effects.pop_front()
 
 func _draw() -> void:
-	if machine == null: return
 	art.background(self, size, 0 if sim == null else sim.layer_index * 2)
 	draw_rect(Rect2(0, 0, 540, 144), Color("#0B202D", 0.8))
 	_text(Vector2(270, 37), "DIG & WONDER", 23, CREAM, 500)
@@ -212,12 +279,12 @@ func _draw() -> void:
 	var life: float = float(stats.hp) if sim == null else float(sim.cart_hp)
 	_text(Vector2(270, 111), "CARRINHO  /  %d de %d PV" % [ceili(life), int(stats.hp)], 13, CREAM, 480)
 	_bar(Rect2(36, 121, 468, 13), life / float(stats.hp), CORAL)
-	_cart(Vector2(270, 235))
 	draw_set_transform(Vector2(sin(art.clock * 90) * impact_shake * 10, 0))
 	_well()
 	if sim != null:
 		for enemy in sim.enemies: _mole(enemy)
-		for unit in sim.units: _drill(unit)
+		for unit in sim.units:
+			if str(unit.get("role", "")) == "defender": _robot(Vector2(320, lerpf(300, 592, clampf(float(unit.age) / float(unit.duration), 0.0, 1.0))), unit)
 		for shot in sim.projectiles: _shot(shot)
 	_draw_effects()
 	draw_set_transform(Vector2.ZERO)
@@ -234,30 +301,6 @@ func _draw() -> void:
 		_panel(Rect2(26, 340, 488, 230), INK, 18)
 		_text(Vector2(270, 390), "PROGRESSO PRESERVADO", 20, CORAL, 450)
 		_wrap(Rect2(48, 418, 444, 120), error, 18, CREAM)
-
-func _cart(center: Vector2) -> void:
-	var source := Rect2(15, 15, 685, 625)
-	var tint := Color(1, 0.65, 0.65) if cart_flash > 0 else Color.WHITE
-	draw_texture_rect_region(machine, Rect2(center - Vector2(99, 90), Vector2(198, 180)), source, tint)
-	var blink := 0.12 if fmod(art.clock, 4.8) > 4.62 else 1.0
-	for side in [-1.0, 1.0]:
-		_oval(center + Vector2(side * 15, -28), Vector2(15, 20 * blink), TEAL)
-		draw_circle(center + Vector2(side * 15 + 2, -30), 2, CREAM)
-	for side in range(2):
-		var anchor := center + Vector2(-95 if side == 0 else 95, 7)
-		var target := Vector2(270, 560)
-		if sim != null and sim.cannon_target() != 0: target.x = float(sim._enemy(sim.cannon_target()).get("x", 270))
-		var angle := (target - anchor).angle() - PI * 0.5
-		draw_circle(anchor, 18, INK)
-		draw_circle(anchor, 13, BRASS)
-		draw_set_transform(anchor, angle)
-		var back := float(recoil[side]) * 40
-		_panel(Rect2(-10, -back, 20, 55), Color("#617A80"), 5)
-		draw_line(Vector2(-5, 3 - back), Vector2(-5, 42 - back), CREAM, 2, true)
-		draw_rect(Rect2(-14, 42 - back, 28, 14), INK)
-		if recoil[side] > 0.1:
-			draw_colored_polygon(PackedVector2Array([Vector2(-10, 57), Vector2(0, 76), Vector2(10, 57)]), BRASS)
-		draw_set_transform(Vector2.ZERO)
 
 func _well() -> void:
 	# Open shaft: receding walls, upper-left lip light and depth fog.
@@ -323,26 +366,6 @@ func _mole_sprite(feet: Vector2, pose: int, tint: Color, dimensions: Vector2) ->
 	var tile := mole_atlas.get_size() / Vector2(4, 1)
 	draw_texture_rect_region(mole_atlas, Rect2(feet - Vector2(dimensions.x * 0.5, dimensions.y * 0.86), dimensions), Rect2(Vector2(pose * tile.x, 0), tile), tint)
 
-func _drill(unit: Dictionary) -> void:
-	var t := clampf(float(unit.age) / float(unit.duration), 0, 1)
-	if unit.get("role", "") == "defender":
-		_robot(Vector2(320, lerpf(300, 592, t * t)), unit)
-		return
-	var working := float(unit.age) >= float(unit.duration)
-	var cycle := fmod(maxf(0, float(unit.age) - float(unit.duration)), float(sim.config.pioneer.hit_interval)) / float(sim.config.pioneer.hit_interval)
-	var hop := sin(cycle * PI) * 31 if working else 0.0
-	var p := Vector2(270, lerpf(300, 580, t * t) - hop)
-	_oval(Vector2(270, 612), Vector2(52 - hop * 0.4, 10), Color("#07151F", 0.65))
-	var compression := 1.0 - maxf(0, 1 - cycle * 8) * 0.12 if working else 1.0
-	draw_set_transform(p, sin(art.clock * 45) * 0.045, Vector2(1.0 / compression, compression))
-	draw_texture_rect_region(machine, Rect2(-24, -37, 48, 45), Rect2(15, 15, 685, 625))
-	# Exposed spring compresses on contact, cone visibly turns between strokes.
-	for turn in range(4): draw_line(Vector2(-10, turn * 3), Vector2(10, turn * 3 + 2), BRASS, 2, true)
-	draw_texture_rect_region(machine, Rect2(-19, 7, 38, 34), Rect2(730, 35, 490, 615))
-	if int(unit.get("hits", 0)) >= 3: draw_line(Vector2(-12, -22), Vector2(13, -3), INK, 2, true)
-	draw_set_transform(Vector2(sin(art.clock * 90) * impact_shake * 10, 0))
-	if working: _text(Vector2(270, 638), "%d / %d GOLPES" % [unit.hits, sim.config.pioneer.hits], 10, TEAL, 110)
-
 func _robot(p: Vector2, unit: Dictionary) -> void:
 	var bob := sin(art.clock * 6) * 2
 	p.y += bob
@@ -362,14 +385,7 @@ func _draw_effects() -> void:
 			var angle := PI + particle * PI / 8.0
 			var velocity := Vector2(cos(angle), sin(angle)) * (28 + particle % 3 * 17)
 			var at := p + velocity * t + Vector2(0, t * t * 34)
-			var tint := BRASS if fx.kind == "drill_break" else Color("#AF8150")
-			draw_circle(at, (3.5 if fx.kind == "drill_break" else 4.5) * (1 - t), Color(tint, 1 - t))
-		if fx.kind == "drill_break":
-			for piece in range(3):
-				var at := p + Vector2((piece - 1) * t * 65, -48 * sin(t * PI) - 10)
-				draw_set_transform(at, t * (piece - 1) * 5)
-				draw_texture_rect_region(machine, Rect2(-8, -8, 16, 16), Rect2(70 + piece * 170, 300, 160, 160), Color(1, 1, 1, 1 - t))
-				draw_set_transform(Vector2(sin(art.clock * 90) * impact_shake * 10, 0))
+			draw_circle(at, 4.5 * (1 - t), Color("#AF8150", 1 - t))
 
 func _shot(shot: Dictionary) -> void:
 	var t := clampf(float(shot.age) / float(shot.duration), 0, 1)
