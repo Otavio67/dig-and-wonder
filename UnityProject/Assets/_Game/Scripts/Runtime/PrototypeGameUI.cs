@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace DigAndWonder
 {
-    /// <summary>HUD de protótipo: contraste alto, retrato, toque e mouse, com arte provisória reutilizável.</summary>
+    /// <summary>Hub e HUD do protótipo: telas separadas, contraste alto, retrato, toque e mouse.</summary>
     public sealed class PrototypeGameUI : MonoBehaviour
     {
         private static readonly Color Ink = new Color(0.035f, 0.11f, 0.14f);
@@ -28,7 +28,6 @@ namespace DigAndWonder
         private TextMeshProUGUI combatLog;
         private TextMeshProUGUI menuTitle;
         private TextMeshProUGUI menuBody;
-        private TextMeshProUGUI startErrorLabel;
         private RectTransform attackUpgradeButton;
         private RectTransform healthUpgradeButton;
         private RectTransform restartButton;
@@ -49,9 +48,18 @@ namespace DigAndWonder
         private Tween[] caveMotionTweens;
         private TextMeshProUGUI[] enemyHealth;
         private RectTransform menuPanel;
-        private RectTransform startPanel;
+        private RectTransform hubPanel;
+        private RectTransform combatRoot;
         private RectTransform worldPanel;
         private RectTransform bottomBar;
+        private RectTransform hubEnterCaveButton;
+        private RectTransform hubReturnButton;
+        private TextMeshProUGUI hubStageLabel;
+        private TextMeshProUGUI hubWalletLabel;
+        private TextMeshProUGUI hubMissionLabel;
+        private TextMeshProUGUI hubLockLabel;
+        private TextMeshProUGUI hubEnterCaveButtonLabel;
+        private DrillSpriteSheetPlayer2D hubDrillFrames;
         private bool inGame;
         private bool saveWasBlocked;
         private string currentTab = "MELHORIAS";
@@ -74,7 +82,7 @@ namespace DigAndWonder
             if (driver.Simulation != null)
                 EnterGame(true);
             else
-                ShowStart();
+                ShowHub();
         }
 
         private void OnDestroy()
@@ -86,14 +94,18 @@ namespace DigAndWonder
         private void BuildInterface()
         {
             var background = MakePanel("Background", root, Ink, new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
-            MakeLabel("Title", background, "DIG & WONDER", 40, Sand, new Vector2(0.04f, 0.91f), new Vector2(0.7f, 0.975f), TextAlignmentOptions.Left);
-            stageLabel = MakeLabel("Stage", background, "CAVERNA", 25, White, new Vector2(0.04f, 0.865f), new Vector2(0.68f, 0.91f), TextAlignmentOptions.Left);
-            walletLabel = MakeLabel("Wallet", background, "◉ 0", 30, Sand, new Vector2(0.68f, 0.905f), new Vector2(0.96f, 0.97f), TextAlignmentOptions.Right);
-            var missionPanel = MakePanel("Mission banner", background, new Color(0.12f, 0.2f, 0.25f), new Vector2(0.04f, 0.785f), new Vector2(0.96f, 0.845f), Vector2.zero, Vector2.zero);
+            hubPanel = MakePanel("Expedition hub", background, new Color(0.055f, 0.17f, 0.2f), new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
+            BuildHubInterface(hubPanel);
+            combatRoot = MakePanel("Combat screen", background, new Color(0, 0, 0, 0), new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
+            combatRoot.GetComponent<Image>().raycastTarget = false;
+            MakeLabel("Title", combatRoot, "DIG & WONDER", 40, Sand, new Vector2(0.04f, 0.91f), new Vector2(0.7f, 0.975f), TextAlignmentOptions.Left);
+            stageLabel = MakeLabel("Stage", combatRoot, "CAVERNA", 25, White, new Vector2(0.04f, 0.865f), new Vector2(0.68f, 0.91f), TextAlignmentOptions.Left);
+            walletLabel = MakeLabel("Wallet", combatRoot, "◉ 0", 30, Sand, new Vector2(0.68f, 0.905f), new Vector2(0.96f, 0.97f), TextAlignmentOptions.Right);
+            var missionPanel = MakePanel("Mission banner", combatRoot, new Color(0.12f, 0.2f, 0.25f), new Vector2(0.04f, 0.785f), new Vector2(0.96f, 0.845f), Vector2.zero, Vector2.zero);
             missionLabel = MakeLabel("Mission", missionPanel, "MISSÃO 01  •  DERROTE O GUARDIÃO", 17, White,
                 new Vector2(0.03f, 0.08f), new Vector2(0.97f, 0.92f), TextAlignmentOptions.Center);
 
-            worldPanel = MakePanel("Cave view", background, Deep, new Vector2(0.04f, 0.325f), new Vector2(0.96f, 0.85f), Vector2.zero, Vector2.zero);
+            worldPanel = MakePanel("Cave view", combatRoot, Deep, new Vector2(0.04f, 0.325f), new Vector2(0.96f, 0.85f), Vector2.zero, Vector2.zero);
             MakePanel("Cave glow", worldPanel, new Color(0.13f, 0.33f, 0.34f), new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.92f), Vector2.zero, Vector2.zero);
             MakeLabel("Depth label", worldPanel, "POÇO DO ACAMPAMENTO  •  CAMADA 01", 21, Mint,
                 new Vector2(0.06f, 0.83f), new Vector2(0.94f, 0.96f), TextAlignmentOptions.Center);
@@ -137,12 +149,12 @@ namespace DigAndWonder
                 new Vector2(0.06f, 0.10f), new Vector2(0.72f, 0.19f), TextAlignmentOptions.Left);
             MakePanel("Health track", worldPanel, Ink, new Vector2(0.06f, 0.055f), new Vector2(0.94f, 0.1f), Vector2.zero, Vector2.zero);
             healthFill = MakePanel("Health fill", worldPanel, Mint, new Vector2(0.06f, 0.055f), new Vector2(0.94f, 0.1f), Vector2.zero, Vector2.zero).GetComponent<Image>();
-            statusLabel = MakeLabel("Status", background, "", 20, Mint,
+            statusLabel = MakeLabel("Status", combatRoot, "", 20, Mint,
                 new Vector2(0.04f, 0.275f), new Vector2(0.96f, 0.32f), TextAlignmentOptions.Center);
-            combatLog = MakeLabel("Combat log", background, "", 18, White,
+            combatLog = MakeLabel("Combat log", combatRoot, "", 18, White,
                 new Vector2(0.06f, 0.235f), new Vector2(0.94f, 0.275f), TextAlignmentOptions.Center);
 
-            bottomBar = MakePanel("Bottom navigation", background, new Color(0.04f, 0.13f, 0.16f), new Vector2(0.02f, 0.025f), new Vector2(0.98f, 0.125f), Vector2.zero, Vector2.zero);
+            bottomBar = MakePanel("Bottom navigation", combatRoot, new Color(0.04f, 0.13f, 0.16f), new Vector2(0.02f, 0.025f), new Vector2(0.98f, 0.125f), Vector2.zero, Vector2.zero);
             string[] tabs = { "MINA", "MELHORIAS", "BROCAS", "BAÚS", "PERFIL" };
             for (int i = 0; i < tabs.Length; i++)
             {
@@ -153,7 +165,7 @@ namespace DigAndWonder
                 tabButtonImages.Add(tab, tabButton.GetComponent<Image>());
             }
 
-            menuPanel = MakePanel("Tab panel", background, Panel, new Vector2(0.06f, 0.135f), new Vector2(0.94f, 0.315f), Vector2.zero, Vector2.zero);
+            menuPanel = MakePanel("Tab panel", combatRoot, Panel, new Vector2(0.06f, 0.135f), new Vector2(0.94f, 0.315f), Vector2.zero, Vector2.zero);
             menuTitle = MakeLabel("Tab title", menuPanel, "MELHORIAS", 22, Sand, new Vector2(0.03f, 0.74f), new Vector2(0.97f, 0.98f), TextAlignmentOptions.Center);
             menuBody = MakeLabel("Tab info", menuPanel, "", 15, White, new Vector2(0.05f, 0.3f), new Vector2(0.95f, 0.74f), TextAlignmentOptions.Center);
             attackUpgradeButton = MakeButton("Upgrade attack", menuPanel, "MELHORAR", 17, 0.04f, 0.03f, 0.47f, 0.28f,
@@ -170,48 +182,109 @@ namespace DigAndWonder
             continueButton = MakeButton("Continue stage", menuPanel, "AVANÇAR FASE", 17, 0.2f, 0.03f, 0.8f, 0.28f,
                 () => { driver.StartNewGame(); EnterGame(false); }, Mint).GetComponent<RectTransform>();
             continueButton.gameObject.SetActive(false);
-            startPanel = MakePanel("Start panel", background, Panel, new Vector2(0.1f, 0.37f), new Vector2(0.9f, 0.71f), Vector2.zero, Vector2.zero);
-            MakeLabel("Welcome", startPanel, "A CAVERNA ESPERA", 34, Sand, new Vector2(0.05f, 0.68f), new Vector2(0.95f, 0.95f), TextAlignmentOptions.Center);
-            MakeLabel("Intro", startPanel, "Sua broca avança sozinha.\nDerrote criaturas, ganhe ouro\ne prepare-se para o guardião.", 22, White,
-                new Vector2(0.1f, 0.28f), new Vector2(0.9f, 0.68f), TextAlignmentOptions.Center);
-            startErrorLabel = MakeLabel("Start error", startPanel, "", 16, Coral, new Vector2(0.08f, 0.25f), new Vector2(0.92f, 0.34f), TextAlignmentOptions.Center);
-            MakeButton("Start", startPanel, "INICIAR ESCAVAÇÃO", 26, 0.08f, 0.04f, 0.92f, 0.27f,
+            hubEnterCaveButton = MakeButton("Hub enter cave", hubPanel, "ENTRAR NA CAVERNA", 20, 0.22f, 0.07f, 0.78f, 0.16f,
                 () =>
                 {
-                    if (!driver.TryStartNewGame())
-                    {
-                        startErrorLabel.text = "NÃO FOI POSSÍVEL CARREGAR DADOS/SAVE. O ARQUIVO FOI PRESERVADO.";
-                        return;
-                    }
-                    EnterGame(false);
-                }, Mint);
+                    if (driver.Simulation != null && driver.Simulation.IsActive) EnterGame(true);
+                    else if (driver.TryStartNewGame()) EnterGame(false);
+                    else hubMissionLabel.text = "Não foi possível iniciar — o progresso foi preservado";
+                }, Mint).GetComponent<RectTransform>();
+            hubEnterCaveButtonLabel = hubEnterCaveButton.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+            hubReturnButton = MakeButton("Return to hub", combatRoot, "ACAMPAMENTO", 14, 0.72f, 0.86f, 0.96f, 0.91f,
+                ShowHub, new Color(0.16f, 0.35f, 0.36f)).GetComponent<RectTransform>();
+            hubReturnButton.gameObject.SetActive(false);
             menuPanel.gameObject.SetActive(false);
             bottomBar.gameObject.SetActive(false);
             worldPanel.gameObject.SetActive(false);
             stageLabel.gameObject.SetActive(false);
             walletLabel.gameObject.SetActive(false);
             missionLabel.gameObject.SetActive(false);
+            combatRoot.gameObject.SetActive(false);
         }
 
-        private void ShowStart()
+        private void BuildHubInterface(RectTransform panel)
+        {
+            MakeLabel("Hub title", panel, "ACAMPAMENTO", 38, Sand,
+                new Vector2(0.06f, 0.9f), new Vector2(0.66f, 0.98f), TextAlignmentOptions.Left);
+            hubWalletLabel = MakeLabel("Hub wallet", panel, "◉ 0", 28, Sand,
+                new Vector2(0.68f, 0.91f), new Vector2(0.94f, 0.98f), TextAlignmentOptions.Right);
+            hubStageLabel = MakeLabel("Hub stage", panel, "EXPEDIÇÃO 01", 22, White,
+                new Vector2(0.06f, 0.84f), new Vector2(0.62f, 0.9f), TextAlignmentOptions.Left);
+            hubMissionLabel = MakeLabel("Hub mission", panel, "Derrote o guardião para avançar", 17, Mint,
+                new Vector2(0.06f, 0.79f), new Vector2(0.94f, 0.84f), TextAlignmentOptions.Left);
+
+            var drillCard = MakePanel("Hub drill card", panel, new Color(0.08f, 0.25f, 0.28f),
+                new Vector2(0.06f, 0.49f), new Vector2(0.94f, 0.77f), Vector2.zero, Vector2.zero);
+            MakeLabel("Hub drill title", drillCard, "BROCA PIONEIRA", 18, Sand,
+                new Vector2(0.52f, 0.72f), new Vector2(0.96f, 0.92f), TextAlignmentOptions.Center);
+            MakeLabel("Hub drill stats", drillCard, "NÍVEL 1\nATQ 6  •  VIDA 120", 17, White,
+                new Vector2(0.52f, 0.28f), new Vector2(0.96f, 0.7f), TextAlignmentOptions.Center);
+            var hubDrillObject = new GameObject("Hub Drill Visual", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            hubDrillObject.transform.SetParent(drillCard, false);
+            var hubDrillRect = (RectTransform)hubDrillObject.transform;
+            hubDrillRect.anchorMin = new Vector2(0.05f, 0.08f);
+            hubDrillRect.anchorMax = new Vector2(0.5f, 0.95f);
+            hubDrillRect.offsetMin = Vector2.zero;
+            hubDrillRect.offsetMax = Vector2.zero;
+            hubDrillFrames = hubDrillObject.AddComponent<DrillSpriteSheetPlayer2D>();
+            hubDrillObject.AddComponent<ProceduralAnimator2D>();
+
+            MakeHubCard(panel, "Oficina", "ATQ  •  VIDA\nMelhorias disponíveis", new Vector2(0.06f, 0.3f), new Vector2(0.47f, 0.45f), Mint);
+            MakeHubCard(panel, "Garagem", "Brocas alternativas\n🔒 FASE 2", new Vector2(0.53f, 0.3f), new Vector2(0.94f, 0.45f), new Color(0.25f, 0.28f, 0.36f));
+            MakeHubCard(panel, "Baús", "Baús 0  •  Chaves 0\nRecompensas da fase", new Vector2(0.06f, 0.17f), new Vector2(0.47f, 0.29f), Sand);
+            MakeHubCard(panel, "Álbum", "Descobertas da caverna\n🔒 FASE 2", new Vector2(0.53f, 0.17f), new Vector2(0.94f, 0.29f), new Color(0.25f, 0.28f, 0.36f));
+            hubLockLabel = MakeLabel("Hub lock status", panel, "Equipamentos e álbum desbloqueiam na Fase 2", 15, White,
+                new Vector2(0.06f, 0.12f), new Vector2(0.94f, 0.17f), TextAlignmentOptions.Center);
+        }
+
+        private void MakeHubCard(RectTransform parent, string title, string body, Vector2 min, Vector2 max, Color color)
+        {
+            RectTransform card = MakePanel("Hub card " + title, parent, color, min, max, Vector2.zero, Vector2.zero);
+            MakeLabel("Title", card, title.ToUpperInvariant(), 17, Ink,
+                new Vector2(0.05f, 0.56f), new Vector2(0.95f, 0.94f), TextAlignmentOptions.Center);
+            MakeLabel("Body", card, body, 13, Ink,
+                new Vector2(0.05f, 0.08f), new Vector2(0.95f, 0.56f), TextAlignmentOptions.Center);
+        }
+
+        private void ShowHub()
         {
             inGame = false;
-            startPanel.gameObject.SetActive(true);
-            worldPanel.gameObject.SetActive(false);
-            menuPanel.gameObject.SetActive(false);
-            bottomBar.gameObject.SetActive(false);
-            stageLabel.gameObject.SetActive(false);
-            walletLabel.gameObject.SetActive(false);
-            missionLabel.gameObject.SetActive(false);
-            statusLabel.gameObject.SetActive(false);
-            combatLog.gameObject.SetActive(false);
+            StopCaveMotion();
+            hubPanel.gameObject.SetActive(true);
+            combatRoot.gameObject.SetActive(false);
+            hubEnterCaveButton.gameObject.SetActive(driver.IsReady);
+            if (hubEnterCaveButtonLabel != null)
+                hubEnterCaveButtonLabel.text = driver.Simulation == null || !driver.Simulation.IsActive ? "NOVA TENTATIVA" : "CONTINUAR EXPEDIÇÃO";
+            RefreshHub();
+        }
+
+        private void RefreshHub()
+        {
+            if (driver == null || driver.Simulation == null)
+            {
+                hubStageLabel.text = "NOVA EXPEDIÇÃO";
+                hubWalletLabel.text = "◉ 0";
+                hubMissionLabel.text = "Inicie a escavação para construir seu acampamento";
+                hubLockLabel.text = "Equipamentos e álbum desbloqueiam na Fase 2";
+                return;
+            }
+
+            IdleCombatSimulation sim = driver.Simulation;
+            int stageNumber = GetStageNumber(sim.Profile.UnlockedStageId);
+            string stageName = sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant();
+            hubStageLabel.text = "EXPEDIÇÃO " + stageNumber.ToString("00") + "  •  " + stageName;
+            hubWalletLabel.text = "◉ " + sim.Gold;
+            hubMissionLabel.text = sim.Run.IsPlayerDefeated ? "Tentativa encerrada — melhore a broca e retorne" :
+                sim.Run.IsStageCleared ? "Guardião derrotado — próxima fase disponível" : "Derrote o guardião para avançar";
+            hubLockLabel.text = stageNumber < 2 ? "Equipamentos e álbum  🔒  desbloqueiam na Fase 2" : "Equipamentos e álbum  •  sistema em breve";
         }
 
         private void EnterGame(bool resumed)
         {
             if (driver.Simulation == null) return;
             inGame = true;
-            startPanel.gameObject.SetActive(false);
+            hubPanel.gameObject.SetActive(false);
+            combatRoot.gameObject.SetActive(true);
             worldPanel.gameObject.SetActive(true);
             menuPanel.gameObject.SetActive(true);
             bottomBar.gameObject.SetActive(true);
@@ -220,10 +293,12 @@ namespace DigAndWonder
             missionLabel.gameObject.SetActive(true);
             statusLabel.gameObject.SetActive(true);
             combatLog.gameObject.SetActive(true);
+            hubReturnButton.gameObject.SetActive(false);
             if (resumed) statusLabel.text = "PROGRESSO RECUPERADO — CONTINUANDO DA ÚLTIMA POSIÇÃO";
             else statusLabel.text = "A broca começou a avançar!";
             drillAnimator.ResetForRun();
             drillFrames.ResetForRun();
+            hubDrillFrames.ResetForRun();
             StartCaveMotion();
             Refresh();
         }
@@ -290,6 +365,7 @@ namespace DigAndWonder
                 StartCaveMotion();
                 statusLabel.text = "PROGRESSO SALVO — COMBATE RETOMADO";
             }
+            hubReturnButton.gameObject.SetActive(!sim.IsActive && !driver.IsSaveBlocked);
             saveWasBlocked = driver.IsSaveBlocked;
         }
 

@@ -210,3 +210,14 @@ Esta versão melhora a apresentação e a leitura do progresso. Não adiciona ab
 Checks de domínio, compilação dos scripts contra stubs e compilação contra DLLs reais do Editor passaram sem erros/avisos. Editor Play Mode, revisão visual, APK, toque e desempenho Android continuam pendentes de execução no ambiente licenciado/aparelho.
 
 Tag: `v0.0.11`.
+
+## 0.0.12 — hub separado do HUD (20/10/2026)
+
+- Corrigida a separação conceitual e estrutural entre as telas: o **Acampamento** é o hub entre tentativas; o `Combat screen` contém apenas a apresentação da escavação e seus controles de combate.
+- O hub agora apresenta a Broca Pioneira, oficina, garagem, baús, álbum e status da expedição em cartões próprios. Garagem, equipamentos e álbum exibem bloqueios de fase sem fingir que os sistemas ainda não implementados estão disponíveis.
+- Uma tentativa salva continua podendo entrar diretamente no combate. Depois de derrota ou vitória, o botão **Acampamento** leva à base; dali o jogador inicia uma nova tentativa ou continua quando aplicável.
+- O Canvas runtime foi renomeado para `Game UI` para não confundir o contêiner da interface com o HUD de combate.
+
+Checks de domínio, compilação contra stubs e compilação contra DLLs reais do Unity passaram. A tela ainda precisa de revisão no Editor licenciado e teste em aparelho Android; nenhuma alegação de FPS foi feita.
+
+Tag: `v0.0.12`.

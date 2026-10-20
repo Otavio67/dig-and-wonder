@@ -10,6 +10,8 @@ Esta ainda é uma base de protótipo. A interface e os ícones são provisórios
 
 A amostra visual da Broca Pioneira agora tem locomoção de chão separada da lógica: caminhada curta, avanço de ataque, reação a dano e derrota. Uma folha PNG transparente derivada da arte enviada já está no checkout; a importação e a ligação dos frames estão documentadas em [SPRITE-BROCA-UNITY.md](docs/SPRITE-BROCA-UNITY.md).
 
+O Acampamento é uma tela de hub separada do HUD de combate: oficina, garagem, baús, álbum e bloqueios de fase ficam na base; a escavação mantém apenas informações e controles da tentativa.
+
 Um smoke test em Play Mode passou no Unity 6000.0.23f1: a luta simulou 10 segundos, com sete ataques automáticos, sete de ouro, 112/120 de vida e nenhum erro ou exceção de runtime. Isso não valida interação física, aparência final ou desempenho no Android; veja os detalhes em [revisão de combate e save](docs/UNITY-REVISAO-COMBATE-SAVE.md).
 
 ## Abrir e executar
