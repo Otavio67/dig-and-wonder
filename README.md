@@ -40,7 +40,7 @@ Atlas pintados da máquina/terreno, fundos em camadas, paleta petróleo/turquesa
 - [Histórico de versões](docs/VERSOES.md), [proveniência](assets/LICENCAS.md) e [Android](docs/ANDROID.md)
 - Histórico do modo substituído em `docs/historico/`; a entrada principal não o executa.
 
-A versão de protótipo atual é 0.0.6, checkpoint da amostra de animações. Marco 1 e Marco 2 foram checkpoints sem APK próprio; builds anteriores são do modo antigo.
+A fonte Godot desta linha de jogo corresponde ao Marco 2/0.0.6. O checkpoint mais recente do repositório é **0.0.7**, início do protótipo Unity 6: consulte [UnityProject](UnityProject/README.md) para abrir, testar e ver as pendências. Não há APK Unity neste checkpoint. Os builds Godot anteriores são do modo antigo.
 
 ## Evidências e limites
 

@@ -135,3 +135,12 @@ Solo/poço, feedback de Torrão/ouro, comparação de melhorias, espaços bloque
 - Harnesses e gravação contínua desktop de 9,6 s em `docs/evidencias/20261020/`. Gravação acelerada somente por fixture local; não mede desempenho. Sem teste em aparelho ou novo APK.
 
 Tag: `v0.0.6` no checkpoint deste marco.
+
+## 0.0.7 — início do protótipo Unity 6 (20/10/2026)
+
+- Adicionados importador dos dados Godot e ScriptableObjects para combate automático por fases, upgrades, inimigos e save Unity com checksum/backup/retomada.
+- HUD móvel provisória em português com iniciar/retomar, tabs inferiores, compras Dano/Vida, caverna rolando e feedback pooled com DOTween.
+- Valores de combate com equivalência direta preservados; melhorias sem fonte Godot continuam desligadas.
+- Checks de domínio e compilação contra stubs Unity passam. Não houve Unity Editor, importação real, gravação, APK, revisão visual ou medição Android neste checkpoint.
+
+Tag: `v0.0.7`. O projeto Unity e seus limites estão em [UnityProject/README.md](../UnityProject/README.md).

@@ -1,6 +1,6 @@
 # Dig & Wonder — mapa de migração Godot → Unity
 
-**Fase 0 de inventário; 20/10/2026.** Fonte inspecionada: branch `prototype/first-playable`, commit `f1db0df`, versão Godot 0.0.6. Este documento propõe a estrutura Unity 6; não inicia a conversão nem altera regras ou conteúdo.
+**Inventário Fase 0 concluído; protótipo Fases 1–3 em andamento; 20/10/2026.** Fonte inspecionada: branch `prototype/first-playable`, commit de origem documentado na Fase 0, versão Godot 0.0.6. O usuário autorizou continuar após o inventário. Este mapa foi atualizado para registrar a conversão feita em `UnityProject/`.
 
 ## 1. Diagnóstico do projeto de origem
 
@@ -148,19 +148,17 @@ Esta é uma **referência de origem para a futura Fase 1**, não um resultado de
 | Economia antiga | `economy.gd`, bioma e catálogos: moedas por célula/material; padrões de 1/3/5/8 offsets; baú consome 1 chave e 1 baú, taxas base [28,36,22,9,3.5,1.5], garantia de épico após 4 falhas e lendário após 11; duplicata converte por raridade. | — legado/inativo no gameplay atual; não combinar sem decisão. |
 | Fases/bosses antigos | `phases/catalog.json`: ciclos, chance surpresa 22%, materiais/vida/recompensas, posições de chave/baú e bosses com PV/ouro próprios. Não corresponde à fase ativa de defesa. | — dados catalogados, implementação atual não ativa essas fases/bosses. |
 
-No fechamento da Fase 1 a tabela exigida deve trazer, para cada valor efetivamente ativado, `origem Godot`, `Unity`, `igual/diferente` e justificativa. Nesta fase nenhum valor foi convertido ou conferido em runtime.
+Paridade conferida pelos testes de domínio e pela leitura dos catálogos Godot. A compilação real/importação Unity continua pendente porque o Editor não está instalado no ambiente remoto.
 
-## 8. Ambiguidades para aprovação antes da Fase 1
+## 8. Decisões e pendências após a aprovação do inventário
 
-1. **Fonte dos números ainda precisa de regra de conversão:** a entrada Godot 0.0.6 é defesa por camadas/carrinho/Pioneira/Torrão. O objetivo agora é combate automático lateral. Os valores ativos do combate antigo serão referência para atributos que tenham equivalência direta; valores sem equivalente serão mapeados como legado e não reaproveitados à força. Valores novos necessários serão marcados como decisões de design antes de balancear.
-2. **Papel da broca e do carrinho — direção esclarecida:** a broca passa a ser a personagem persistente, avançando automaticamente e lutando; o carrinho deixa de ser protagonista e não deve ser mantido na arena por padrão. O visual, a paleta e a identidade subterrânea existentes continuam como base.
-3. **Escopo visual/unidades:** “manter apenas a broca e o visual” significa manter a identidade (paleta/fundos/terreno/UI/atlas) e substituir personagens, ou manter também carrinho, Torrão e Escavador? `Lia/Bento` estão ocultos; sprites legacy diferem dos atlas pintados atuais.
-4. **Progressão ativa:** a entrada atual tem ouro e upgrades permanentes de Dano/Vida; sistema antigo tem moedas, 60 equipamentos, skins, 6 brocas, chaves/baús e descoberta. Quais desses sistemas entram no novo loop e quais devem ser apenas dados disponíveis?
-5. **Inatividade/offline:** “Idle RPG” pode significar luta automática apenas com app aberto ou avanço/recompensa offline. Godot atual não calcula renda/combate offline. Definir isso antes de criar valores, save e comportamento de retomada.
-6. **Save dos jogadores:** preservar/importar o perfil de defesa schema 6, o save de mineração schemas 1–5, ambos, ou começar um save Unity vazio? Os saves reais do usuário não estão nesta cópia do repositório.
-7. **Colisores:** nenhum collider existe na origem; alvos usam posição/IDs. Confirmar se os colliders Unity necessários serão hurtboxes para consultas/FX sem governar o combate, ou se física passa a determinar hits.
-8. **Ambiente de compilação:** o projeto remoto não tem Unity Editor/CLI e não tem projeto Unity. Como a validação exige Unity 6 em batchmode a cada fase, o editor precisa estar disponível neste ambiente ou deve ser compilado no PC do usuário/runner. Também será necessário obter/importar DOTween; ele não está versionado.
-9. **Alvo Android:** preservar pacote `com.otavio67.digandwonder`, ARM64, retrato, API mínima 24/alvo 36 e modo offline do preset atual? Unity/URP e SDKs podem alterar manifesto e requisitos; resolver isso antes da Fase 3.
+1. **Fonte dos valores:** números com equivalente direto foram importados de Godot. Crítico, Crítico+ e custo de melhoria do Especial não existem no combate Godot ativo; ficam desativados. PV/recompensas dos bosses foram preservados, mas não estão balanceados para o novo loop.
+2. **Broca/carrinho:** direção respondida pelo usuário — a broca é a protagonista persistente que avança sozinha; o carrinho não conduz o loop. O visual subterrâneo/paleta continua como inspiração. As sprites finais não foram montadas na UI Unity provisória.
+3. **Progressão:** luta automática em fases, ouro por inimigo e boss como condição de avanço. Baús/chaves são concedidos pelo boss, mas a abertura e o catálogo de equipamentos ainda não estão no protótipo Unity. As abas estão preparadas como navegação inicial.
+4. **Offline/save:** sem progresso de combate offline. O perfil Unity usa `Application.persistentDataPath`, arquivo temporário, checksum e backup. Uma tentativa ativa volta do último snapshot salvo. Não foi feita migração automática do save Godot.
+5. **Alvos/colisores:** combate segue por IDs/eventos tipados, sem física determinar acertos; pooling é somente visual.
+6. **Validação:** DOTween está versionado verbatim com licença. Unity Editor/CLI continua ausente e download oficial bloqueado por resposta 403; por isso batchmode, importação real, Play e APK permanecem pendentes.
+7. **Android/configuração Unity:** retrato, Input System novo e cena de entrada são preparados pelo script do Editor. URP Renderer 2D e Cinemachine 3 estão no Package Manager, mas ainda não foram ativados/validados no Editor. APK e identidade final aguardam ferramenta e revisão.
 
 ### Direção de jogo definida pelo pedido após o inventário
 
@@ -182,6 +180,10 @@ O vídeo enviado (`WhatsApp Video 2026-10-20 at 00.22.57.mp4`) é uma **referên
 
 O jogo de referência não determina valores, taxas de loot, duração de fase ou frequência de anúncios. Esses dados serão rastreados à origem Godot ou explicitamente marcados como novos quando aprovados.
 
-## Situação da Fase 0
+## Estado atual da migração
 
-Leituras feitas: `project.godot`, as duas cenas, o único `.tres`, todos os JSON de conteúdo, scripts do projeto/teste, inventário da dependência AdMob, documentação de regras/proveniência e ativos visuais principais. Nenhum `.cs` foi criado, nenhum número foi alterado, nenhuma versão/save foi convertido, nenhum Unity batchmode foi executado. A Fase 1 depende da aprovação deste mapa e das decisões acima.
+- **Fase 0:** inventário feito; mapa aprovado para prosseguir em conversa posterior.
+- **Fase 1:** ScriptableObjects/importador, simulação, recompensas, upgrades e save com recuperação implementados. Dez verificações de domínio passam; fonte de paridade é testada.
+- **Fase 2:** feedback base em DOTween e quatro pools pré-aquecidos; efeitos cosméticos não mudam a simulação e são cancelados em terminais.
+- **Fase 3:** bootstrap retrato e HUD provisória em código, Input System/UI/TMP, área segura, menus, botão de início/retomada e compras Dano/Vida. Cena vazia e settings são gerados pelo Editor ao abrir.
+- A compilação local contra stubs mínimos passou sem avisos, mas **não é importação/compilação Unity real**. Não houve revisão visual, gravação, execução no Unity nem teste Android nesta nuvem. Ainda falta ativar/configurar URP 2D e validar a câmera Cinemachine no Editor.

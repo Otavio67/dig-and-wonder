@@ -1,5 +1,14 @@
 .godot/
 .tools/
+UnityProject/Library/
+UnityProject/Temp/
+UnityProject/Obj/
+UnityProject/Logs/
+UnityProject/UserSettings/
+UnityProject/Tools/DomainChecks/bin/
+UnityProject/Tools/DomainChecks/obj/
+UnityProject/Tools/UnityCompileCheck/bin/
+UnityProject/Tools/UnityCompileCheck/obj/
 builds/
 docs/revisao-android/*.png.import
 *.apk

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/CombatData.cs" Link="CombatData.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/CombatEvent.cs" Link="CombatEvent.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/SaveData.cs" Link="SaveData.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/AtomicSaveRepository.cs" Link="AtomicSaveRepository.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/IdleCombatSimulation.cs" Link="IdleCombatSimulation.cs" />
+  </ItemGroup>
+</Project>
