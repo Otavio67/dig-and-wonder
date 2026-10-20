@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace DigAndWonder
 {
     public sealed class AtomicSaveRepository
     {
-        private const int CurrentSchemaVersion = 1;
+        private const int CurrentSchemaVersion = GameSaveData.CurrentSchemaVersion;
         private readonly string primaryPath;
         private readonly string backupPath;
         private readonly string temporaryPath;
@@ -28,6 +29,8 @@ namespace DigAndWonder
         public bool TryLoad(out GameSaveData data, out bool recoveredBackup)
         {
             recoveredBackup = false;
+            // Um app antigo não deve substituir um save íntegro de uma versão futura pelo seu backup antigo.
+            if (HasVerifiedFutureVersion(primaryPath)) { data = null; return false; }
             if (TryRead(primaryPath, out data)) return true;
             string recoveryPath = backupPath;
             if (!TryRead(backupPath, out data))
@@ -61,6 +64,8 @@ namespace DigAndWonder
         public void Save(GameSaveData data)
         {
             Validate(data);
+            if (HasVerifiedFutureVersion(primaryPath))
+                throw new InvalidDataException("O save pertence a uma versão futura e foi preservado.");
             string payload = JsonConvert.SerializeObject(data, Formatting.None);
             var envelope = new SaveEnvelope
             {
@@ -81,14 +86,29 @@ namespace DigAndWonder
             ReplacePrimary(temporaryPath, primaryPath, keepCurrentAsBackup ? backupPath : null);
         }
 
-        private static void Validate(GameSaveData data)
+        private static void Validate(GameSaveData data, bool allowLegacy = false)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
-            if (data.SchemaVersion != CurrentSchemaVersion) throw new InvalidDataException("Versão de save incompatível.");
+            bool legacy = allowLegacy && data.SchemaVersion == 1;
+            if (data.SchemaVersion != CurrentSchemaVersion && !legacy) throw new InvalidDataException("Versão de save incompatível.");
             if (data.Gold < 0 || data.Keys < 0 || data.Chests < 0 || data.AttackLevel < 0 || data.HealthLevel < 0 ||
                 data.CriticalChanceLevel < 0 || data.CriticalDamageLevel < 0)
                 throw new InvalidDataException("O save contém valores negativos.");
             if (string.IsNullOrWhiteSpace(data.UnlockedStageId)) throw new InvalidDataException("O perfil não tem fase desbloqueada válida.");
+            if (!legacy)
+            {
+                if (data.Characters == null || data.Characters.Count == 0 || string.IsNullOrWhiteSpace(data.EquippedCharacterId))
+                    throw new InvalidDataException("O perfil não contém personagens válidas.");
+                var characterIds = new HashSet<string>(StringComparer.Ordinal);
+                foreach (CharacterProgressData character in data.Characters)
+                    if (character == null || string.IsNullOrWhiteSpace(character.CharacterId) || character.TotalExperience < 0 ||
+                        !characterIds.Add(character.CharacterId))
+                        throw new InvalidDataException("O perfil contém XP inválido ou personagens duplicadas.");
+                if (!characterIds.Contains(data.EquippedCharacterId))
+                    throw new InvalidDataException("A personagem equipada não pertence ao perfil.");
+                if (data.ActiveRun != null && data.ActiveRun.CharacterId != data.EquippedCharacterId)
+                    throw new InvalidDataException("A personagem da tentativa diverge da personagem equipada.");
+            }
             if (data.ActiveRun == null) return;
             ActiveRunSnapshot run = data.ActiveRun;
             if (string.IsNullOrWhiteSpace(run.StageId)) throw new InvalidDataException("A tentativa salva não tem uma fase válida.");
@@ -128,6 +148,20 @@ namespace DigAndWonder
                 if (float.IsNaN(value) || float.IsInfinity(value)) throw new InvalidDataException("O save contém números não finitos.");
         }
 
+        private static bool HasVerifiedFutureVersion(string path)
+        {
+            if (!File.Exists(path)) return false;
+            try
+            {
+                SaveEnvelope envelope = JsonConvert.DeserializeObject<SaveEnvelope>(File.ReadAllText(path, Encoding.UTF8));
+                return envelope != null && envelope.SchemaVersion > CurrentSchemaVersion && !string.IsNullOrEmpty(envelope.Payload) &&
+                    string.Equals(envelope.Sha256, ComputeHash(envelope.Payload), StringComparison.OrdinalIgnoreCase);
+            }
+            catch (JsonException) { return false; }
+            catch (IOException) { return false; }
+            catch (UnauthorizedAccessException) { return false; }
+        }
+
         private static bool TryRead(string path, out GameSaveData data)
         {
             data = null;
@@ -135,11 +169,35 @@ namespace DigAndWonder
             try
             {
                 var envelope = JsonConvert.DeserializeObject<SaveEnvelope>(File.ReadAllText(path, Encoding.UTF8));
-                if (envelope == null || envelope.SchemaVersion != CurrentSchemaVersion || string.IsNullOrEmpty(envelope.Payload)) return false;
+                if (envelope == null || (envelope.SchemaVersion != 1 && envelope.SchemaVersion != CurrentSchemaVersion) || string.IsNullOrEmpty(envelope.Payload)) return false;
                 if (!string.Equals(envelope.Sha256, ComputeHash(envelope.Payload), StringComparison.OrdinalIgnoreCase)) return false;
+                JObject payload = JObject.Parse(envelope.Payload);
+                if (payload["SchemaVersion"]?.Type != JTokenType.Integer ||
+                    payload["SchemaVersion"].ToString() != envelope.SchemaVersion.ToString()) return false;
+                // No esquema novo, campos ausentes não podem reiniciar XP silenciosamente pelos defaults do DTO.
+                if (envelope.SchemaVersion == CurrentSchemaVersion)
+                {
+                    if (payload["Characters"] == null || payload["EquippedCharacterId"] == null) return false;
+                    if (payload["Characters"] is JArray characters)
+                        foreach (JToken character in characters)
+                            if (!(character is JObject item) || item["CharacterId"] == null || item["TotalExperience"] == null) return false;
+                    if (payload["ActiveRun"] is JObject activeRun && activeRun["CharacterId"] == null) return false;
+                }
                 data = JsonConvert.DeserializeObject<GameSaveData>(envelope.Payload);
                 if (data == null) return false;
-                Validate(data);
+                Validate(data, allowLegacy: true);
+                if (data.SchemaVersion == 1)
+                {
+                    // Migração apenas em memória. Os bytes originais viram backup na primeira gravação confirmada.
+                    data.SchemaVersion = CurrentSchemaVersion;
+                    data.EquippedCharacterId = CharacterProgression.StarterCharacterId;
+                    data.Characters = new List<CharacterProgressData>
+                    {
+                        new CharacterProgressData { CharacterId = CharacterProgression.StarterCharacterId }
+                    };
+                    if (data.ActiveRun != null) data.ActiveRun.CharacterId = CharacterProgression.StarterCharacterId;
+                    Validate(data);
+                }
                 return data != null;
             }
             catch (JsonException) { return false; }

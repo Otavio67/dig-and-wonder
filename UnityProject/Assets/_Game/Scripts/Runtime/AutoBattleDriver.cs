@@ -14,6 +14,11 @@ namespace DigAndWonder
         public bool IsSaveBlocked => !string.IsNullOrEmpty(LastSaveError);
         public bool IsReady => !startupBlocked && !IsSaveBlocked && balance != null && saveRepository != null;
         public GameSaveData Profile => Simulation != null ? Simulation.Profile : loadedProfile;
+        public CharacterDefinition EquippedCharacterDefinition => Profile != null && characterCatalog.TryGetValue(Profile.EquippedCharacterId, out CharacterDefinition definition)
+            ? definition : null;
+        public CharacterLevelState CurrentCharacterLevel => EquippedCharacterDefinition != null
+            ? CharacterProgression.GetLevel(CharacterProgression.Find(Profile, Profile.EquippedCharacterId), characterExperienceRules[Profile.EquippedCharacterId])
+            : default;
 
         public int CurrentAttackMaximum => balance != null && balance.progression != null && balance.progression.attackUpgrade != null
             ? balance.progression.attackUpgrade.maxLevel : 0;
@@ -30,6 +35,10 @@ namespace DigAndWonder
         private bool saveRequested;
         private bool applicationPaused;
         private bool menuPaused;
+        private readonly System.Collections.Generic.Dictionary<string, CharacterDefinition> characterCatalog =
+            new System.Collections.Generic.Dictionary<string, CharacterDefinition>(StringComparer.Ordinal);
+        private readonly System.Collections.Generic.Dictionary<string, CharacterExperienceRules> characterExperienceRules =
+            new System.Collections.Generic.Dictionary<string, CharacterExperienceRules>(StringComparer.Ordinal);
 
         private void Awake()
         {
@@ -39,6 +48,26 @@ namespace DigAndWonder
                 Debug.LogError("CombatBalanceDefinition não encontrado em Resources/Data.", this);
                 startupBlocked = true;
                 enabled = false;
+                return;
+            }
+
+            try
+            {
+                foreach (CharacterDefinition definition in Resources.LoadAll<CharacterDefinition>("Data/Characters"))
+                {
+                    if (definition == null || !definition.implemented) continue;
+                    if (string.IsNullOrWhiteSpace(definition.id) || definition.experience == null)
+                        throw new InvalidOperationException("Personagem sem ID ou curva de XP.");
+                    characterExperienceRules.Add(definition.id, definition.experience.ToRuntime());
+                    characterCatalog.Add(definition.id, definition);
+                }
+                if (!characterCatalog.ContainsKey(CharacterProgression.StarterCharacterId))
+                    throw new InvalidOperationException("A personagem inicial não foi importada.");
+            }
+            catch (Exception exception)
+            {
+                startupBlocked = true;
+                Debug.LogError("Catálogo de personagens inválido. Progresso preservado. " + exception.Message, this);
                 return;
             }
 
@@ -62,6 +91,12 @@ namespace DigAndWonder
             if (recovered) Debug.LogWarning("Save recuperado do backup validado.", this);
 
             loadedProfile = profile;
+            if (!characterCatalog.ContainsKey(profile.EquippedCharacterId))
+            {
+                startupBlocked = true;
+                Debug.LogError("Personagem equipada ausente nesta versão. O save foi preservado.", this);
+                return;
+            }
             if (profile.ActiveRun != null || profile.Gold > 0 || profile.Keys > 0 || profile.Chests > 0 ||
                 profile.AttackLevel > 0 || profile.HealthLevel > 0 || profile.UnlockedStageId != "prado_cristalino")
                 CreateSimulation(profile);
@@ -99,7 +134,7 @@ namespace DigAndWonder
 
         private void Update()
         {
-            if (Simulation == null || applicationPaused) return;
+            if (Profile == null || applicationPaused) return;
             saveTimer += Time.unscaledDeltaTime;
             if (IsSaveBlocked)
             {
@@ -107,7 +142,7 @@ namespace DigAndWonder
                 if (saveTimer >= periodicSaveSeconds) SaveNow();
                 return;
             }
-            if (menuPaused) return;
+            if (Simulation == null || menuPaused) return;
             if (!Simulation.IsActive) return;
             accumulator += Time.deltaTime;
             float maxCatchUp = balance.maximumFrameCatchUp;
@@ -126,6 +161,8 @@ namespace DigAndWonder
         {
             CombatEventRaised?.Invoke(combatEvent);
             if (combatEvent.Type == CombatEventType.EnemyDefeated ||
+                combatEvent.Type == CombatEventType.CharacterExperienceAwarded ||
+                combatEvent.Type == CombatEventType.CharacterLeveledUp ||
                 combatEvent.Type == CombatEventType.UpgradePurchased ||
                 combatEvent.Type == CombatEventType.BossSpawned ||
                 combatEvent.Type == CombatEventType.StageCleared ||
@@ -149,11 +186,11 @@ namespace DigAndWonder
 
         private void SaveNow()
         {
-            if (saveRepository == null || Simulation == null) return;
+            if (saveRepository == null || Profile == null) return;
             try
             {
-                if (Simulation.IsActive) Simulation.Profile.ActiveRun = Simulation.CaptureRun();
-                saveRepository.Save(Simulation.Profile);
+                if (Simulation != null && Simulation.IsActive) Simulation.Profile.ActiveRun = Simulation.CaptureRun();
+                saveRepository.Save(Profile);
                 LastSaveError = null;
                 saveRequested = false;
             }
@@ -189,6 +226,23 @@ namespace DigAndWonder
             bool purchased = Simulation.TryPurchaseUpgradeAtBase(kind);
             if (purchased) SaveNow();
             return purchased;
+        }
+
+        /// <summary>Ponto de entrada para futuras recompensas; só aceita personagens registradas e implementadas.</summary>
+        public bool TryUnlockCharacter(string characterId)
+        {
+            if (!IsReady || applicationPaused || string.IsNullOrWhiteSpace(characterId) || !characterCatalog.ContainsKey(characterId)) return false;
+            bool unlocked = CharacterProgression.TryUnlock(Profile, characterId);
+            if (unlocked) SaveNow();
+            return unlocked;
+        }
+
+        public bool TryEquipCharacter(string characterId)
+        {
+            if (!IsReady || applicationPaused || string.IsNullOrWhiteSpace(characterId) || !characterCatalog.ContainsKey(characterId)) return false;
+            bool equipped = CharacterProgression.TryEquip(Profile, characterId);
+            if (equipped) SaveNow();
+            return equipped;
         }
     }
 }

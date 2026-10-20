@@ -255,3 +255,16 @@ Tag: `v0.0.14`.
 Detalhes e roteiro pendente de Play Mode/aparelho: [OFICINA-PERSONAGEM.md](OFICINA-PERSONAGEM.md). Nenhum APK novo ou medição de desempenho Android.
 
 Tag: `v0.0.15`.
+
+## 0.0.16 — XP individual por personagem
+
+- Pioneira começa no nível 0. Cada ID de personagem tem XP próprio; desbloqueios novos começam zerados, duplicatas não resetam e trocar/voltar preserva o progresso anterior.
+- XP por inimigo derrotado vinculado à personagem que iniciou a tentativa, com eventos de XP/subida de nível e preservação na derrota/reinício/retomada. Curva nova configurável por ScriptableObject: 10 por inimigo comum, 50 por chefe, requisito 20 + 10 × nível e máximo inicial 50.
+- Barra da Oficina mostra nível e XP reais; HUD e Acampamento mostram nível. Reforços de ATQ/VIDA permanecem separados, com valores preservados.
+- Save Unity esquema 2, migração de 1 em memória, primeiro backup com os bytes anteriores e rejeição de XP inválido/coleções duplicadas/campos ausentes. Versões futuras íntegras não são substituídas por backup antigo.
+- Catálogo inicial só com a Pioneira; APIs de concessão/seleção preparadas para personagens futuras. Dois IDs de fixture foram usados para testar independência, sem adicionar personagem fictícia jogável.
+- 39 checks de domínio passaram, compilação com stubs/DLLs reais sem erros/avisos. Editor batch novamente bloqueado por licença antes da importação. Sem novo APK, Play Mode desta versão ou medição Android.
+
+Regras, exemplos, detalhes da migração e pendências: [EXPERIENCIA-PERSONAGENS.md](EXPERIENCIA-PERSONAGENS.md).
+
+Tag: `v0.0.16`.

@@ -1,5 +1,7 @@
 # Oficina da personagem — 0.0.15
 
+> Atualização 0.0.16: a barra de reforços desta composição foi substituída por XP/nível individual por personagem. Consulte [EXPERIENCIA-PERSONAGENS.md](EXPERIENCIA-PERSONAGENS.md) para o comportamento atual e a migração do save. O restante deste documento registra a composição e validação da 0.0.15.
+
 ## Resultado e acesso
 
 A Oficina usa uma composição de interface, com peças independentes: placa de título, vitrine da Pioneira, pedestal, slots, cartucho de combate, melhorias e navegação em esteira. O Acampamento continua sendo o hub. A tela de personagem abre pelo cartão **Oficina** ou pela aba **Personagem** durante uma expedição; **Voltar** e o botão coral de fechar retornam à origem.

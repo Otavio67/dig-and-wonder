@@ -312,7 +312,7 @@ namespace DigAndWonder
             string stageName = sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant();
             hubStageLabel.text = "EXPEDIÇÃO " + stageNumber.ToString("00") + "  •  " + stageName;
             hubWalletLabel.text = "◉ " + sim.Gold;
-            hubDrillStats.text = "ATQ " + driver.CurrentAttackDamage.ToString("0.##") + "\nVIDA " + sim.PlayerMaximumHealth.ToString("0");
+            hubDrillStats.text = "NÍVEL " + driver.CurrentCharacterLevel.Level + "\nATQ " + driver.CurrentAttackDamage.ToString("0.##") + "  •  VIDA " + sim.PlayerMaximumHealth.ToString("0");
             hubMissionLabel.text = sim.Run.IsPlayerDefeated ? "Tentativa encerrada — melhore a broca e retorne" :
                 sim.Run.IsStageCleared ? "Guardião derrotado — próxima fase disponível" : "Derrote o guardião para avançar";
             hubLockLabel.text = stageNumber < 2 ? "Equipamentos e álbum  🔒  desbloqueiam na Fase 2" : "Equipamentos e álbum  •  sistema em breve";
@@ -380,7 +380,7 @@ namespace DigAndWonder
                 walletLabel.text = "◉ " + sim.Gold;
                 walletLabel.transform.DOPunchScale(new Vector3(0.08f, 0.08f, 0), 0.22f, 5, 0.7f);
             }
-            healthLabel.text = "BROCA  " + Mathf.CeilToInt(sim.PlayerHealth) + " / " + Mathf.CeilToInt(sim.PlayerMaximumHealth);
+            healthLabel.text = "BROCA NV. " + driver.CurrentCharacterLevel.Level + "  •  " + Mathf.CeilToInt(sim.PlayerHealth) + " / " + Mathf.CeilToInt(sim.PlayerMaximumHealth);
             float healthRatio = sim.PlayerMaximumHealth <= 0 ? 0 : sim.PlayerHealth / sim.PlayerMaximumHealth;
             healthFill.rectTransform.anchorMax = new Vector2(0.06f + 0.88f * healthRatio, 0.1f);
             for (int i = 0; i < enemyIcons.Length; i++)
@@ -568,6 +568,8 @@ namespace DigAndWonder
                 case CombatEventType.SpecialStarted: combatLog.text = "ESPECIAL: PIONEIRA EM LANÇAMENTO"; break;
                 case CombatEventType.SpecialStrike: combatLog.text = "IMPACTO DA PIONEIRA  •  " + Mathf.CeilToInt(e.Amount); break;
                 case CombatEventType.GoldAwarded: combatLog.text = "+" + Mathf.CeilToInt(e.Amount) + " ouro"; break;
+                case CombatEventType.CharacterExperienceAwarded: combatLog.text = "+" + Mathf.CeilToInt(e.Amount) + " XP para sua broca"; break;
+                case CombatEventType.CharacterLeveledUp: statusLabel.text = "SUA BROCA SUBIU PARA O NÍVEL " + Mathf.CeilToInt(e.Amount) + "!"; break;
                 case CombatEventType.UpgradePurchased: statusLabel.text = "MELHORIA COMPRADA — PROGRESSO SALVO"; break;
                 case CombatEventType.ChestAwarded: combatLog.text = "BAÚ DE FASE ENCONTRADO!"; break;
                 case CombatEventType.PlayerDefeated: statusLabel.text = "DERROTA — OURO E MELHORIAS PRESERVADOS"; break;

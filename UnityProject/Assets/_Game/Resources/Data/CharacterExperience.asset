@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f326d33d79cd40f18efdd2779a969307, type: 3}
+  m_Name: CharacterExperience
+  m_EditorClassIdentifier:
+  regularEnemyExperience: 10
+  bossExperience: 50
+  firstLevelExperience: 20
+  experiencePerLevelStep: 10
+  maximumLevel: 50
+  designNote: "Curva inicial de prototipo autorizada para XP individual. Nao existia na origem Godot. Nivel inicial 0. Sem bonus automatico de dano ou vida nesta etapa."

@@ -36,14 +36,15 @@ namespace DigAndWonder
         private TMP_FontAsset titleFont;
         private TMP_FontAsset bodyFont;
         private TextMeshProUGUI wallet;
-        private TextMeshProUGUI reforcements;
+        private TextMeshProUGUI experienceLabel;
+        private TextMeshProUGUI characterName;
         private TextMeshProUGUI attackValue;
         private TextMeshProUGUI healthValue;
         private TextMeshProUGUI attackPrice;
         private TextMeshProUGUI healthPrice;
         private TextMeshProUGUI status;
         private TextMeshProUGUI lockSummary;
-        private Image reinforcementFill;
+        private Image experienceFill;
         private Image attackFace;
         private Image healthFace;
         private Button attackButton;
@@ -97,15 +98,15 @@ namespace DigAndWonder
             ButtonAt(root, "Close workshop", "", Coral, 0.84f, 0.91f, 0.98f, 0.99f, returnToHub,
                 out TextMeshProUGUI ignoredCloseLabel, out Image closeFace);
             Icon(closeFace.transform, "close", 0.2f, 0.15f, 0.8f, 0.85f);
-            Label(root, "BROCA PIONEIRA", 32, Cream, 0.045f, 0.877f, 0.63f, 0.910f, true, TextAlignmentOptions.Left);
+            characterName = Label(root, "BROCA PIONEIRA", 32, Cream, 0.045f, 0.877f, 0.63f, 0.910f, true, TextAlignmentOptions.Left);
             Icon(root, "gear", 0.69f, 0.877f, 0.75f, 0.909f);
             wallet = Label(root, "0", 32, Gold, 0.76f, 0.877f, 0.96f, 0.909f, true, TextAlignmentOptions.Right);
 
             BuildShowcase();
-            RectTransform reinforcementTrack = Plate("Reinforcement track", root, Teal, 0.04f, 0.561f, 0.96f, 0.602f);
-            RectTransform track = Plate("Energy tube", reinforcementTrack, Petroleum, 0.04f, 0.25f, 0.96f, 0.78f);
-            reinforcementFill = Plate("Energy fill", track, Gold, 0f, 0f, 0f, 1f).GetComponent<Image>();
-            reforcements = Label(reinforcementTrack, "REFORÇOS", 30, Cream, 0.07f, 0.03f, 0.93f, 0.98f, true);
+            RectTransform experienceTrack = Plate("Character XP track", root, Teal, 0.04f, 0.561f, 0.96f, 0.602f);
+            RectTransform track = Plate("Energy tube", experienceTrack, Petroleum, 0.04f, 0.25f, 0.96f, 0.78f);
+            experienceFill = Plate("Experience fill", track, Cyan, 0f, 0f, 0f, 1f).GetComponent<Image>();
+            experienceLabel = Label(experienceTrack, "NÍVEL 0", 30, Cream, 0.07f, 0.03f, 0.93f, 0.98f, true);
 
             BuildModules();
             for (int i = 0; i < panes.Length; i++)
@@ -288,10 +289,13 @@ namespace DigAndWonder
             }
             lastReady = driver.IsReady;
             wallet.text = profile.Gold.ToString("N0", Portuguese);
-            int maximum = driver.CurrentAttackMaximum + driver.CurrentHealthMaximum;
-            int current = profile.AttackLevel + profile.HealthLevel;
-            reforcements.text = "REFORÇOS " + current + " / " + maximum;
-            reinforcementFill.rectTransform.anchorMax = new Vector2(maximum > 0 ? (float)current / maximum : 0f, 1f);
+            CharacterLevelState level = driver.CurrentCharacterLevel;
+            CharacterDefinition definition = driver.EquippedCharacterDefinition;
+            characterName.text = definition != null ? definition.displayName.ToUpperInvariant() : "PERSONAGEM INDISPONÍVEL";
+            experienceLabel.text = "NÍVEL " + level.Level + (level.IsMaximum ? "  •  MÁXIMO" :
+                "  •  XP " + level.ExperienceInLevel + " / " + level.ExperienceToNextLevel);
+            experienceFill.rectTransform.anchorMax = new Vector2(level.IsMaximum ? 1f : level.ExperienceToNextLevel > 0
+                ? (float)level.ExperienceInLevel / level.ExperienceToNextLevel : 0f, 1f);
             float hp = driver.Simulation != null ? driver.Simulation.PlayerMaximumHealth : balance == null ? 0f : balance.playerBaseHealth;
             attackValue.text = "ATQ  " + Number(driver.CurrentAttackDamage) + "\nNv. " + profile.AttackLevel + " / " + driver.CurrentAttackMaximum;
             healthValue.text = "VIDA  " + Number(hp) + "\nNv. " + profile.HealthLevel + " / " + driver.CurrentHealthMaximum;

@@ -22,7 +22,9 @@ namespace DigAndWonder
         KeyAwarded,
         StageCleared,
         PlayerDefeated,
-        Checkpoint
+        Checkpoint,
+        CharacterExperienceAwarded,
+        CharacterLeveledUp
     }
 
     public readonly struct CombatEvent

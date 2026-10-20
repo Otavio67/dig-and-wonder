@@ -26,6 +26,24 @@ var checks = new (string Name, Action Test)[]
     ("snapshot inválido é rejeitado antes da escrita", InvalidSnapshotIsRejected),
     ("save principal válido prevalece sobre temporário", ConfirmedPrimaryWinsOverTemporary),
     ("arquivos inválidos são preservados sem reset", InvalidCopiesRemainUntouched),
+    ("personagem inicial começa no nível zero", CharacterStartsAtZero),
+    ("brocas têm XP independente e duplicatas não reiniciam", CharactersKeepIndependentExperience),
+    ("troca exige posse e aguarda fim da tentativa", CharacterEquipRespectsRun),
+    ("trocar e voltar preserva nível de cada broca", SwitchingCharactersPreservesProgress),
+    ("XP pertence à broca registrada na tentativa", ExperienceBelongsToRunCharacter),
+    ("inimigo paga XP uma vez e dano não paga XP", EnemyExperienceIsAwardedOnce),
+    ("chefe paga XP e níveis antes dos eventos de recompensa", BossExperienceIsAtomic),
+    ("subida de nível conserva excedente e emite evento", LevelUpKeepsOverflow),
+    ("limite de XP não transborda nem reduz progresso", ExperienceCapDoesNotOverflow),
+    ("derrota e reinício preservam XP", DefeatKeepsCharacterExperience),
+    ("save retomado conserva XP e autoria de projéteis", ResumedRunKeepsExperienceOwnership),
+    ("arquivo atômico retoma XP e projéteis sem duplicar recompensa", AtomicFileResumesCharacterExperience),
+    ("save 1 migra sem perder economia ou tentativa", LegacySaveMigratesCharacterProgress),
+    ("backup recupera XP de múltiplas personagens", CharacterExperienceRecoversFromBackup),
+    ("save rejeita XP negativo, duplicatas e personagem inválida", InvalidCharacterProgressIsRejected),
+    ("schema 2 incompleto não reinicia XP silenciosamente", MissingCharacterExperienceIsRejected),
+    ("versão malformada recupera backup sem exceção", InvalidSchemaValueRecoversBackup),
+    ("versão futura de save permanece intacta", FutureCharacterSaveIsPreserved),
     ("ScriptableObject mapping stays tied to Godot source numbers", GodotNumbersMatchMappedData)
 };
 
@@ -334,10 +352,10 @@ static void InvalidSnapshotIsRejected() => WithSaveDirectory(directory =>
     Assert(repository.TryLoad(out GameSaveData preserved, out _) && preserved.Gold == 7, "validação alterou o último save válido");
 });
 
-static void WriteEnvelope(string path, string payload)
+static void WriteEnvelope(string path, string payload, int schemaVersion = GameSaveData.CurrentSchemaVersion)
 {
     string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
-    File.WriteAllText(path, JsonConvert.SerializeObject(new { SchemaVersion = 1, Payload = payload, Sha256 = hash }));
+    File.WriteAllText(path, JsonConvert.SerializeObject(new { SchemaVersion = schemaVersion, Payload = payload, Sha256 = hash }));
 }
 
 static void ConfirmedPrimaryWinsOverTemporary() => WithSaveDirectory(directory =>
@@ -429,7 +447,12 @@ static IdleCombatSimulation NewSimulation(GameSaveData save, int waveCount, floa
         HealthUpgrade = new UpgradeCombatData { Kind = UpgradeKind.Health, BaseCost = 20, CostStep = 16, MaximumLevel = 10, Bonus = 35f, Implemented = true },
         CriticalChanceUpgrade = new UpgradeCombatData { Kind = UpgradeKind.CriticalChance, Implemented = false },
         CriticalDamageUpgrade = new UpgradeCombatData { Kind = UpgradeKind.CriticalDamage, Implemented = false },
-        Stages = new[] { stage, next }
+        Stages = new[] { stage, next },
+        Characters = new[]
+        {
+            new CharacterCombatData { Id = CharacterProgression.StarterCharacterId, DisplayName = "Broca Pioneira", Experience = TestExperienceRules() },
+            new CharacterCombatData { Id = "test_drill", DisplayName = "Personagem de fixture", Experience = TestExperienceRules() }
+        }
     };
     return new IdleCombatSimulation(config, save, "prado_cristalino", 12345u);
 }
@@ -444,3 +467,304 @@ static void Assert(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
 }
+
+static CharacterExperienceRules TestExperienceRules() => new CharacterExperienceRules
+{
+    RegularEnemyExperience = 10, BossExperience = 50, FirstLevelExperience = 20, ExperiencePerLevelStep = 10, MaximumLevel = 50
+};
+
+static void CharacterStartsAtZero()
+{
+    var save = new GameSaveData();
+    CharacterLevelState state = CharacterProgression.GetLevel(CharacterProgression.Find(save, save.EquippedCharacterId), TestExperienceRules());
+    Assert(state.Level == 0 && state.ExperienceInLevel == 0 && state.ExperienceToNextLevel == 20, "personagem não começou no nível 0 com XP zerado");
+}
+
+static void CharactersKeepIndependentExperience()
+{
+    var save = new GameSaveData();
+    var rules = TestExperienceRules();
+    CharacterProgression.Award(save, "pioneer", rules, 50);
+    Assert(CharacterProgression.TryUnlock(save, "test_drill"), "personagem nova não foi concedida");
+    Assert(CharacterProgression.GetLevel(CharacterProgression.Find(save, "test_drill"), rules).Level == 0, "nova personagem herdou nível");
+    Assert(!CharacterProgression.TryUnlock(save, "pioneer"), "duplicata criou outro registro");
+    CharacterProgression.Award(save, "test_drill", rules, 10);
+    Assert(save.Characters.Count == 2 && CharacterProgression.Find(save, "pioneer").TotalExperience == 50 &&
+        CharacterProgression.Find(save, "test_drill").TotalExperience == 10, "XP foi compartilhado ou reiniciado");
+    Assert(CharacterProgression.GetLevel(CharacterProgression.Find(save, "pioneer"), rules).Level == 2, "progresso antigo foi perdido");
+}
+
+static void CharacterEquipRespectsRun()
+{
+    var save = new GameSaveData();
+    Assert(!CharacterProgression.TryEquip(save, "test_drill"), "personagem não possuída foi equipada");
+    CharacterProgression.TryUnlock(save, "test_drill");
+    IdleCombatSimulation sim = NewSimulation(save, 100);
+    Assert(!CharacterProgression.TryEquip(save, "test_drill"), "troca foi aceita com projéteis/tentativa ativos");
+    Assert(sim.ActiveCharacterId == "pioneer" && save.EquippedCharacterId == "pioneer", "tentativa trocou de personagem");
+}
+
+static void SwitchingCharactersPreservesProgress()
+{
+    var save = new GameSaveData();
+    var rules = TestExperienceRules();
+    CharacterProgression.Award(save, "pioneer", rules, 35);
+    CharacterProgression.TryUnlock(save, "test_drill");
+    Assert(CharacterProgression.TryEquip(save, "test_drill"), "troca na base falhou");
+    Assert(CharacterProgression.GetLevel(CharacterProgression.Find(save, save.EquippedCharacterId), rules).Level == 0, "nova broca não veio nível zero");
+    Assert(CharacterProgression.TryEquip(save, "pioneer"), "retorno à Pioneira falhou");
+    CharacterLevelState previous = CharacterProgression.GetLevel(CharacterProgression.Find(save, save.EquippedCharacterId), rules);
+    Assert(previous.Level == 1 && previous.ExperienceInLevel == 15, "voltar apagou nível/XP da Pioneira");
+}
+
+static void ExperienceBelongsToRunCharacter()
+{
+    var save = new GameSaveData();
+    CharacterProgression.TryUnlock(save, "test_drill");
+    IdleCombatSimulation sim = NewSimulation(save, 100);
+    // Mesmo uma mutação externa indevida do DTO não pode redirecionar recompensas em voo.
+    save.EquippedCharacterId = "test_drill";
+    StepFor(sim, 5f);
+    Assert(CharacterProgression.Find(save, "pioneer").TotalExperience == 10 &&
+        CharacterProgression.Find(save, "test_drill").TotalExperience == 0, "XP migrou para uma broca fora da tentativa");
+}
+
+static void EnemyExperienceIsAwardedOnce()
+{
+    var save = new GameSaveData();
+    IdleCombatSimulation sim = NewSimulation(save, 100);
+    int events = 0;
+    sim.EventRaised += e => { if (e.Type == CombatEventType.CharacterExperienceAwarded) events++; };
+    StepFor(sim, 0.5f);
+    Assert(CharacterProgression.Find(save, "pioneer").TotalExperience == 0, "disparo ou dano concedeu XP antes da derrota");
+    StepFor(sim, 4.5f);
+    Assert(CharacterProgression.Find(save, "pioneer").TotalExperience == 10 && events == 1, "morte não pagou 10 XP uma vez");
+    StepFor(sim, 3f);
+    Assert(CharacterProgression.Find(save, "pioneer").TotalExperience == 10 && events == 1, "XP repetido após inimigo removido");
+}
+
+static void BossExperienceIsAtomic()
+{
+    var save = TerminalFixture();
+    IdleCombatSimulation sim = NewSimulation(save, 100);
+    bool observed = false;
+    sim.EventRaised += e =>
+    {
+        if (e.Type != CombatEventType.EnemyDefeated) return;
+        observed = true;
+        Assert(CharacterProgression.Find(save, "pioneer").TotalExperience == 50, "observador recebeu recompensa antes do XP");
+        Assert(CharacterProgression.GetLevel(CharacterProgression.Find(save, "pioneer"), TestExperienceRules()).Level == 2,
+            "50 XP não aplicou a subida de dois níveis");
+        Assert(save.Chests == 2 && save.Keys == 2 && save.ActiveRun == null, "recompensa do chefe ficou parcial");
+    };
+    sim.Step(0.05f);
+    Assert(observed, "chefe não foi derrotado pela fixture");
+}
+
+static void LevelUpKeepsOverflow()
+{
+    var save = new GameSaveData();
+    var rules = TestExperienceRules();
+    CharacterProgression.Award(save, "pioneer", rules, 35);
+    IdleCombatSimulation sim = NewSimulation(save, 100);
+    int levels = 0;
+    sim.EventRaised += e => { if (e.Type == CombatEventType.CharacterLeveledUp) levels++; };
+    StepFor(sim, 5f); // 35 + 10 = 45: nível 1, 25/30 XP.
+    CharacterLevelState state = CharacterProgression.GetLevel(CharacterProgression.Find(save, "pioneer"), rules);
+    Assert(state.Level == 1 && state.ExperienceInLevel == 25 && levels == 0, "XP parcial foi descartado ou concedeu nível cedo");
+    var bossSave = TerminalFixture();
+    CharacterProgression.Award(bossSave, "pioneer", rules, 35);
+    IdleCombatSimulation boss = NewSimulation(bossSave, 100);
+    boss.EventRaised += e => { if (e.Type == CombatEventType.CharacterLeveledUp) levels++; };
+    boss.Step(0.05f); // 85 total: nível 2, 35/40 XP.
+    state = CharacterProgression.GetLevel(CharacterProgression.Find(bossSave, "pioneer"), rules);
+    Assert(state.Level == 2 && state.ExperienceInLevel == 35 && levels == 1, "evento de nível ou excedente está incorreto");
+}
+
+static void ExperienceCapDoesNotOverflow()
+{
+    var save = new GameSaveData();
+    var rules = TestExperienceRules();
+    int awarded = CharacterProgression.Award(save, "pioneer", rules, int.MaxValue);
+    CharacterProgressData character = CharacterProgression.Find(save, "pioneer");
+    CharacterLevelState state = CharacterProgression.GetLevel(character, rules);
+    Assert(awarded == 13250 && character.TotalExperience == 13250 && state.Level == 50 && state.IsMaximum,
+        "limite da curva calculado incorretamente");
+    Assert(CharacterProgression.Award(save, "pioneer", rules, 50) == 0, "máximo continuou acumulando XP");
+    character.TotalExperience = long.MaxValue;
+    Assert(CharacterProgression.Award(save, "pioneer", rules, 50) == 0 && character.TotalExperience == long.MaxValue,
+        "curva reduzida destruiu XP ou causou overflow");
+    bool rejected = false;
+    try { CharacterProgression.Award(save, "pioneer", rules, -1); }
+    catch (ArgumentOutOfRangeException) { rejected = true; }
+    Assert(rejected && character.TotalExperience == long.MaxValue, "XP negativo foi aceito");
+}
+
+static void DefeatKeepsCharacterExperience()
+{
+    var save = TerminalFixture();
+    CharacterProgression.Award(save, "pioneer", TestExperienceRules(), 35);
+    save.ActiveRun.PendingHits = new[] { new PendingHitSnapshot { TargetsPlayer = true, Damage = 999, RemainingTravel = 0.01f } };
+    IdleCombatSimulation sim = NewSimulation(save, 100);
+    sim.Step(0.05f);
+    Assert(sim.Run.IsPlayerDefeated && CharacterProgression.Find(save, "pioneer").TotalExperience == 35, "derrota retirou ou concedeu XP");
+    IdleCombatSimulation restarted = NewSimulation(save, 100);
+    Assert(restarted.ActiveCharacterId == "pioneer" && CharacterProgression.Find(save, "pioneer").TotalExperience == 35, "reinício zerou a broca");
+}
+
+static void ResumedRunKeepsExperienceOwnership()
+{
+    var save = new GameSaveData();
+    CharacterProgression.TryUnlock(save, "test_drill");
+    CharacterProgression.TryEquip(save, "test_drill");
+    IdleCombatSimulation continuous = NewSimulation(save, 100);
+    StepFor(continuous, 0.5f);
+    save.ActiveRun = continuous.CaptureRun();
+    GameSaveData restored = JsonConvert.DeserializeObject<GameSaveData>(JsonConvert.SerializeObject(save));
+    IdleCombatSimulation resumed = NewSimulation(restored, 100);
+    Assert(resumed.ActiveCharacterId == "test_drill" && restored.Characters.Count == 2, "retomada mudou autora ou duplicou a lista");
+    StepFor(continuous, 5f);
+    StepFor(resumed, 5f);
+    Assert(CharacterProgression.Find(restored, "test_drill").TotalExperience == 10 &&
+        CharacterProgression.Find(restored, "pioneer").TotalExperience == 0, "retomada dividiu XP ou premiou duas vezes");
+    Assert(JsonConvert.SerializeObject(save.Characters) == JsonConvert.SerializeObject(restored.Characters), "XP retomado divergiu da execução contínua");
+}
+
+static void LegacySaveMigratesCharacterProgress() => WithSaveDirectory(directory =>
+{
+    string primary = Path.Combine(directory, "dig-and-wonder.save.json");
+    var legacy = new GameSaveData
+    {
+        Gold = 137, Keys = 2, Chests = 3, AttackLevel = 4, HealthLevel = 2,
+        ActiveRun = new ActiveRunSnapshot { StageId = "prado_cristalino", PlayerHealth = 150, ElapsedSeconds = 2f, NextEntityId = 1 }
+    };
+    JObject payload = JObject.FromObject(legacy);
+    payload["SchemaVersion"] = 1;
+    payload.Remove("Characters");
+    payload.Remove("EquippedCharacterId");
+    ((JObject)payload["ActiveRun"]).Remove("CharacterId");
+    WriteEnvelope(primary, payload.ToString(Formatting.None), 1);
+    byte[] original = File.ReadAllBytes(primary);
+    var repository = new AtomicSaveRepository(directory);
+    Assert(repository.TryLoad(out GameSaveData migrated, out bool recovered) && !recovered, "save 1 não foi lido");
+    Assert(migrated.SchemaVersion == 2 && migrated.Gold == 137 && migrated.Keys == 2 && migrated.Chests == 3 &&
+        migrated.AttackLevel == 4 && migrated.HealthLevel == 2, "migração alterou economia ou níveis existentes");
+    Assert(migrated.Characters.Count == 1 && migrated.Characters[0].TotalExperience == 0 && migrated.EquippedCharacterId == "pioneer" &&
+        migrated.ActiveRun.CharacterId == "pioneer" && migrated.ActiveRun.ElapsedSeconds == 2f, "migração perdeu tentativa ou inventou XP retroativo");
+    Assert(File.ReadAllBytes(primary).SequenceEqual(original), "somente ler já sobrescreveu o save antigo");
+    repository.Save(migrated);
+    Assert(File.ReadAllBytes(primary + ".bak").SequenceEqual(original), "backup não preservou os bytes originais");
+    Assert(repository.TryLoad(out GameSaveData reopened, out _) && reopened.Characters.Count == 1 && reopened.SchemaVersion == 2,
+        "save migrado não reabriu sem duplicação");
+});
+
+static void AtomicFileResumesCharacterExperience() => WithSaveDirectory(directory =>
+{
+    var save = new GameSaveData();
+    CharacterProgression.Award(save, "pioneer", TestExperienceRules(), 50);
+    CharacterProgression.TryUnlock(save, "test_drill");
+    CharacterProgression.TryEquip(save, "test_drill");
+    IdleCombatSimulation continuous = NewSimulation(save, 100, waveInterval: 1f, regularEnemyHealth: 1f);
+    for (int step = 0; step < 200 && continuous.IsActive; step++)
+    {
+        continuous.Step(0.05f);
+        if (CharacterProgression.Find(save, "test_drill").TotalExperience >= 20 &&
+            continuous.CaptureRun().PendingHits.Any(hit => !hit.TargetsPlayer)) break;
+    }
+    save.ActiveRun = continuous.CaptureRun();
+    Assert(save.ActiveRun.PendingHits.Any(hit => !hit.TargetsPlayer) && CharacterProgression.Find(save, "test_drill").TotalExperience >= 20,
+        "fixture não chegou ao nível 1 com projétil em voo");
+    var repository = new AtomicSaveRepository(directory);
+    repository.Save(save);
+    Assert(repository.TryLoad(out GameSaveData restored, out _) && restored.Characters.Count == 2, "arquivo não restaurou a coleção");
+    IdleCombatSimulation resumed = NewSimulation(restored, 100, waveInterval: 1f, regularEnemyHealth: 1f);
+    StepFor(continuous, 2f);
+    StepFor(resumed, 2f);
+    Assert(JsonConvert.SerializeObject(continuous.CaptureRun()) == JsonConvert.SerializeObject(resumed.CaptureRun()) &&
+        JsonConvert.SerializeObject(save.Characters) == JsonConvert.SerializeObject(restored.Characters),
+        "save em disco mudou projéteis, XP ou contagem de recompensas");
+    Assert(CharacterProgression.Find(restored, "pioneer").TotalExperience == 50, "personagem guardada ganhou ou perdeu XP");
+});
+
+static void CharacterExperienceRecoversFromBackup() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    var save = new GameSaveData { Gold = 51 };
+    var rules = TestExperienceRules();
+    CharacterProgression.Award(save, "pioneer", rules, 35);
+    CharacterProgression.TryUnlock(save, "test_drill");
+    CharacterProgression.TryEquip(save, "test_drill");
+    CharacterProgression.Award(save, "test_drill", rules, 10);
+    repository.Save(save);
+    CharacterProgression.Award(save, "test_drill", rules, 20);
+    repository.Save(save);
+    File.WriteAllText(Path.Combine(directory, "dig-and-wonder.save.json"), "{corrompido");
+    Assert(repository.TryLoad(out GameSaveData restored, out bool recovered) && recovered, "backup de personagens não foi recuperado");
+    Assert(restored.Characters.Count == 2 && restored.EquippedCharacterId == "test_drill" && restored.Gold == 51 &&
+        CharacterProgression.Find(restored, "test_drill").TotalExperience == 10 && CharacterProgression.Find(restored, "pioneer").TotalExperience == 35,
+        "backup misturou XP ou mudou a personagem equipada");
+});
+
+static void InvalidCharacterProgressIsRejected() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    repository.Save(new GameSaveData { Gold = 17 });
+    var duplicate = new GameSaveData();
+    duplicate.Characters.Add(new CharacterProgressData { CharacterId = "pioneer" });
+    var negative = new GameSaveData();
+    negative.Characters[0].TotalExperience = -1;
+    foreach (GameSaveData invalid in new[] { duplicate, negative, new GameSaveData { Characters = null },
+        new GameSaveData { EquippedCharacterId = "not_owned" },
+        new GameSaveData { ActiveRun = new ActiveRunSnapshot { StageId = "prado_cristalino", CharacterId = "other", PlayerHealth = 120, NextEntityId = 1 } } })
+    {
+        bool rejected = false;
+        try { repository.Save(invalid); }
+        catch (InvalidDataException) { rejected = true; }
+        Assert(rejected, "progresso inválido sobrescreveu save válido");
+    }
+    Assert(repository.TryLoad(out GameSaveData preserved, out _) && preserved.Gold == 17, "validação destruiu o save anterior");
+});
+
+static void MissingCharacterExperienceIsRejected() => WithSaveDirectory(directory =>
+{
+    string primary = Path.Combine(directory, "dig-and-wonder.save.json");
+    JObject payload = JObject.FromObject(new GameSaveData());
+    ((JObject)payload["Characters"][0]).Remove("TotalExperience");
+    WriteEnvelope(primary, payload.ToString(Formatting.None));
+    string original = File.ReadAllText(primary);
+    var repository = new AtomicSaveRepository(directory);
+    Assert(!repository.TryLoad(out _, out _) && repository.HasAnySaveFile && File.ReadAllText(primary) == original,
+        "XP ausente foi aceito como zero ou seu arquivo foi sobrescrito");
+});
+
+static void FutureCharacterSaveIsPreserved() => WithSaveDirectory(directory =>
+{
+    string primary = Path.Combine(directory, "dig-and-wonder.save.json");
+    var repository = new AtomicSaveRepository(directory);
+    repository.Save(new GameSaveData { Gold = 7 });
+    repository.Save(new GameSaveData { Gold = 14 });
+    JObject payload = JObject.FromObject(new GameSaveData());
+    payload["SchemaVersion"] = 3;
+    WriteEnvelope(primary, payload.ToString(Formatting.None), 3);
+    byte[] original = File.ReadAllBytes(primary);
+    Assert(!repository.TryLoad(out _, out _) && repository.HasAnySaveFile && File.ReadAllBytes(primary).SequenceEqual(original),
+        "backup antigo substituiu uma versão futura íntegra");
+    bool rejected = false;
+    try { repository.Save(new GameSaveData()); }
+    catch (InvalidDataException) { rejected = true; }
+    Assert(rejected && File.ReadAllBytes(primary).SequenceEqual(original), "escrita sobrescreveu uma versão futura");
+});
+
+static void InvalidSchemaValueRecoversBackup() => WithSaveDirectory(directory =>
+{
+    var repository = new AtomicSaveRepository(directory);
+    var save = new GameSaveData { Gold = 23 };
+    CharacterProgression.Award(save, "pioneer", TestExperienceRules(), 35);
+    repository.Save(save);
+    repository.Save(save);
+    JObject payload = JObject.FromObject(save);
+    payload["SchemaVersion"] = "inválido";
+    WriteEnvelope(Path.Combine(directory, "dig-and-wonder.save.json"), payload.ToString(Formatting.None));
+    Assert(repository.TryLoad(out GameSaveData restored, out bool recovered) && recovered && restored.Gold == 23 &&
+        CharacterProgression.Find(restored, "pioneer").TotalExperience == 35, "tipo inválido de versão quebrou recuperação de XP");
+});

@@ -89,5 +89,6 @@ namespace DigAndWonder
         public UpgradeCombatData CriticalDamageUpgrade;
         public StageCombatData[] Stages;
         public StageCombatData SurpriseStage;
+        public CharacterCombatData[] Characters;
     }
 }

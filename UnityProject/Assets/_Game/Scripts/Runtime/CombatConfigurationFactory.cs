@@ -1,4 +1,5 @@
 using System.Linq;
+using UnityEngine;
 
 namespace DigAndWonder
 {
@@ -29,7 +30,17 @@ namespace DigAndWonder
                 CriticalChanceUpgrade = ToRuntime(progression.criticalChanceUpgrade),
                 CriticalDamageUpgrade = ToRuntime(progression.criticalDamageUpgrade),
                 Stages = progression.normalCycle.Select(ToRuntime).ToArray(),
-                SurpriseStage = progression.surpriseStage == null ? null : ToRuntime(progression.surpriseStage)
+                SurpriseStage = progression.surpriseStage == null ? null : ToRuntime(progression.surpriseStage),
+                Characters = Resources.LoadAll<CharacterDefinition>("Data/Characters")
+                    .Where(character => character != null && character.implemented)
+                    .Select(character => new CharacterCombatData
+                    {
+                        Id = character.id,
+                        DisplayName = character.displayName,
+                        Experience = character.experience == null
+                            ? throw new System.InvalidOperationException("Curva de XP ausente: " + character.id)
+                            : character.experience.ToRuntime()
+                    }).ToArray()
             };
         }
 

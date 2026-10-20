@@ -12,6 +12,7 @@ namespace DigAndWonder
         private readonly List<PendingHitSnapshot> pendingHits = new List<PendingHitSnapshot>();
         private ActiveRunSnapshot run;
         private StageCombatData currentStage;
+        private CharacterCombatData currentCharacter;
 
         public event Action<CombatEvent> EventRaised;
 
@@ -25,6 +26,7 @@ namespace DigAndWonder
         public bool IsActive => run != null && !run.IsStageCleared && !run.IsPlayerDefeated;
         public string CurrentStageId => run?.StageId;
         public string CurrentStageDisplayName => currentStage?.DisplayName;
+        public string ActiveCharacterId => run?.CharacterId;
 
         public IdleCombatSimulation(CombatConfiguration configuration, GameSaveData saveData, string newStageId, uint randomSeed)
         {
@@ -45,7 +47,8 @@ namespace DigAndWonder
 
         private void NormalizeProfile()
         {
-            if (profile.SchemaVersion < 1) profile.SchemaVersion = 1;
+            if (profile.SchemaVersion != GameSaveData.CurrentSchemaVersion)
+                throw new InvalidOperationException("O perfil deve ser migrado antes de iniciar a simulação.");
             if (profile.Gold < 0) profile.Gold = 0;
             if (profile.Keys < 0) profile.Keys = 0;
             if (profile.Chests < 0) profile.Chests = 0;
@@ -58,12 +61,14 @@ namespace DigAndWonder
         public void BeginStage(StageCombatData stage, uint randomSeed)
         {
             if (stage == null) throw new ArgumentNullException(nameof(stage));
+            currentCharacter = ResolveCharacter(profile.EquippedCharacterId);
             currentStage = stage;
             enemies.Clear();
             pendingHits.Clear();
             run = new ActiveRunSnapshot
             {
                 StageId = stage.Id,
+                CharacterId = currentCharacter.Id,
                 PlayerHealth = PlayerMaximumHealth,
                 AttackTimer = 0f,
                 AttackHitTimer = 0f,
@@ -322,7 +327,12 @@ namespace DigAndWonder
 
         private void DefeatEnemy(EnemySnapshot enemy)
         {
-            enemies.Remove(enemy);
+            if (!enemies.Remove(enemy)) return;
+            CharacterProgressData character = CharacterProgression.Find(profile, run.CharacterId);
+            int previousLevel = CharacterProgression.GetLevel(character, currentCharacter.Experience).Level;
+            int awardedExperience = CharacterProgression.Award(profile, run.CharacterId, currentCharacter.Experience,
+                enemy.IsBoss ? currentCharacter.Experience.BossExperience : currentCharacter.Experience.RegularEnemyExperience);
+            int newLevel = CharacterProgression.GetLevel(character, currentCharacter.Experience).Level;
             profile.Gold += enemy.GoldReward;
             // Observadores recebem a transação completa, inclusive ao salvar no evento.
             if (enemy.IsBoss)
@@ -336,6 +346,10 @@ namespace DigAndWonder
             }
             Emit(CombatEventType.EnemyDefeated, enemy.Id, enemy.GoldReward, enemy.IsBoss ? currentStage.Boss.DisplayName : config.RegularEnemy.DisplayName);
             Emit(CombatEventType.GoldAwarded, enemy.Id, enemy.GoldReward, "Ouro por inimigo derrotado");
+            if (awardedExperience > 0)
+                Emit(CombatEventType.CharacterExperienceAwarded, enemy.Id, awardedExperience, run.CharacterId);
+            if (newLevel > previousLevel)
+                Emit(CombatEventType.CharacterLeveledUp, enemy.Id, newLevel, run.CharacterId);
             if (!enemy.IsBoss)
             {
                 SpawnPendingEnemies();
@@ -423,6 +437,9 @@ namespace DigAndWonder
 
         private void RestoreRun(ActiveRunSnapshot snapshot)
         {
+            if (snapshot.CharacterId != profile.EquippedCharacterId)
+                throw new InvalidOperationException("A personagem equipada diverge da tentativa salva.");
+            currentCharacter = ResolveCharacter(snapshot.CharacterId);
             currentStage = FindStage(snapshot.StageId) ?? FirstStage();
             run = CloneRun(snapshot);
             enemies.Clear();
@@ -432,6 +449,17 @@ namespace DigAndWonder
             if (snapshot.PendingHits != null)
                 pendingHits.AddRange(snapshot.PendingHits.Where(hit => hit != null).Select(ClonePendingHit));
             profile.ActiveRun = run;
+        }
+
+        private CharacterCombatData ResolveCharacter(string characterId)
+        {
+            if (CharacterProgression.Find(profile, characterId) == null)
+                throw new InvalidOperationException("A personagem da tentativa não pertence ao perfil: " + characterId);
+            CharacterCombatData definition = config.Characters?.FirstOrDefault(item => item != null && item.Id == characterId);
+            if (definition == null || definition.Experience == null)
+                throw new InvalidOperationException("Personagem ou curva de XP não encontrada: " + characterId);
+            definition.Experience.Validate();
+            return definition;
         }
 
         private float GetDamageMultiplier() => 1f + profile.AttackLevel * config.AttackUpgrade.Bonus;
@@ -486,6 +514,7 @@ namespace DigAndWonder
         private static ActiveRunSnapshot CloneRun(ActiveRunSnapshot value) => new ActiveRunSnapshot
         {
             StageId = value.StageId,
+            CharacterId = value.CharacterId,
             ElapsedSeconds = value.ElapsedSeconds,
             PlayerHealth = value.PlayerHealth,
             AttackTimer = value.AttackTimer,

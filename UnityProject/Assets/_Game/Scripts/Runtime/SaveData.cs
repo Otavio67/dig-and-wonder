@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace DigAndWonder
 {
     [Serializable]
     public sealed class GameSaveData
     {
-        public int SchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
+        public int SchemaVersion = CurrentSchemaVersion;
         public int Gold;
         public int Keys;
         public int Chests;
@@ -15,13 +17,27 @@ namespace DigAndWonder
         public int CriticalChanceLevel;
         public int CriticalDamageLevel;
         public string UnlockedStageId = "prado_cristalino";
+        public string EquippedCharacterId = CharacterProgression.StarterCharacterId;
+        [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
+        public List<CharacterProgressData> Characters = new List<CharacterProgressData>
+        {
+            new CharacterProgressData { CharacterId = CharacterProgression.StarterCharacterId }
+        };
         public ActiveRunSnapshot ActiveRun;
+    }
+
+    [Serializable]
+    public sealed class CharacterProgressData
+    {
+        public string CharacterId;
+        public long TotalExperience;
     }
 
     [Serializable]
     public sealed class ActiveRunSnapshot
     {
         public string StageId;
+        public string CharacterId = CharacterProgression.StarterCharacterId;
         public float ElapsedSeconds;
         public float PlayerHealth;
         public float AttackTimer;
