@@ -8,7 +8,7 @@ A amostra Unity é um jogo 2D retrato de combate automático com tema de escava�
 
 Esta ainda é uma base de protótipo. A interface e os ícones são provisórios; abertura de baús, equipamentos, álbum de descobertas e novas regiões não estão implementados. O jogo ainda não passou por revisão visual, teste de toque em aparelho Android ou medição de desempenho.
 
-A amostra visual da Broca Pioneira agora tem locomoção de chão separada da lógica: caminhada curta, avanço de ataque, reação a dano e derrota. O PNG enviado ainda precisa ser adicionado ao checkout para a importação da folha de sprites; a preparação está documentada em [SPRITE-BROCA-UNITY.md](docs/SPRITE-BROCA-UNITY.md).
+A amostra visual da Broca Pioneira agora tem locomoção de chão separada da lógica: caminhada curta, avanço de ataque, reação a dano e derrota. Uma folha PNG transparente derivada da arte enviada já está no checkout; a importação e a ligação dos frames estão documentadas em [SPRITE-BROCA-UNITY.md](docs/SPRITE-BROCA-UNITY.md).
 
 Um smoke test em Play Mode passou no Unity 6000.0.23f1: a luta simulou 10 segundos, com sete ataques automáticos, sete de ouro, 112/120 de vida e nenhum erro ou exceção de runtime. Isso não valida interação física, aparência final ou desempenho no Android; veja os detalhes em [revisão de combate e save](docs/UNITY-REVISAO-COMBATE-SAVE.md).
 

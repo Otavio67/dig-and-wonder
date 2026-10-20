@@ -36,3 +36,6 @@ solo-torroes-raizes.png: imagem gerada pela ferramenta integrada imagegen para e
 
 ## Atlas do Marco 2 — 20/10/2026
 `characters/torrao-poses.png` e `characters/escavador-poses.png`: imagens 2D geradas pela ferramenta integrada imagegen para este projeto. Prompts em docs/PROMPTS-MARCO2.md. Não foram usados modelos 3D ou personagens copiados. Não se atribui autoria humana à geração.
+
+## Folha da Broca Pioneira — 20/10/2026
+`UnityProject/Assets/_Game/Art/Drill/drill_pioneira.png`: folha RGBA 4 × 3 gerada pela ferramenta integrada de imagens a partir da referência enviada pelo usuário, com fundo removido e células normalizadas para o protótipo Unity. O arquivo não foi extraído de jogo ou biblioteca de terceiros e ainda precisa de revisão no Unity Editor antes de ser tratado como arte final.

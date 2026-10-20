@@ -177,6 +177,14 @@ Relatório e passos de teste: [UNITY-REVISAO-COMBATE-SAVE.md](UNITY-REVISAO-COMB
 - Adicionado `GroundDrillMotion2D`, uma camada visual reutilizável para caminhada, antecipação, avanço, impacto e derrota.
 - O movimento usa DOTween em tempo não escalado e cancela tweens pendentes ao reiniciar, morrer, desabilitar ou remover a unidade.
 - A posição funcional, o colisor, os valores de combate, a economia e o save permanecem fora da animação.
-- A amostra de sprite enviada foi avaliada e documentada; o PNG ainda precisa ser colocado no checkout antes da importação e da animação por frames.
+- A amostra de sprite enviada foi avaliada e documentada; a folha PNG ainda estava pendente de integração no checkout.
 
 Checks estáticos serão executados neste checkpoint. O Editor remoto não tem licença ativa; não há nova gravação, teste de aparelho ou medição Android.
+
+## 0.0.9 — folha visual da Broca Pioneira (20/10/2026)
+
+- Gerada uma derivação transparente da referência enviada, preservando a broca, a paleta e as 12 poses em uma folha RGBA de 1680 × 960.
+- A folha foi normalizada em uma grade de 4 × 3 células de 420 × 320 e recebeu pivô provisório próximo ao contato das esteiras.
+- O arquivo está em `UnityProject/Assets/_Game/Art/Drill/drill_pioneira.png`; a ligação ao HUD e a revisão de importação continuam para o Editor local.
+
+Tag: `v0.0.9`. A imagem foi revisada visualmente fora do Unity; não há validação de frames, toque ou desempenho Android.
