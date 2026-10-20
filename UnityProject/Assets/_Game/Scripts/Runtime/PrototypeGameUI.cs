@@ -311,12 +311,6 @@ namespace DigAndWonder
 
         private void OpenProgression()
         {
-            if (driver.Simulation == null)
-            {
-                hubMissionLabel.text = "Inicie uma expedição antes de usar a oficina";
-                return;
-            }
-
             inGame = false;
             StopCaveMotion();
             hubPanel.gameObject.SetActive(false);
@@ -341,6 +335,7 @@ namespace DigAndWonder
                 progressionPowerLabel.text = "PODER —";
                 progressionAttackValue.text = "ATQ\nINICIE A EXPEDIÇÃO";
                 progressionHealthValue.text = "PV\nINICIE A EXPEDIÇÃO";
+                progressionStatusLabel.text = "Inicie a expedição para desbloquear compras";
                 progressionAttackButton.interactable = false;
                 progressionHealthButton.interactable = false;
                 return;

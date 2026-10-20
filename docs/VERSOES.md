@@ -232,3 +232,12 @@ Tag: `v0.0.12`.
 Checks de economia/save, compilação contra stubs e compilação contra DLLs reais do Unity passaram. A revisão visual dentro do Editor e o teste em aparelho Android continuam pendentes.
 
 Tag: `v0.0.13`.
+
+## 0.0.14 — prévia da oficina no primeiro acesso (20/10/2026)
+
+- A Oficina pode ser aberta no Acampamento mesmo antes da primeira tentativa, permitindo revisar a estrutura de atributos e bloqueios.
+- Em perfil sem expedição, os valores e botões ficam explicitamente desabilitados com a instrução para iniciar; nenhuma compra ou saldo é criado.
+
+Checks de domínio, compilação dos scripts e compilação contra DLLs reais do Unity passaram.
+
+Tag: `v0.0.14`.
