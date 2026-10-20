@@ -1,6 +1,6 @@
 # Economia, XP e progressão — 0.0.17
 
-> Histórico de balanceamento da **0.0.17**. A regra foi esclarecida e implementada na **0.0.18**: brocas gratuitas ao vencer fases 10/20/30…, dificuldade em degraus a cada cinco fases e XP comum com aumento mínimo por fase. Veja [BROCAS-POR-FASE.md](BROCAS-POR-FASE.md) para o catálogo, fórmulas e ensaios atuais. Moedas, custos e poderes desta base permanecem.
+> Histórico de balanceamento da **0.0.17**. A regra foi esclarecida e implementada na **0.0.18**: brocas gratuitas ao vencer fases 10/20/30…, dificuldade em degraus a cada cinco fases e XP comum com aumento mínimo por fase. A **0.0.19** estende a campanha até a fase 100; veja [ENDGAME-100.md](ENDGAME-100.md) para as regras finais. Moedas, custos e poderes desta base permanecem.
 
 ## Decisões e alcance
 

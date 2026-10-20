@@ -49,6 +49,8 @@ namespace DigAndWonder
     {
         public int MaximumStage;
         public double EnemyHealthBase, EnemyDamageBase, EnemyHealthGrowth, EnemyDamageGrowth;
+        public int EndgameStartStage;
+        public double EndgameHealthGrowth, EndgameDamageGrowth;
         public double BossHealthMultiplier, BossDamageMultiplier, GoldGrowth, ExperienceGrowth;
         public int EnemyGoldBase, BossGoldMultiplier;
         public int MinimumExperienceStep;
@@ -75,6 +77,9 @@ namespace DigAndWonder
                 throw new ArgumentException("Contadores inválidos na economia.");
             RequireRange(EnemyHealthBase, 1, 10000); RequireRange(EnemyDamageBase, 0.1, 1000);
             RequireRange(EnemyHealthGrowth, 1, 1.2); RequireRange(EnemyDamageGrowth, 1, 1.2);
+            if (EndgameStartStage < 2 || EndgameStartStage > MaximumStage + 1)
+                throw new ArgumentException("Início do end game inválido.");
+            RequireRange(EndgameHealthGrowth, 1, 1.2); RequireRange(EndgameDamageGrowth, 1, 1.2);
             if (MinimumExperienceStep < 1 || MinimumExperienceStep > 10) throw new ArgumentException("Passo mínimo de XP inválido.");
             RequireRange(GoldGrowth, 1, 1.2); RequireRange(ExperienceGrowth, 1, 1.2);
             RequireRange(BossHealthMultiplier, 1, 20); RequireRange(BossDamageMultiplier, 1, 10);
@@ -92,7 +97,7 @@ namespace DigAndWonder
                     character.UnlockStage > MaximumStage || character.BasicHitCount < 0 || character.BasicHitCount > 3 ||
                     character.SpecialTargetCount < 1 || character.SpecialTargetCount > 3)
                     throw new ArgumentException("Broca inválida no catálogo.");
-                RequireRange(character.AttackMultiplier, .1, 20); RequireRange(character.HealthMultiplier, .1, 20);
+                RequireRange(character.AttackMultiplier, .1, 100); RequireRange(character.HealthMultiplier, .1, 200);
                 RequireRange(character.SpeedMultiplier, .5, 1.5); RequireRange(character.ProjectileDamageMultiplier, .5, 2);
                 RequireRange(character.InnateRicochet, 0, .75);
                 RequireRange(character.TintR, 0, 1); RequireRange(character.TintG, 0, 1); RequireRange(character.TintB, 0, 1);
@@ -172,8 +177,10 @@ namespace DigAndWonder
         }
         public int StageIndex(int stage) => Math.Max(0, Math.Min(MaximumStage, stage) - 1);
         public int DifficultyTier(int stage) => Math.Max(1, Math.Min(MaximumStage, stage)) / DifficultyStepInterval;
-        public double EnemyHealth(int stage) => EnemyHealthBase * Math.Pow(EnemyHealthGrowth, StageIndex(stage)) * Math.Pow(DifficultyHealthStep, DifficultyTier(stage));
-        public double EnemyDamage(int stage) => EnemyDamageBase * Math.Pow(EnemyDamageGrowth, StageIndex(stage)) * Math.Pow(DifficultyDamageStep, DifficultyTier(stage));
+        private int EarlyStageIndex(int stage) => Math.Min(StageIndex(stage), EndgameStartStage - 2);
+        private int EndgameStageIndex(int stage) => Math.Max(0, StageIndex(stage) - (EndgameStartStage - 2));
+        public double EnemyHealth(int stage) => EnemyHealthBase * Math.Pow(EnemyHealthGrowth, EarlyStageIndex(stage)) * Math.Pow(EndgameHealthGrowth, EndgameStageIndex(stage)) * Math.Pow(DifficultyHealthStep, DifficultyTier(stage));
+        public double EnemyDamage(int stage) => EnemyDamageBase * Math.Pow(EnemyDamageGrowth, EarlyStageIndex(stage)) * Math.Pow(EndgameDamageGrowth, EndgameStageIndex(stage)) * Math.Pow(DifficultyDamageStep, DifficultyTier(stage));
         public EconomyUpgradeRule Upgrade(UpgradeKind kind) => Upgrades.FirstOrDefault(x => x.Kind == kind);
         public AttackPowerRule Power(string id) => Powers.FirstOrDefault(x => x.Id == id);
     }

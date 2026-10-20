@@ -295,3 +295,15 @@ Tag: `v0.0.17`.
 Catálogo, cálculos, resultados e roteiro: [BROCAS-POR-FASE.md](BROCAS-POR-FASE.md).
 
 Tag: `v0.0.18`.
+
+## 0.0.19 — campanha final até a fase 100
+
+- A campanha foi estendida de 60 para 100 fases. O chefe continua sendo a única condição de avanço; a fase 100 encerra o conteúdo atual e fica disponível para treino.
+- Recompensas de fase agora incluem Cobalto (70), Nova (80), Titã (90) e Singular (100). Cada broca nova começa com XP 0, nível 0 e poderes próprios; a coleção antiga e o save esquema 3 permanecem compatíveis.
+- Dificuldade e XP continuam crescendo por fase, com degraus de dificuldade a cada cinco fases. O núcleo impede avançar além de 100 e não cria uma fase 101 sem conteúdo.
+- Quatro ScriptableObjects novos foram adicionados. A arte continua provisória, usando a folha da Pioneira com tintas distintas; as diferenças funcionais de padrão já entram no combate.
+- 75 checks de domínio passaram e os scripts continuam compilando com stubs e DLLs reais. Nove simulações chegaram à fase 100 em 101,22–119,75 minutos simulados, dependendo da política de compra; isso não é tempo humano medido. Editor batch, Play Mode, APK e medição Android seguem pendentes por falta de licença/aparelho nesta nuvem.
+
+Detalhes de conteúdo, compatibilidade e limites: [ENDGAME-100.md](ENDGAME-100.md).
+
+Tag: `v0.0.19`.

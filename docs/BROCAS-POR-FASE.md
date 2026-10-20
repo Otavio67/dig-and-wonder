@@ -1,5 +1,7 @@
 # Brocas como recompensa de fase — 0.0.18
 
+> A campanha foi estendida para as fases 70–100 no checkpoint 0.0.19. Esta página preserva a tabela original até Aurora; consulte [ENDGAME-100.md](ENDGAME-100.md) para Cobalto, Nova, Titã, Singular e o limite da fase 100.
+
 ## Regra confirmada pelo usuário
 
 **Vencer fases libera brocas; subir o nível da broca não libera outra personagem.** Vencer a fase 10 concede uma melhor que a inicial; vencer 20, 30, 40, 50 e 60 concede as seguintes. Não há nível geral de jogador ou um segundo XP para essa contagem.

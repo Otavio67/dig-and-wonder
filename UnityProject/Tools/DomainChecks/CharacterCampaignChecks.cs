@@ -5,7 +5,7 @@ internal static class CharacterCampaignChecks
 {
     internal static IEnumerable<(string Name, Action Test)> All()
     {
-        yield return ("campanha: catálogo cobre recompensas das fases 10 a 60", CatalogCoversMilestones);
+        yield return ("campanha: catálogo cobre recompensas das fases 10 a 100", CatalogCoversMilestones);
         yield return ("campanha: nível alto da broca não libera recompensa de fase", ExperienceDoesNotUnlockCharacters);
         yield return ("campanha: broca nova vem zerada e duplicata conserva XP e poderes", MilestonesKeepIndividualProgress);
         yield return ("campanha: chefe concede broca e recompensa antes dos eventos/save", BossUnlockIsAtomic);
@@ -16,6 +16,7 @@ internal static class CharacterCampaignChecks
         yield return ("campanha: Centelha dispara três projéteis na rajada", SparkUsesThreeShots);
         yield return ("campanha: Prisma possui estilhaço sem comprar poder", PrismHasInnateRicochet);
         yield return ("campanha: Sísmica aplica especial em três alvos", SeismicHasAreaSpecial);
+        yield return ("campanha: Singular encerra o catálogo com padrão próprio e nível zero", FinalDrillHasEndgamePattern);
         yield return ("campanha: dificuldade aumenta nas fases 5/10 e XP cresce por fase", DifficultyAndExperienceGrow);
         yield return ("campanha: save retoma outra broca com projéteis e XP independente", CharacterRunResumes);
     }
@@ -33,8 +34,8 @@ internal static class CharacterCampaignChecks
     private static void CatalogCoversMilestones()
     {
         EconomyRules rules = EconomyChecks.Rules();
-        Check(rules.CharacterRoster.Length == 7, "catálogo incompleto");
-        Check(rules.CharacterRoster.Where(x => x.UnlockStage > 0).Select(x => x.UnlockStage).OrderBy(x => x).SequenceEqual(new[] { 10, 20, 30, 40, 50, 60 }), "marcos incorretos");
+        Check(rules.CharacterRoster.Length == 11, "catálogo incompleto");
+        Check(rules.CharacterRoster.Where(x => x.UnlockStage > 0).Select(x => x.UnlockStage).OrderBy(x => x).SequenceEqual(new[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 }), "marcos incorretos");
         string directory = Path.Combine(EconomyChecks.Root, "UnityProject/Assets/_Game/Resources/Data/Characters");
         foreach (CharacterCombatData character in rules.CharacterRoster)
         {
@@ -130,10 +131,10 @@ internal static class CharacterCampaignChecks
         }
     }
 
-    private static IdleCombatSimulation PatternSimulation(string id, bool special)
+    private static IdleCombatSimulation PatternSimulation(string id, bool special, int highestClearedStage = 60)
     {
         CombatConfiguration config = EconomyChecks.Configuration();
-        var save = new GameSaveData { HighestClearedStage = 60 };
+        var save = new GameSaveData { HighestClearedStage = highestClearedStage };
         CharacterProgression.GrantStageRewards(save, config.Characters); CharacterProgression.TryEquip(save, id);
         save.ActiveRun = new ActiveRunSnapshot
         {
@@ -148,7 +149,7 @@ internal static class CharacterCampaignChecks
     private static void MilestoneSwapsAreWorthwhile()
     {
         EconomyRules rules = EconomyChecks.Rules(); CharacterCombatData[] catalog = rules.CharacterRoster.OrderBy(x => x.UnlockStage).ToArray();
-        int[] modeledPreviousLevels = { 11, 12, 14, 17, 20, 23 };
+        int[] modeledPreviousLevels = { 11, 12, 14, 17, 20, 22, 24, 26, 28, 30 };
         double BasicRate(CharacterCombatData character) => character.BasicHitCount * character.ProjectileDamageMultiplier * character.SpeedMultiplier /
             (1.25 + (character.BasicHitCount - 1) * .28);
         for (int i = 1; i < catalog.Length; i++)
@@ -180,13 +181,33 @@ internal static class CharacterCampaignChecks
         Check(sim.Enemies.All(x => x.Health < 10000), "especial não atingiu três alvos");
     }
 
+    private static void FinalDrillHasEndgamePattern()
+    {
+        EconomyRules rules = EconomyChecks.Rules();
+        var save = new GameSaveData { HighestClearedStage = rules.MaximumStage };
+        string[] granted = CharacterProgression.GrantStageRewards(save, rules.CharacterRoster);
+        CharacterProgressData finalProgress = CharacterProgression.Find(save, "singularity");
+        CharacterCombatData finalCharacter = rules.CharacterRoster.First(x => x.Id == "singularity");
+        Check(granted.Contains("singularity") && finalProgress != null && finalProgress.TotalExperience == 0 &&
+            finalCharacter.BasicHitCount == 3 && finalCharacter.SpecialTargetCount == 3 &&
+            Math.Abs(finalCharacter.InnateRicochet - .3) < .0001, "recompensa final ou padrão incorreto");
+        CharacterProgression.TryEquip(save, "singularity");
+        var sim = new IdleCombatSimulation(EconomyChecks.Configuration(rules), save, "prado_cristalino", 12345);
+        int shots = 0; sim.EventRaised += e => { if (e.Type == CombatEventType.DrillAttack) shots++; };
+        Tick(sim, 1f);
+        Check(sim.ActiveCharacterId == "singularity" && shots > 0, "broca final não entrou no combate: " + sim.ActiveCharacterId + "/" + shots);
+    }
+
     private static void DifficultyAndExperienceGrow()
     {
         EconomyRules rules = EconomyChecks.Rules();
         Check(rules.DifficultyTier(4) == 0 && rules.DifficultyTier(5) == 1 && rules.DifficultyTier(9) == 1 && rules.DifficultyTier(10) == 2, "degrau deslocado");
         Check(Math.Abs(rules.EnemyHealth(5) / rules.EnemyHealth(4) - 1.115 * 1.12) < .00001 &&
             Math.Abs(rules.EnemyDamage(5) / rules.EnemyDamage(4) - 1.10 * 1.08) < .00001, "multiplicador de degrau incorreto");
-        for (int stage = 2; stage <= 60; stage++)
+        Check(rules.EnemyHealth(61) > rules.EnemyHealth(60) && rules.EnemyDamage(61) > rules.EnemyDamage(60) &&
+            rules.EnemyHealth(61) / rules.EnemyHealth(60) < 1.10,
+            "compressão do end game inválida: " + rules.EnemyHealth(60) + "/" + rules.EnemyHealth(61) + "/" + rules.EnemyDamage(60) + "/" + rules.EnemyDamage(61));
+        for (int stage = 2; stage <= 100; stage++)
             Check(rules.ExperienceReward(stage, false) > rules.ExperienceReward(stage - 1, false) &&
                 rules.ExperienceReward(stage, true) > rules.ExperienceReward(stage - 1, true), "XP regrediu com a fase");
         Check(rules.Experience.RequiredForNextLevel(30) > rules.Experience.RequiredForNextLevel(20), "requisito de XP não cresce");

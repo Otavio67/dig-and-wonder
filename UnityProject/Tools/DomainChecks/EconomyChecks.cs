@@ -97,7 +97,7 @@ internal static class EconomyChecks
         yield return ("economia: chefe entrega recompensa e primeira vitória atomicamente", FirstClearIsAtomic);
         yield return ("economia: repetir fase não duplica cristais de primeira vitória", RepeatClearDoesNotPayFirstClear);
         yield return ("economia: treino repete fase vencida e não interrompe tentativa", TrainingRespectsProgress);
-        yield return ("economia: fase 60 encerra avanço sem ultrapassar o marco", FinalStageRemainsBounded);
+        yield return ("economia: fase 100 encerra avanço sem ultrapassar o marco", FinalStageRemainsBounded);
         yield return ("economia: baú exige chave e persiste sorteio", ChestTransactions);
         yield return ("economia: guardar baú não aumenta valor com a fase", ChestValueDoesNotInflate);
         yield return ("economia: distribuição de 100 mil baús respeita percentuais", ChestDistribution);
@@ -114,7 +114,7 @@ internal static class EconomyChecks
 
     private static void RulesAreValid()
     {
-        EconomyRules rules = Rules(); Check(rules.MaximumStage == 60 && rules.Experience.MaximumLevel == 60, "marco incompleto");
+        EconomyRules rules = Rules(); Check(rules.MaximumStage == 100 && rules.Experience.MaximumLevel == 60, "marco incompleto");
         rules.ChestRewards[0].Weight--;
         bool rejected = false; try { rules.Validate(); } catch (ArgumentException) { rejected = true; }
         Check(rejected, "probabilidade inválida aceita");
@@ -155,7 +155,11 @@ internal static class EconomyChecks
         EconomyRules rules = Rules();
         int enemies = 0;
         for (int wave = 1; wave <= rules.WaveCount; wave++) enemies += wave > rules.LateWaveAfter ? rules.LateWaveSize : 1;
-        int xp = enemies * rules.ExperienceReward(rules.MaximumStage, false) + rules.ExperienceReward(rules.MaximumStage, true);
+        // A referência de longo prazo continua sendo a faixa 60. As fases 61-100 são
+        // conteúdo de end game e oferecem catch-up para brocas novas sem encurtar a
+        // meta de desenvolvimento individual medida no mid-game.
+        int referenceStage = Math.Min(60, rules.MaximumStage);
+        int xp = enemies * rules.ExperienceReward(referenceStage, false) + rules.ExperienceReward(referenceStage, true);
         double secondsPerCycle = (rules.WaveCount - 1) * rules.WaveInterval;
         double hours = rules.Experience.MaximumExperience * secondsPerCycle / xp / 3600;
         Check(hours >= 60 && hours <= 100, "curva fugiu da referência de longo prazo: " + hours);
@@ -313,9 +317,9 @@ internal static class EconomyChecks
 
     private static void FinalStageRemainsBounded()
     {
-        GameSaveData save = WinningSave(60, 59);
+        GameSaveData save = WinningSave(100, 99);
         var sim = new IdleCombatSimulation(Configuration(), save, "prado_cristalino", 1); Tick(sim, 1);
-        Check(save.CampaignStage == 60 && save.HighestClearedStage == 60, "avançou além do marco");
+        Check(save.CampaignStage == 100 && save.HighestClearedStage == 100, "avançou além do marco");
     }
 
     private static void TrainingRespectsProgress()
@@ -439,14 +443,14 @@ internal static class EconomyChecks
         var curves = new List<string> { "phase,normal_hp,boss_hp,normal_damage,normal_gold,boss_gold,normal_xp,boss_xp,first_clear_crystals" };
         for (int phase = 1; phase <= rules.MaximumStage; phase++)
             curves.Add(FormattableString.Invariant($"{phase},{rules.EnemyHealth(phase):F2},{rules.EnemyHealth(phase) * rules.BossHealthMultiplier:F2},{rules.EnemyDamage(phase):F2},{rules.NormalGold(phase)},{rules.NormalGold(phase) * rules.BossGoldMultiplier},{rules.ExperienceReward(phase, false)},{rules.ExperienceReward(phase, true)},{rules.FirstClearCrystals + (phase % rules.MilestoneInterval == 0 ? rules.MilestoneCrystals : 0)}"));
-        File.WriteAllLines(Path.Combine(output, "campaign-0.0.18.csv"), curves);
+        File.WriteAllLines(Path.Combine(output, "campaign-0.0.19.csv"), curves);
         var xp = new List<string> { "level,xp_to_next,total_xp" }; long total = 0;
         for (int level = 0; level <= 60; level++)
         {
             xp.Add($"{level},{(level < 60 ? rules.Experience.RequiredForNextLevel(level) : 0)},{total}");
             if (level < 60) total += rules.Experience.RequiredForNextLevel(level);
         }
-        File.WriteAllLines(Path.Combine(output, "character-xp-0.0.18.csv"), xp);
+        File.WriteAllLines(Path.Combine(output, "character-xp-0.0.19.csv"), xp);
         var upgrades = new List<string> { "kind,level,cost,cumulative_cost,unlock_character_level" };
         foreach (EconomyUpgradeRule upgrade in rules.Upgrades)
         {
@@ -456,11 +460,11 @@ internal static class EconomyChecks
                 upgrades.Add($"{upgrade.Kind},{level},{upgrade.Cost(level)},{cumulative},{upgrade.UnlockLevel}"); cumulative += upgrade.Cost(level);
             }
         }
-        File.WriteAllLines(Path.Combine(output, "upgrade-costs-0.0.18.csv"), upgrades);
+        File.WriteAllLines(Path.Combine(output, "upgrade-costs-0.0.19.csv"), upgrades);
         var results = new List<string> { "strategy,seed,phase,result,simulated_minutes,attempts,character_level,attack_level,health_level,gold,crystals,gold_earned,gold_spent,powers_bought,active_character,next_character" };
         foreach (string strategy in new[] { "balanced", "attack", "survival" })
             foreach (uint seed in new uint[] { 12345, 54321, 98765 }) Simulate(config, strategy, seed, results);
-        File.WriteAllLines(Path.Combine(output, "simulation-0.0.18.csv"), results);
+        File.WriteAllLines(Path.Combine(output, "simulation-0.0.19.csv"), results);
         WriteLongTermExperienceReport(config, output);
         Console.WriteLine("Relatórios gerados em docs/balance; tempos simulados, sem anúncios, sem dinheiro real e sem usar cristais.");
         foreach (string strategy in new[] { "balanced", "attack", "survival" })
@@ -473,9 +477,12 @@ internal static class EconomyChecks
     private static void WriteLongTermExperienceReport(CombatConfiguration config, string output)
     {
         EconomyRules rules = config.Economy;
-        var save = new GameSaveData { CampaignStage = rules.MaximumStage, HighestClearedStage = rules.MaximumStage, LootRandomState = 54321 };
+        // A projeção de XP continua comparável ao mid-game na fase 60. O relatório
+        // de campanha separado percorre o novo fim em 100.
+        int farmStage = Math.Min(60, rules.MaximumStage);
+        var save = new GameSaveData { CampaignStage = farmStage, HighestClearedStage = farmStage, LootRandomState = 54321 };
         CharacterProgression.GrantStageRewards(save, config.Characters);
-        CharacterProgression.TryEquip(save, rules.CharacterRoster.OrderBy(x => x.UnlockStage).Last().Id);
+        CharacterProgression.TryEquip(save, rules.CharacterRoster.Where(x => x.UnlockStage <= farmStage).OrderBy(x => x.UnlockStage).Last().Id);
         CharacterProgressData characterProgress = CharacterProgression.Find(save, save.EquippedCharacterId);
         save.AttackLevel = rules.Upgrade(UpgradeKind.Attack).MaximumLevel;
         save.HealthLevel = rules.Upgrade(UpgradeKind.Health).MaximumLevel;
@@ -496,7 +503,7 @@ internal static class EconomyChecks
             var sim = new IdleCombatSimulation(config, save, "prado_cristalino", 54321u + (uint)level);
             int ticks = 0;
             while (sim.IsActive && ticks < 7200) { sim.Step(.05f); ticks++; }
-            if (!sim.Run.IsStageCleared) throw new InvalidOperationException("Cenário de farm favorável não concluiu a fase 60.");
+            if (!sim.Run.IsStageCleared) throw new InvalidOperationException("Cenário de farm favorável não concluiu a fase " + farmStage + ".");
             long gained = characterProgress.TotalExperience - before;
             if (gained < 1) throw new InvalidOperationException("Ciclo sem XP.");
             int extraCycles = (int)Math.Ceiling(Math.Max(0, target - characterProgress.TotalExperience) / (double)gained);
@@ -505,10 +512,14 @@ internal static class EconomyChecks
             elapsed += sim.Run.ElapsedSeconds * currentCycles; cycles += currentCycles;
             int measuredLevel = CharacterProgression.GetLevel(characterProgress, rules.Experience).Level;
             rows.Add(FormattableString.Invariant($"{measuredLevel},{characterProgress.TotalExperience},{elapsed / 3600:F3},{sim.Run.ElapsedSeconds:F2},{gained},{cycles}"));
+            // Farma sempre a mesma fase de referência; a vitória normalmente aponta
+            // para a fase seguinte e isso não deve alterar a projeção.
+            save.CampaignStage = farmStage;
+            save.HighestClearedStage = farmStage;
             // Um único ciclo pode pular níveis iniciais; segue do nível realmente alcançado.
             level = measuredLevel - 1;
         }
-        File.WriteAllLines(Path.Combine(output, "long-term-xp-0.0.18.csv"), rows);
+        File.WriteAllLines(Path.Combine(output, "long-term-xp-0.0.19.csv"), rows);
         Console.WriteLine("XP longo prazo: " + rows.Last() + " (projeção por ciclos medidos, oficina/poderes no máximo desde o início; não é partida humana)");
     }
 
