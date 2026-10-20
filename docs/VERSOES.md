@@ -319,3 +319,15 @@ Tag: `v0.0.19`.
 Catálogos e regras de conteúdo: [CONTENT-BIBLE-ENDGAME.md](CONTENT-BIBLE-ENDGAME.md).
 
 Tag: `v0.0.20`.
+
+## 0.0.21 — faixas progressivas de inimigos
+
+- A campanha recebeu um catálogo separado de dez faixas, cobrindo as fases 1–100. Cada faixa adiciona cinco inimigos novos, com entrada gradual nos offsets 0/2/4/7/9; o conjunto de tipos é cumulativo.
+- A meta de encontros comuns começa em 20 derrotas por fase e sobe cinco a cada bloco de dez fases, chegando a 65 na faixa 91–100. Cada fase mantém um boss adicional; derrotar o boss continua sendo a única condição de avanço.
+- Foram criados 50 IDs de inimigos com função, personalidade, ataque, telegraph e efeito planejados. Eles permanecem conteúdo de dados até a integração de spawn, pool, arte, drops e balanceamento no runtime.
+- O runtime jogável não foi alterado neste checkpoint: continua com as oito ondas do protótipo 0.0.19. Isso evita declarar uma progressão que ainda não foi validada em combate.
+- Os relatórios de economia foram regenerados com o identificador 0.0.21; os checks de domínio e compilação continuam sendo a referência técnica desta versão.
+
+Catálogo e regra de quantidade: [CONTENT-BIBLE-ENDGAME.md](CONTENT-BIBLE-ENDGAME.md) e [`content/enemies/campaign-tiers.json`](../content/enemies/campaign-tiers.json).
+
+Tag: `v0.0.21`.

@@ -1,4 +1,4 @@
-# Bíblia de conteúdo — profundidade, inimigos, brocas e pets — 0.0.20
+# Bíblia de conteúdo — profundidade, inimigos, brocas e pets — 0.0.21
 
 Este documento transforma a próxima expansão em conteúdo consultável por dados. Os catálogos em `content/regions`, `content/enemies`, `content/drills`, `content/pets` e `content/modes` são separados da simulação Unity. IDs são estáveis para que um save futuro não dependa do nome traduzido.
 
@@ -22,7 +22,26 @@ Na Dimensão Fraturada, o cenário dobra, os veios ficam suspensos e alguns inim
 
 ## Inimigos e leitura de combate
 
-O catálogo define quatro funções: básico, ágil, suporte/controle e tanque. Cada inimigo tem preparação, ação e recuperação. O jogador deve entender o próximo ataque pelo movimento e pelo som, sem depender de texto.
+### Escalonamento de encontros da campanha
+
+O catálogo `content/enemies/campaign-tiers.json` separa a quantidade de alvos da quantidade de tipos disponíveis. A cada bloco de dez fases entram cinco inimigos novos no conjunto cumulativo; dentro do bloco eles aparecem nos offsets de fase `0, 2, 4, 7 e 9`, para que o jogador aprenda os padrões aos poucos. O boss da fase continua sendo um encontro adicional e permanece a única condição de avanço.
+
+| Fases | Tipos novos no bloco | Tipos acumulados | Inimigos comuns por fase | Boss extra |
+| ---: | ---: | ---: | ---: | :---: |
+| 1–10 | 5 | 5 | 20 | 1 |
+| 11–20 | 5 | 10 | 25 | 1 |
+| 21–30 | 5 | 15 | 30 | 1 |
+| 31–40 | 5 | 20 | 35 | 1 |
+| 41–50 | 5 | 25 | 40 | 1 |
+| 51–60 | 5 | 30 | 45 | 1 |
+| 61–70 | 5 | 35 | 50 | 1 |
+| 71–80 | 5 | 40 | 55 | 1 |
+| 81–90 | 5 | 45 | 60 | 1 |
+| 91–100 | 5 | 50 | 65 | 1 |
+
+Essa curva começa com vinte derrotas comuns por fase, suficiente para dar ritmo sem transformar a primeira região em uma maratona, e cresce cinco alvos a cada dez fases. Como os inimigos novos são adicionados ao conjunto, o número de tipos visíveis pode ser maior que cinco; a distribuição por onda deve limitar a sobreposição para preservar a leitura. Esses números são a meta de conteúdo, ainda não são usados pelo loop Unity jogável, que continua com as oito ondas do protótipo enquanto spawn, pool, drops e balanceamento são integrados.
+
+O catálogo combina funções de base, ágil, suporte, controle, tanque e especiais como elite, explosivo e caçador. Cada inimigo tem preparação, ação e recuperação. O jogador deve entender o próximo ataque pelo movimento e pelo som, sem depender de texto.
 
 - **Torrão:** inimigo inicial, arremessa cascalho depois de levantar a pá.
 - **Morcego de Cascalho:** mergulho irregular e cópia de alvo uma vez.
@@ -75,4 +94,4 @@ Os primeiros nomes são Carvõezinho, Morceguinho Mapa, Geodinha, Fagulha, Relog
 
 O próximo trabalho técnico deve ser: (1) ligar as regiões 51+ ao visual e ao portal, (2) criar um inimigo novo de cada função com telegraph real, (3) implementar o primeiro andar da Escavação Profunda, (4) adicionar um pet passivo simples, e só depois (5) conectar baús a fragmentos e brocas futuras.
 
-Os catálogos desta entrega são planejamento estruturado. Eles não afirmam que inimigos, pets, portal, equipamentos ou modos futuros já aparecem na cena jogável.
+Os catálogos desta entrega são planejamento estruturado. Eles não afirmam que inimigos, pets, portal, equipamentos ou modos futuros já aparecem na cena jogável. O catálogo de faixas de inimigos também deixa explícita a próxima integração necessária: substituir o spawn fixo por uma seleção por fase sem mudar a condição de vitória pelo boss.

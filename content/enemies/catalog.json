@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "content_status": "design_catalog",
-  "note": "Padrões e personalidades são conteúdo de design. Apenas os inimigos já existentes nos assets Unity estão marcados como implementados.",
+  "note": "Padrões e personalidades são conteúdo de design. Apenas os inimigos já existentes nos assets Unity estão marcados como implementados. A progressão de cinco inimigos novos por bloco de dez fases está em campaign-tiers.json.",
   "enemies": [
     {
       "id": "torrao",
