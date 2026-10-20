@@ -1,5 +1,6 @@
 {
   "phase": {"id": 1, "name": "Poço do Acampamento", "layers": 6, "layer_hp": 44, "hp_per_layer": 8, "layer_gold": 12, "gold_per_layer": 2, "materials": ["terra", "terra", "argila", "pedra", "pedra", "cristal"], "wave_interval": 10.0, "timed_waves": 12, "late_wave_after": 3, "late_wave_size": 2, "final_moles": 2},
+  "first_impact_gold": 2,
   "cart": {"hp": 120, "cannon_damage": 6, "cannon_interval": 1.25},
   "pioneer": {"damage": 32, "cooldown": 3.0, "flight": 0.8, "max_simultaneous": 2},
   "mole": {"name": "Toupeira Torrão", "hp": 48, "damage": 8, "attack_interval": 2.8, "first_attack": 1.7, "telegraph": 0.65, "gold": 7},

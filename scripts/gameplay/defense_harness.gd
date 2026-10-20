@@ -20,6 +20,9 @@ func _initialize() -> void:
 	assert(not run.launch() and data.gold == 0)
 	advance(run, 0.85)
 	assert(run.layer_hp < hp and run.units.is_empty())
+	assert(data.gold == int(run.config.first_impact_gold))
+	run.damage_layer(run.layer_index, 1)
+	assert(data.gold == 2, "First-impact reward only once per attempt")
 	var first := run.layer_index
 	assert(run.damage_layer(first, 1000))
 	var earned: int = data.gold
@@ -62,6 +65,7 @@ func _initialize() -> void:
 	run.restart()
 	assert(run.layer_index == 0 and run.cart_hp == run.stats().hp and run.cooldown == 3)
 	assert(data == kept and run.units.is_empty() and run.projectiles.is_empty())
+	assert(not run.first_impact_paid)
 	# Per-event layer and final-wave rewards; no boss or skipped mandatory wave.
 	var win := Run.new(Store.fresh())
 	for i in range(int(win.config.phase.layers)):

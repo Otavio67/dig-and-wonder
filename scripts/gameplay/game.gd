@@ -26,6 +26,8 @@ var layer_flash := 0.0
 var notices: Array[Dictionary] = []
 var machine: Texture2D
 var terrain: Texture2D
+var soil: Texture2D
+var spawn_flash := 0.0
 var icons: Dictionary = {}
 var styles: Dictionary = {}
 var persistence_enabled := true # Captures set false; normal play always persists.
@@ -37,6 +39,7 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	machine = load("res://assets/ilustracoes/maquina-baus-atlas.png")
 	terrain = load("res://assets/terreno/materiais-atlas.png")
+	soil = load("res://assets/terreno/solo-torroes-raizes.png")
 	var loaded := Store.load_profile()
 	profile = loaded.profile
 	legacy = loaded.legacy
@@ -145,6 +148,7 @@ func _process(delta: float) -> void:
 	art.update(delta, 0 if sim == null else sim.layer_index * 6, "prado_cristalino")
 	cart_flash = maxf(0, cart_flash - delta)
 	layer_flash = maxf(0, layer_flash - delta)
+	spawn_flash = maxf(0, spawn_flash - delta)
 	for i in range(2): recoil[i] = maxf(0, float(recoil[i]) - delta)
 	for i in range(notices.size() - 1, -1, -1):
 		notices[i].life -= delta
@@ -163,7 +167,9 @@ func _consume_events() -> void:
 		match str(event.type):
 			"gold":
 				save_needed = true
-				notices.append({"text": "+%d ouro" % event.amount, "life": 0.9, "x": 270.0, "y": 576.0})
+				var source := str(event.source)
+				notices.append({"text": "+%d OURO%s" % [event.amount, " / TORRÃO" if source == "mole" else ""], "life": 1.8, "x": clampf(float(event.get("x", 270)), 125, 415), "y": 512.0})
+			"spawn": spawn_flash = 1.5
 			"purchase", "victory", "defeat": save_needed = true
 			"cannon": recoil[int(event.side)] = 0.15
 			"cart_hit": cart_flash = 0.25
@@ -193,7 +199,9 @@ func _draw() -> void:
 		for unit in sim.units: _drill(unit)
 		for shot in sim.projectiles: _shot(shot)
 	for notice in notices:
-		_text(Vector2(notice.x, notice.y - (0.9 - float(notice.life)) * 25), str(notice.text), 18, Color(BRASS, minf(1, float(notice.life) * 3)), 180)
+		var at := Vector2(notice.x, notice.y - (1.8 - float(notice.life)) * 18)
+		_text(at + Vector2(1, 2), str(notice.text), 17, INK, 230)
+		_text(at, str(notice.text), 17, Color(BRASS, minf(1, float(notice.life) * 3)), 230)
 	if screen == "start": _start_panel()
 	elif screen == "import": _import_panel()
 	elif sim != null and sim.status != "active": _result_panel()
@@ -228,25 +236,42 @@ func _cart(center: Vector2) -> void:
 		draw_set_transform(Vector2.ZERO)
 
 func _well() -> void:
-	draw_rect(Rect2(35, 331, 470, 407), Color("#0B202D", 0.58))
-	for x in [38.0, 502.0]:
-		draw_line(Vector2(x, 331), Vector2(x, 738), Color("#617A80"), 5, true)
-		for y in range(350, 730, 52): draw_line(Vector2(x - 5, y), Vector2(x + 5, y), BRASS, 2, true)
+	# Open shaft: receding walls, upper-left lip light and depth fog.
+	for band in range(48):
+		var t := band / 47.0
+		draw_rect(Rect2(32, 315 + band * 8.9, 476, 9.5), Color("#25444C").lerp(Color("#07151F"), t))
+	for side in range(2):
+		var points := PackedVector2Array([Vector2(27, 315), Vector2(74, 338), Vector2(96, 737), Vector2(27, 737)])
+		if side == 1:
+			for i in range(points.size()): points[i].x = 540 - points[i].x
+		draw_colored_polygon(points, Color("#5B4B3D") if side == 0 else Color("#3B3935"))
+		for ledge in range(8):
+			var y := 341.0 + ledge * 50
+			var x := 73.0 + ledge * 2.8
+			if side == 1: x = 540 - x
+			var outward := -1.0 if side == 0 else 1.0
+			draw_line(Vector2(x, y), Vector2(x + outward * 39, y - 15), Color("#9B7850", 0.45 - ledge * 0.035), 3, true)
+		draw_line(points[1], points[2], Color("#C59A62", 0.35 if side == 0 else 0.12), 3, true)
 	var index: int = 0 if sim == null else int(sim.layer_index)
 	var complete: bool = sim != null and sim.final_encounter
-	_text(Vector2(270, 363), "FRENTE DE ESCAVAÇÃO", 12, Color("#B7FFF1"), 390)
-	_text(Vector2(270, 395), "%d / 6 CAMADAS  /  RESTAM %d" % [index, maxi(0, 6 - index)], 16, CREAM, 430)
+	_text(Vector2(270, 358), "POÇO / %d DE 6 CAMADAS" % index, 14, CREAM, 360)
+	_text(Vector2(270, 385), "TORRÃO EM CAMPO" if sim != null and not sim.enemies.is_empty() else "CANHÕES EM VIGÍLIA", 12, CORAL if spawn_flash > 0 else TEAL, 350)
 	var material := "terra" if sim == null else str(sim.material())
-	_text(Vector2(270, 534), "ENCONTRO FINAL: LIMPE AS TOUPEIRAS" if complete else material.to_upper(), 16, BRASS, 470)
+	_text(Vector2(270, 650), "ENCONTRO FINAL" if complete else "FRENTE / " + material.to_upper(), 14, CREAM, 420)
 	if not complete:
 		var hp := 44.0 if sim == null else float(sim.layer_hp)
 		var maximum := 44.0 if sim == null else float(sim.layer_max)
-		_bar(Rect2(72, 549, 396, 18), hp / maximum, TEAL)
-		_text(Vector2(270, 588), "%d / %d RESISTÊNCIA" % [ceili(hp), int(maximum)], 13, CREAM, 430)
 		var column: int = {"terra": 0, "argila": 1, "pedra": 2, "cristal": 3}.get(material, 0)
 		var tile := terrain.get_size() / Vector2(4, 3)
 		var source := Rect2(Vector2(int(column) * tile.x, posmod(index, 3) * tile.y), tile)
-		draw_texture_rect_region(terrain, Rect2(44, 607, 452, 130), source, Color(1, 0.8, 0.7) if layer_flash > 0 else Color.WHITE)
+		if material in ["terra", "argila"]:
+			draw_texture_rect(soil, Rect2(36, 595, 468, 156), false, Color(1, 0.83, 0.68) if layer_flash > 0 else Color.WHITE)
+		else:
+			draw_texture_rect_region(terrain, Rect2(44, 607, 452, 130), source, Color(1, 0.8, 0.7) if layer_flash > 0 else Color.WHITE)
+		_panel(Rect2(97, 653, 346, 65), Color("#0B202D", 0.88), 10)
+		_text(Vector2(270, 673), "FRENTE / " + material.to_upper(), 13, CREAM, 330)
+		_bar(Rect2(111, 683, 318, 9), hp / maximum, TEAL)
+		_text(Vector2(270, 709), "%d / %d RESISTÊNCIA" % [ceili(hp), int(maximum)], 12, CREAM, 330)
 		if hp < maximum * 0.6:
 			draw_polyline(PackedVector2Array([Vector2(210, 612), Vector2(242, 642), Vector2(225, 673), Vector2(260, 712)]), INK, 4, true)
 	else:
@@ -254,6 +279,8 @@ func _well() -> void:
 
 func _mole(enemy: Dictionary) -> void:
 	var p := Vector2(float(enemy.x), 601 + sin(art.clock * 3 + float(enemy.id)) * 2)
+	_oval(p + Vector2(0, 14), Vector2(83, 20), Color("#07151F", 0.75))
+	if spawn_flash > 0: _text(p - Vector2(0, 63), "TORRÃO", 12, BRASS, 100)
 	if enemy.telegraph:
 		draw_circle(p - Vector2(0, 22), 30, Color("#F27C67", 0.2))
 		_text(p - Vector2(0, 47), "! ARREMESSO", 12, CORAL, 125)
@@ -300,15 +327,22 @@ func _controls() -> void:
 	for slot in range(2):
 		var r := Rect2(276 + slot * 126, 758, 118, 88)
 		_panel(r, Color("#24434D"), 10)
-		_text(r.get_center() + Vector2(0, -5), "—", 26, Color("#617A80"), 95)
-		_text(r.get_center() + Vector2(0, 22), "ESPAÇO VAZIO", 10, Color("#B7D6D3"), 110)
+		_icon("lock", Rect2(r.get_center() - Vector2(12, 27), Vector2(24, 24)))
+		_text(r.get_center() + Vector2(0, 22), "BLOQUEADO", 11, Color("#B7D6D3"), 110)
 	if sim != null:
 		for kind in ["damage", "hull"]:
 			var level := int(profile.get(kind + "_level", 0))
-			var value := "DANO %d / BROCA %d" % [roundi(sim.stats().cannon_damage), roundi(sim.stats().drill_damage)] if kind == "damage" else "VIDA MÁXIMA %d" % int(sim.stats().hp)
 			var cost: int = sim.upgrade_cost(kind)
-			var label := "DANO" if kind == "damage" else "VIDA"
-			_button(kind, "%s NV.%d  /  %s" % [label, level, "MÁX." if level >= 10 else str(cost) + " OURO"], value, BRASS, level < 10 and int(profile.get("gold", 0)) >= cost)
+			var current: Dictionary = sim.stats()
+			var next_multiplier: float = 1.0 + mini(level + 1, 10) * float(sim.config.upgrades.damage.bonus)
+			var label := "DANO / NV.%d" % level if kind == "damage" else "VIDA / NV.%d" % level
+			var upgrade_detail := "Canhão %.2f → %.2f | Broca %.2f → %.2f" % [current.cannon_damage, float(sim.config.cart.cannon_damage) * next_multiplier, current.drill_damage, float(sim.config.pioneer.damage) * next_multiplier] if kind == "damage" else "Máxima %d → %d PV" % [int(current.hp), int(current.hp) + (0 if level >= 10 else int(sim.config.upgrades.hull.bonus))]
+			var r := Layout.button(kind)
+			var enabled: bool = level < 10 and int(profile.gold) >= cost
+			art.plate(self, r, BRASS, r.has_point(pointer), enabled, false)
+			_text(Vector2(r.get_center().x, r.position.y + 17), label, 12, CREAM, r.size.x - 20)
+			_text(Vector2(r.get_center().x, r.position.y + 37), upgrade_detail, 10, CREAM, r.size.x - 12)
+			_text(Vector2(r.get_center().x, r.position.y + 56), "NÍVEL MÁXIMO" if level >= 10 else "CUSTO: %d OURO / TEM: %d" % [cost, profile.gold], 11, BRASS if not enabled else INK, r.size.x - 20)
 	_text(Vector2(270, 862), "MELHORIAS PERMANENTES", 11, TEAL, 490)
 
 func _start_panel() -> void:
@@ -373,3 +407,4 @@ func _oval(center: Vector2, dimensions: Vector2, tint: Color) -> void:
 	var points := PackedVector2Array()
 	for i in range(24): points.append(center + Vector2(cos(i * TAU / 24), sin(i * TAU / 24)) * dimensions * 0.5)
 	draw_colored_polygon(points, tint)
+

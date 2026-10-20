@@ -30,3 +30,6 @@ Os ícones SVG em `ui/` e o Theme foram construídos em código para o projeto. 
 ## Marco 1 — reaproveitamento no jogo de defesa
 
 Carroceria do carrinho e Pioneira reutilizam o atlas de máquina existente; canhões, munição, Torrão e fissuras provisórias foram desenhados em código nativo 2D pelo Codex. Não foram gerados assets externos novos neste marco nem atribuída autoria humana. Atlas/ícones/fundos mantêm a proveniência acima. A nova composição não copia personagens ou interface dos jogos de referência. Canhões e Torrão são placeholders, não arte final.
+
+## Revisão de solo — 20/10/2026
+solo-torroes-raizes.png: imagem gerada pela ferramenta integrada imagegen para este projeto. Prompt e integração em docs/REVISAO-MARCO1.md. Sem recurso externo copiado; não se atribui autoria humana à geração.

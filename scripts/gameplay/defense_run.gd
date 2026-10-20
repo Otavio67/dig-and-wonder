@@ -10,6 +10,7 @@ var layer_max := 0.0
 var cart_hp := 0.0
 var cooldown := 3.0
 var clock := 0.0
+var first_impact_paid := false
 var wave_timer := 0.0
 var timed_waves := 0
 var pending_spawns := 0
@@ -38,6 +39,7 @@ func restart() -> void:
 	events.clear()
 	layer_index = 0
 	clock = 0
+	first_impact_paid = false
 	timed_waves = 0
 	pending_spawns = 0
 	final_encounter = false
@@ -173,6 +175,10 @@ func _drain_spawns() -> void:
 func damage_layer(index: int, amount: float) -> bool:
 	if status != "active" or final_encounter or index != layer_index or amount <= 0: return false
 	layer_hp = maxf(0, layer_hp - amount)
+	if not first_impact_paid:
+		first_impact_paid = true
+		profile.gold += int(config.first_impact_gold)
+		events.append({"type": "gold", "amount": int(config.first_impact_gold), "source": "first_impact", "x": 270.0})
 	events.append({"type": "impact", "material": material()})
 	if layer_hp > 0: return true
 	var gold := int(config.phase.layer_gold) + layer_index * int(config.phase.gold_per_layer)
@@ -199,7 +205,7 @@ func _damage_enemy(id: int, amount: float) -> bool:
 	if enemy.hp <= 0:
 		enemies.erase(enemy)
 		profile.gold += int(config.mole.gold)
-		events.append({"type": "gold", "amount": int(config.mole.gold), "source": "mole"})
+		events.append({"type": "gold", "amount": int(config.mole.gold), "source": "mole", "x": enemy.x})
 	return true
 
 func damage_cart(amount: float) -> void:
