@@ -17,11 +17,11 @@ Falta instalar o APK em um aparelho Android e conferir toque, safe area e aparê
 
 ## Origem, Git e preservação
 
-Fonte: `Otavio67/dig-and-wonder`, branch **prototype/first-playable**, commit `7b3518fa7549daa40f7f9d70c38a7c508fb28a67`. Versão 0.0.7 com checkpoints posteriores. ZIP completo autenticado pelo navegador; **338 arquivos originais conferidos individualmente** contra os hashes Git remotos, zero divergências antes dos ajustes locais.
+Fonte: `Otavio67/dig-and-wonder`, branch **prototype/first-playable**, commit atual **`758912f15365e33d4a4340b8c393845095f7f0ff`**. Versão 0.0.7 com checkpoints posteriores. O clone local acompanha o histórico da branch; os 338 arquivos conferidos anteriormente foram preservados antes dos ajustes locais.
 
 A base anterior está em `.tools/backups/antes-download-20261020/`; Godot portátil existente foi preservado. Nenhum save do jogador foi alterado. A fonte Godot e os JSON de `content/` devem acompanhar UnityProject; são origem/importação, não orientação para retornar de engine.
 
-O Git local continua em `main` sem commits e com origin HTTPS configurada. O conector GitHub lê o repositório privado, mas o Git do terminal não tem autenticação utilizável. O ZIP **não equivale a clone com histórico**. Não criar/enviar um commit inicial desses arquivos como projeto novo; sincronizar com a branch de origem preservando os ajustes locais. Nada foi publicado no GitHub nesta etapa.
+O Git local está em `prototype/first-playable`, com `origin` HTTPS configurada e sincronizado com o commit acima. O clone atual já tem histórico; não criar um commit inicial nem trocar a branch por `main`. Preservar alterações locais antes de novos pulls.
 
 ## Ajustes de configuração feitos aqui
 
