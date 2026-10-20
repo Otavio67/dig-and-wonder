@@ -26,3 +26,7 @@ Cinco PNGs foram gerados pela ferramenta integrada de imagens, com prompts próp
 São imagens geradas para este projeto, não ilustrações atribuídas a uma pessoa nem recursos extraídos dos jogos citados. Não se declara licença de terceiros ou exclusividade. As primeiras tentativas mais brilhantes foram substituídas; somente a seleção integrada participa do render ativo.
 
 Os ícones SVG em `ui/` e o Theme foram construídos em código para o projeto. Picareta e bússola seguem a família de contorno existente. Os vídeos do usuário foram analisados como referência de linguagem; não foram copiados para o repositório nem usados como texturas.
+
+## Marco 1 — reaproveitamento no jogo de defesa
+
+Carroceria do carrinho e Pioneira reutilizam o atlas de máquina existente; canhões, munição, Torrão e fissuras provisórias foram desenhados em código nativo 2D pelo Codex. Não foram gerados assets externos novos neste marco nem atribuída autoria humana. Atlas/ícones/fundos mantêm a proveniência acima. A nova composição não copia personagens ou interface dos jogos de referência. Canhões e Torrão são placeholders, não arte final.

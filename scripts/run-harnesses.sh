@@ -8,6 +8,7 @@ export HOME="$PWD/.tools/home"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
+export D_W_TESTING=1
 mkdir -p .tools/logs
 run_harness() {
   local name="$1"
@@ -20,7 +21,9 @@ run_harness() {
   fi
 }
 run_harness logic res://scripts/gameplay/logic_harness.gd
-run_harness gameplay res://scripts/gameplay/game_harness.gd
 run_harness save res://scripts/save/save_harness.gd
+run_harness defense res://scripts/gameplay/defense_harness.gd
+run_harness defense-save res://scripts/save/defense_save_harness.gd
+run_harness gameplay res://scripts/gameplay/game_harness.gd
 run_harness android res://scripts/gameplay/android_harness.gd
 run_harness characters res://scripts/visual/characters_harness.gd

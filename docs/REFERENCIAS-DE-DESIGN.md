@@ -1,3 +1,11 @@
+# Estado das referências após a mudança de direção
+
+A direção principal atual é defesa com escavação, carrinho fixo, canhões automáticos e habilidades com cooldown. Legend of Slime orienta clareza de progressão e melhorias permanentes, sem cópia de interface, personagens ou conteúdo. Não foi feita nova pesquisa externa neste marco.
+
+As notas abaixo registram decisões do protótipo manual anterior. Venda, baús/chaves, oferta pós-venda e grade não integram o ciclo atual. Consulte `DESENVOLVIMENTO.md` e `CATALOGO-DEFESA.md` para regras vigentes.
+
+---
+
 # Referências de design para o protótipo
 
 Pesquisa em 19/10/2026. As referências servem para observar padrões de experiência; não autorizam copiar personagens, arte, texto ou conteúdo.

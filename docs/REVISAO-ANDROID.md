@@ -1,3 +1,5 @@
+> **Estado após a mudança de direção (20/10/2026):** o jogo principal agora é defesa com escavação, descrito em `DESENVOLVIMENTO.md`. Os resultados de APK/plataforma abaixo pertencem aos checkpoints 0.0.4/0.0.5 anteriores. Não comprovam exportação nem execução do Marco 1 atual em aparelho. SDK e prova AdMob permanecem isolados; não há anúncio no ciclo de defesa. O perfil atual é esquema 6 com importação confirmada e arquivo separado. Área segura/cancelamento/foco são reaproveitados.
+
 # Revisão Android — versão 0.0.4
 
 Data: 20/10/2026. Escopo: orientações oficiais aplicáveis ao protótipo Godot 4.7.2, Android ARM64, jogo 2D offline. A documentação cobre muitos produtos independentes; a presença de uma API no portal não torna sua integração obrigatória. Este diagnóstico confronta requisitos de plataforma/publicação, recomendações de experiência e ferramentas opcionais com o código e o APK reais.

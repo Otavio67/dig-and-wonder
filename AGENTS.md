@@ -21,13 +21,15 @@ Não versione `.tools/`, `.godot/`, APKs, credenciais ou chaves. Recursos origin
 
 ## Ordem de trabalho
 
-1. Validar importação/execução da base e preparar exportação Android.
-2. Gerar APK mínimo; testar toque e anúncio recompensado de teste em Android antes de expandir o jogo.
-3. Implementar uma região, escavação/coleta/venda, uma melhoria, uma transformação distinta, descoberta e save.
-4. Revisar visual e sensação de jogo antes de ampliar para três regiões, álbum e ajudantes.
+Direção principal autorizada em 20/10/2026: defesa com escavação por camadas, carrinho fixo, dois canhões automáticos e unidades lançáveis. O modo manual em grade foi substituído. Especificação atual em `docs/DESENVOLVIMENTO.md`; material antigo em `docs/historico/`.
+
+1. Marco 1: uma fase curta, camada ativa, Pioneira com cooldown, Torrão, ouro, melhorias de dano/vida, derrota/reinício, perfil 6 e importação segura de legado.
+2. Marco 2 após aprovação: clareza/balanceamento e somente uma unidade adicional.
+3. Marco 3: fases/desbloqueios e novos inimigos um por vez.
+4. Marco 4: primeiro boss. Validar APK/toque/desempenho e anúncios isolados antes de publicação; não tornar anúncio requisito de tentativa.
 
 ## Verificação
 
 Execute checks adequados ao que mudou. Ao implementar economia/save/transformações, teste recursos insuficientes, padrões distintos de destruição e recuperação do progresso. Headless não comprova qualidade visual, diversão, desempenho em Android ou funcionamento de anúncios. Documente resultados e limitações sem inventar verificações.
 
-O estado inicial contém somente uma tela de abertura estática; ela não é um protótipo jogável. Não declarar APK, anúncios ou nuvem do Codex configurados sem evidência.
+O protótipo atual usa a entrada de defesa; não manter um segundo modo completo em paralelo. Não declarar APK, anúncios ou nuvem do Codex configurados sem evidência.

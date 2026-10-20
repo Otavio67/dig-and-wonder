@@ -3,6 +3,10 @@ extends SceneTree
 const SaveStore = preload("res://scripts/save/save_store.gd")
 
 func _initialize() -> void:
+	if OS.get_environment("D_W_TESTING") != "1" or not ProjectSettings.globalize_path("user://").contains("/.tools/"):
+		push_error("Run with isolated test data via check-project.ps1 or run-harnesses.sh")
+		quit(1)
+		return
 	var root := ProjectSettings.globalize_path("user://")
 	DirAccess.make_dir_recursive_absolute(root)
 	DirAccess.remove_absolute(root.path_join("dig_wonder.save.json"))

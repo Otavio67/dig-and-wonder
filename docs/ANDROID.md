@@ -1,3 +1,5 @@
+> **Estado após a mudança de direção (20/10/2026):** o jogo principal agora é defesa com escavação, descrito em `DESENVOLVIMENTO.md`. Os resultados de APK/plataforma abaixo pertencem aos checkpoints 0.0.4/0.0.5 anteriores. Não comprovam exportação nem execução do Marco 1 atual em aparelho. SDK e prova AdMob permanecem isolados; não há anúncio no ciclo de defesa. O perfil atual é esquema 6 com importação confirmada e arquivo separado. Área segura/cancelamento/foco são reaproveitados.
+
 # Teste Android
 
 ## Preparar o ambiente Linux x86_64

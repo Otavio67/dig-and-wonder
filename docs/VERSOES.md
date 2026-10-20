@@ -112,3 +112,14 @@ Importação, boot e harnesses de lógica, gameplay, save, interface e personage
 ### Limites desta revisão
 
 A avaliação artística final depende da revisão das capturas pelo usuário. Os fundos intermediário/próximo são reutilizados entre faixas; as seis brocas ainda compartilham a carenagem principal e recebem acessórios próprios. Os cartões pequenos podem exigir mais simplificação para melhorar a leitura. O foco está definido no Theme, mas navegação por teclado ainda requer integração própria. Tamanho em dp, toque, FPS, memória, consumo, anúncios e APK não foram validados em aparelho. Nenhuma alteração de balanceamento, formato de save ou fluxo de anúncios foi feita.
+
+## Marco 1 — defesa com escavação (20/10/2026)
+
+- Mudança de direção autorizada: grade manual substituída na entrada principal por carrinho fixo, dois canhões automáticos, uma camada compartilhada e Pioneira por cooldown, sem custo por lançamento. Seis camadas e encontro final de Torrões; nenhum boss.
+- Ouro por evento único; melhorias permanentes limitadas de dano/vida; derrota terminal com limpeza completa e reinício preservando carteira/compras. Cooldown integral ao recomeçar ou reabrir, sem renda offline.
+- Perfil esquema 6 em arquivo separado. Importação dos esquemas 1–5 depende de confirmação; cópia integral verificada antes da conversão de moedas+mochila 1:1 e reforços para Dano até nível 10. Demais itens ficam arquivados, sem conversão inventada, e o original permanece intacto.
+- Arte, paleta, atlas, área segura, placas e infraestrutura Godot reaproveitados. Canhões e Torrão são placeholders coerentes; catálogos completos e boss permanecem planejamento identificado.
+- Check Windows nativo, importação/boot e harnesses de combate, save novo/antigo, integração, input e rigs preservados. Ferramentas de captura antigas encaminham para o jogo atual. Documentação antiga arquivada e direção atual consolidada em DESENVOLVIMENTO/README.
+- Capturas e gravação reais desktop em `builds/review/marco1-20261020/`; vinte segundos em 12 fps, execução normal. A mesma tentativa vence por lançamentos/compras acessíveis, outra perde por inatividade e reinicia sem retirar o permanente. Captura não grava no perfil do jogador.
+
+Checkpoint sem nova versão/tag/APK. Não foram medidos toque, dp, FPS, memória, anúncios ou execução Android. Próximo marco, após aprovação: clareza/balanceamento e uma unidade alternativa.
