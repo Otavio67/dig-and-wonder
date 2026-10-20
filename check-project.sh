@@ -9,6 +9,19 @@ export HOME="$PWD/.tools/home"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
+if [[ -x .tools/android-sdk/platform-tools/adb ]] && command -v java >/dev/null; then
+  export ANDROID_HOME="$PWD/.tools/android-sdk"
+  export ANDROID_SDK_ROOT="$ANDROID_HOME"
+  export JAVA_HOME="${JAVA_HOME:-$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")}"
+  mkdir -p "$XDG_CONFIG_HOME/godot"
+  cat > "$XDG_CONFIG_HOME/godot/editor_settings-4.7.tres" <<EOF
+[gd_resource type="EditorSettings" format=3]
+
+[resource]
+export/android/android_sdk_path = "$ANDROID_HOME"
+export/android/java_sdk_path = "$JAVA_HOME"
+EOF
+fi
 run_check() {
   local name="$1"
   shift

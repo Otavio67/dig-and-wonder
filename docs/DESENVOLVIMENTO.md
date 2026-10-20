@@ -151,3 +151,9 @@ As regiões são dados independentes em `content/phases/catalog.json`. Cada fase
 O ciclo normal alterna Prado Cristalino, Gruta Basáltica e Jardim Fóssil. Ao derrotar o chefe, uma rolagem determinística tem 22% de chance de escolher a Fenda Aurora; o resultado entra no save e não se altera após reiniciar. A Fenda tem minério, descoberta, chefe e três pares de chaves/baús marcados no terreno; regiões regulares oferecem até dois pares. Os ícones revelam onde escavar, mas não há checklist nem coleta obrigatória. Somente o chefe abre a descida. Os blocos de cada mapa têm composição determinística, então o máximo de materiais é limitado pelo tamanho da fase.
 
 O save esquema 5 grava a sequência de fases, chefe ativo, chefes vencidos e marcadores já recolhidos. Saves 1–4 são migrados para uma fase que corresponde aproximadamente à profundidade atual, sem remover moedas, chaves ou baús antigos. Harnesses cobrem o limite de mineração, quantidade máxima de achados, dano do chefe, escolha surpresa e retomada da fase salva.
+
+## Ambiente Android — 20/10/2026
+
+Preparado ambiente Linux x86_64 com OpenJDK 21, Android Platform Tools, SDK/API 36, Build Tools 36.0.0, NDK 28.1 e CMake 3.10.2.4988404. Os templates de exportação Godot 4.7.2 vieram do release oficial e passaram na checagem SHA-512. A configuração e o preset ficam documentados em `docs/ANDROID.md`; arquivos grandes do SDK, do Godot e APKs ficam fora do Git em `.tools/` e `builds/`.
+
+O preset de teste produz APK debug assinado para ARM64, API mínima 24/alvo 36, pacote `com.otavio67.digandwonder` e sem permissão de internet. A exportação headless foi concluída, `apksigner verify` aprovou assinatura v2/v3 e `aapt` confirmou pacote/versões. Não havia aparelho conectado; logo, instalação, controles por toque, anúncios e desempenho continuam pendentes de validação física. O APK também não inclui integração de anúncios.

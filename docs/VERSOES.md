@@ -34,3 +34,10 @@ Tag: `v0.0.2`.
 - Harnesses verificam limite do terreno, limites de recompensas, combate, transição, sorteio e save.
 
 Tag planejada: `v0.0.3` no checkpoint Git deste marco.
+
+## Build Android de teste — 0.0.3 (20/10/2026)
+
+- Toolchain Linux preparada por `scripts/setup-android.sh`; exportação repetível por `scripts/export-android-debug.sh`.
+- Preset `Android teste`, ícone provisório cartoon e compressão ETC2/ASTC para Android.
+- APK ARM64 assinado para depuração, validado pelo `apksigner`; manifesto confirma API mínima 24 e alvo 36.
+- O APK não integra anúncios. ADB funciona no container, mas não há dispositivo conectado; instalação, toque e desempenho seguem pendentes de aparelho.

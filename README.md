@@ -21,8 +21,12 @@ Em Linux x86_64:
 
 ```bash
 bash setup-cloud.sh
+bash scripts/setup-android.sh
 bash check-project.sh
+bash scripts/export-android-debug.sh
 ```
+
+O APK de depuração sai em `builds/dig-and-wonder-android-debug.apk` (pasta ignorada pelo Git). Veja [configuração e limites do teste Android](docs/ANDROID.md). O preset é voltado a teste local em aparelhos ARM64; não é um pacote de publicação.
 
 O instalador baixa a versão fixada do distribuidor oficial e confere o SHA-512. O workflow `.github/workflows/validate.yml` executa importação e inicialização no GitHub Actions. Esses checks não comprovam qualidade visual, 60 FPS, funcionamento em Android ou anúncios.
 
@@ -43,7 +47,7 @@ Em `0.0.3`, cada fase tem 24 trechos de profundidade e terreno/minérios própri
 
 Confira o histórico e as notas em [VERSOES.md](docs/VERSOES.md). Conteúdo de brocas, equipamentos e região permanece separado dos sistemas para facilitar novas expansões.
 
-Ainda não foi produzido APK: este ambiente não tem Android SDK, ADB ou templates de exportação configurados. Não foi integrado plugin de anúncios, nem exibido rewarded ad de teste. O Google Mobile Ads oferece IDs de teste Android; validar a chamada, a recompensa e o ciclo do app depende de escolher/instalar uma ponte Godot Android e usar um dispositivo. A meta de 60 FPS também permanece sem medição em aparelho. A revisão visual automática não ficou disponível: o modo de captura do Godot abortou no container sem backend de janela.
+Atualização de 20/10/2026: o ambiente de nuvem tem Android SDK, ADB e templates Android do Godot configurados; a exportação e a assinatura do APK de depuração foram verificadas. Não foi integrado plugin de anúncios, nem exibido rewarded ad de teste. Validar instalação, toque, execução, anúncio e FPS depende de aparelho Android. A revisão visual automática não ficou disponível: o modo de captura do Godot abortou no container sem backend de janela.
 
 ## Diretrizes confirmadas pelo usuário
 
