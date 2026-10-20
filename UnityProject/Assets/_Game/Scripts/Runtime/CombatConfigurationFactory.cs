@@ -8,6 +8,9 @@ namespace DigAndWonder
         public static CombatConfiguration Create(CombatBalanceDefinition balance)
         {
             ProgressionDefinition progression = balance.progression;
+            EconomyDefinition economy = Resources.Load<EconomyDefinition>("Data/Economy");
+            if (economy == null) throw new System.InvalidOperationException("Economia do mid-game não encontrada.");
+            EconomyRules economyRules = economy.ToRuntime();
             CombatConfiguration result = new CombatConfiguration
             {
                 PlayerBaseHealth = balance.playerBaseHealth,
@@ -33,18 +36,9 @@ namespace DigAndWonder
                 SurpriseStage = progression.surpriseStage == null ? null : ToRuntime(progression.surpriseStage),
                 Characters = Resources.LoadAll<CharacterDefinition>("Data/Characters")
                     .Where(character => character != null && character.implemented)
-                    .Select(character => new CharacterCombatData
-                    {
-                        Id = character.id,
-                        DisplayName = character.displayName,
-                        Experience = character.experience == null
-                            ? throw new System.InvalidOperationException("Curva de XP ausente: " + character.id)
-                            : character.experience.ToRuntime()
-                    }).ToArray()
+                    .Select(character => character.ToRuntime(economyRules)).ToArray(),
+                Economy = economyRules
             };
-            EconomyDefinition economy = Resources.Load<EconomyDefinition>("Data/Economy");
-            if (economy == null) throw new System.InvalidOperationException("Economia do mid-game não encontrada.");
-            result.Economy = economy.ToRuntime();
             return result;
         }
 

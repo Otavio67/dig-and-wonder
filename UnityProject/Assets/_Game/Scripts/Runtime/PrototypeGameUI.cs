@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using DG.Tweening;
@@ -70,6 +71,7 @@ namespace DigAndWonder
         private float refreshTimer;
         private int displayedGold = -1;
         private int displayedCrystals = -1;
+        private string lastCharacterReward;
         private readonly Dictionary<string, Image> tabButtonImages = new Dictionary<string, Image>();
         private ProgressionDefinition progression;
         private AbilityDefinition[] abilityCatalog;
@@ -240,7 +242,7 @@ namespace DigAndWonder
             MakeHubCard(panel, "Oficina", "ATQ  •  VIDA\nMelhorias disponíveis", new Vector2(0.06f, 0.3f), new Vector2(0.47f, 0.45f), Mint);
             MakeHubCard(panel, "Treino", "Repetir a última fase vencida\nGanhe ouro e XP", new Vector2(0.53f, 0.3f), new Vector2(0.94f, 0.45f), new Color(0.25f, 0.44f, 0.46f));
             MakeHubCard(panel, "Baús", "Abrir com chaves\nOuro e cristais", new Vector2(0.06f, 0.17f), new Vector2(0.47f, 0.29f), Sand);
-            MakeHubCard(panel, "Álbum", "Descobertas da caverna\n🔒 FASE 2", new Vector2(0.53f, 0.17f), new Vector2(0.94f, 0.29f), new Color(0.25f, 0.28f, 0.36f));
+            MakeHubCard(panel, "Garagem", "Coleção de brocas\nRecompensas de fase", new Vector2(0.53f, 0.17f), new Vector2(0.94f, 0.29f), new Color(0.25f, 0.44f, 0.46f));
             hubLockLabel = MakeLabel("Hub lock status", panel, "Equipamentos e álbum desbloqueiam na Fase 2", 15, White,
                 new Vector2(0.06f, 0.12f), new Vector2(0.94f, 0.17f), TextAlignmentOptions.Center);
         }
@@ -267,6 +269,11 @@ namespace DigAndWonder
             {
                 Button button = card.gameObject.AddComponent<Button>();
                 button.onClick.AddListener(OpenTreasury);
+            }
+            else if (title == "Garagem")
+            {
+                Button button = card.gameObject.AddComponent<Button>();
+                button.onClick.AddListener(() => { OpenProgression(); workshop.Show(3); });
             }
             else if (title == "Treino")
             {
@@ -332,15 +339,19 @@ namespace DigAndWonder
             string stageName = sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant();
             hubStageLabel.text = "EXPEDIÇÃO " + stageNumber.ToString("00") + "  •  " + stageName;
             hubWalletLabel.text = "◉ " + sim.Gold;
-            hubDrillStats.text = "NÍVEL " + driver.CurrentCharacterLevel.Level + "\nATQ " + driver.CurrentAttackDamage.ToString("0.##") + "  •  VIDA " + sim.PlayerMaximumHealth.ToString("0");
+            hubDrillStats.text = driver.EquippedCharacter.DisplayName + " NV. " + driver.CurrentCharacterLevel.Level + "\nATQ " + driver.CurrentAttackDamage.ToString("0.##") + "  •  VIDA " + driver.CurrentStats.MaximumHealth.ToString("0");
             hubMissionLabel.text = sim.Run.IsPlayerDefeated ? "Tentativa encerrada — melhore a broca e retorne" :
                 sim.Run.IsStageCleared ? "Guardião derrotado — próxima fase disponível" : "Derrote o guardião para avançar";
-            hubLockLabel.text = stageNumber < 2 ? "Equipamentos e álbum  🔒  desbloqueiam na Fase 2" : "Equipamentos e álbum  •  sistema em breve";
+            CharacterCombatData next = Array.Find(driver.CharacterCatalog, item => item.UnlockStage > sim.Profile.HighestClearedStage);
+            hubLockLabel.text = next != null ? "VENÇA A FASE " + next.UnlockStage + " PARA GANHAR " + next.DisplayName.ToUpperInvariant() : "COLEÇÃO DESTE MARCO COMPLETA";
+            ApplyCharacterColors();
         }
 
         private void EnterGame(bool resumed)
         {
             if (driver.Simulation == null) return;
+            if (driver.Simulation.IsActive) lastCharacterReward = null;
+            ApplyCharacterColors();
             driver.SetMenuPaused(false);
             inGame = true;
             hubPanel.gameObject.SetActive(false);
@@ -393,7 +404,7 @@ namespace DigAndWonder
             if (sim == null) return;
             stageLabel.text = sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant();
             int stageNumber = sim.Run.CampaignStage;
-            missionLabel.text = "MISSÃO " + stageNumber.ToString("00") + "  •  DERROTE O GUARDIÃO  •  " + (sim.Run.IsStageCleared ? "CONCLUÍDA" : "EM ANDAMENTO");
+            missionLabel.text = "FASE " + stageNumber.ToString("00") + "  •  AMEAÇA " + (1 + driver.Economy.DifficultyTier(stageNumber)) + "  •  " + (sim.Run.IsStageCleared ? "CONCLUÍDA" : "DERROTE O GUARDIÃO");
             if (displayedGold != sim.Gold || displayedCrystals != sim.Profile.Crystals)
             {
                 displayedGold = sim.Gold;
@@ -429,7 +440,8 @@ namespace DigAndWonder
             }
             else if (sim.Run.IsStageCleared)
             {
-                statusLabel.text = "GUARDIÃO DERROTADO — FASE CONCLUÍDA!";
+                statusLabel.text = string.IsNullOrEmpty(lastCharacterReward) ? "GUARDIÃO DERROTADO — FASE CONCLUÍDA!" :
+                    lastCharacterReward + " LIBERADA! ABRA PERSONAGEM > BROCAS.";
             }
             if (driver.IsSaveBlocked)
             {
@@ -588,8 +600,12 @@ namespace DigAndWonder
             {
                 case CombatEventType.EnemySpawned: statusLabel.text = "UMA CRIATURA SURGIU!"; break;
                 case CombatEventType.BossSpawned: statusLabel.text = "GUARDIÃO À FRENTE!"; statusLabel.transform.DOPunchScale(new Vector3(0.18f, 0.18f, 0), 0.35f, 4, 0.65f); break;
-                case CombatEventType.SpecialStarted: combatLog.text = "ESPECIAL: PIONEIRA EM LANÇAMENTO"; break;
-                case CombatEventType.SpecialStrike: combatLog.text = "IMPACTO DA PIONEIRA  •  " + Mathf.CeilToInt(e.Amount); break;
+                case CombatEventType.SpecialStarted: combatLog.text = "ESPECIAL: " + driver.EquippedCharacter.DisplayName.ToUpperInvariant(); break;
+                case CombatEventType.SpecialStrike: combatLog.text = "IMPACTO ESPECIAL  •  " + Mathf.CeilToInt(e.Amount); break;
+                case CombatEventType.CharacterUnlocked:
+                    CharacterCombatData reward = Array.Find(driver.CharacterCatalog, item => item.Id == e.Text);
+                    lastCharacterReward = reward == null ? e.Text : reward.DisplayName.ToUpperInvariant();
+                    break;
                 case CombatEventType.GoldAwarded: combatLog.text = "+" + Mathf.CeilToInt(e.Amount) + " ouro"; break;
                 case CombatEventType.CharacterExperienceAwarded: combatLog.text = "+" + Mathf.CeilToInt(e.Amount) + " XP para sua broca"; break;
                 case CombatEventType.CharacterLeveledUp: statusLabel.text = "SUA BROCA SUBIU PARA O NÍVEL " + Mathf.CeilToInt(e.Amount) + "!"; break;
@@ -634,6 +650,15 @@ namespace DigAndWonder
                 int index = Mathf.Abs(e.EntityId) % enemyAnimators.Length;
                 enemyAnimators[index].PlayImpact();
             }
+        }
+
+        private void ApplyCharacterColors()
+        {
+            CharacterCombatData character = driver.EquippedCharacter;
+            if (character == null) return;
+            var tint = new Color(character.TintR, character.TintG, character.TintB);
+            if (drillFrames != null) drillFrames.GetComponent<Image>().color = tint;
+            if (hubDrillFrames != null) hubDrillFrames.GetComponent<Image>().color = tint;
         }
 
         private RectTransform MakePanel(string name, Transform parent, Color color, Vector2 min, Vector2 max, Vector2 offsetMin, Vector2 offsetMax)

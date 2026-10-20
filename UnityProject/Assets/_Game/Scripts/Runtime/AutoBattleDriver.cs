@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace DigAndWonder
@@ -25,8 +26,10 @@ namespace DigAndWonder
         public int CurrentHealthMaximum => Economy?.Upgrade(UpgradeKind.Health).MaximumLevel ?? 0;
         public DrillStats CurrentStats => Profile != null && Economy != null && characterExperienceRules.ContainsKey(Profile.EquippedCharacterId)
             ? EconomyProgression.Stats(Profile, Economy, Profile.EquippedCharacterId, characterExperienceRules[Profile.EquippedCharacterId],
-                balance.drillAttackDamage, balance.playerBaseHealth) : default;
+                balance.drillAttackDamage, balance.playerBaseHealth, EquippedCharacter) : default;
         public float CurrentAttackDamage => CurrentStats.AttackDamage;
+        public CharacterCombatData[] CharacterCatalog { get; private set; } = Array.Empty<CharacterCombatData>();
+        public CharacterCombatData EquippedCharacter => Profile == null ? null : CharacterCatalog.FirstOrDefault(x => x.Id == Profile.EquippedCharacterId);
 
         private AtomicSaveRepository saveRepository;
         private GameSaveData loadedProfile;
@@ -65,6 +68,9 @@ namespace DigAndWonder
                     characterExperienceRules.Add(definition.id, definition.experience.ToRuntime());
                     characterCatalog.Add(definition.id, definition);
                 }
+                CharacterCatalog = characterCatalog.Values.Select(x => x.ToRuntime(Economy)).OrderBy(x => x.UnlockStage).ToArray();
+                if (CharacterCatalog.Length != Economy.CharacterRoster.Length)
+                    throw new InvalidOperationException("Uma broca da tabela está sem ScriptableObject implementado.");
                 if (!characterCatalog.ContainsKey(CharacterProgression.StarterCharacterId))
                     throw new InvalidOperationException("A personagem inicial não foi importada.");
             }
@@ -136,6 +142,7 @@ namespace DigAndWonder
 
         private void CreateSimulation(GameSaveData profile)
         {
+            int characterCount = profile.Characters.Count;
             if (Simulation != null) Simulation.EventRaised -= OnSimulationEvent;
             string stageId = profile.ActiveRun != null ? profile.ActiveRun.StageId : profile.UnlockedStageId;
             uint seed = (uint)DateTime.UtcNow.Ticks;
@@ -153,6 +160,7 @@ namespace DigAndWonder
             Simulation.EventRaised += OnSimulationEvent;
             accumulator = 0f;
             saveTimer = 0f;
+            if (profile.Characters.Count != characterCount) SaveNow();
         }
 
         private void Update()
@@ -186,6 +194,7 @@ namespace DigAndWonder
             if (combatEvent.Type == CombatEventType.EnemyDefeated ||
                 combatEvent.Type == CombatEventType.CharacterExperienceAwarded ||
                 combatEvent.Type == CombatEventType.CharacterLeveledUp ||
+                combatEvent.Type == CombatEventType.CharacterUnlocked ||
                 combatEvent.Type == CombatEventType.UpgradePurchased ||
                 combatEvent.Type == CombatEventType.BossSpawned ||
                 combatEvent.Type == CombatEventType.StageCleared ||
@@ -291,6 +300,8 @@ namespace DigAndWonder
         public bool TryUnlockCharacter(string characterId)
         {
             if (!IsReady || applicationPaused || string.IsNullOrWhiteSpace(characterId) || !characterCatalog.ContainsKey(characterId)) return false;
+            CharacterCombatData definition = CharacterCatalog.First(x => x.Id == characterId);
+            if (definition.UnlockStage > Profile.HighestClearedStage) return false;
             bool unlocked = CharacterProgression.TryUnlock(Profile, characterId);
             if (unlocked) SaveNow();
             return unlocked;
@@ -300,7 +311,11 @@ namespace DigAndWonder
         {
             if (!IsReady || applicationPaused || string.IsNullOrWhiteSpace(characterId) || !characterCatalog.ContainsKey(characterId)) return false;
             bool equipped = CharacterProgression.TryEquip(Profile, characterId);
-            if (equipped) SaveNow();
+            if (equipped)
+            {
+                SaveNow();
+                CombatEventRaised?.Invoke(new CombatEvent(CombatEventType.CharacterEquipped, text: characterId));
+            }
             return equipped;
         }
     }

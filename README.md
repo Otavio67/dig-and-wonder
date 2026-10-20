@@ -6,15 +6,15 @@
 
 A amostra Unity é um jogo 2D retrato de combate automático com tema de escavação. A broca enfrenta inimigos, recebe ouro e permite comprar melhorias. Em um perfil novo, o jogador toca em **Iniciar escavação**; a luta e os ataques acontecem automaticamente.
 
-O checkpoint **0.0.17** tem uma primeira economia até a fase 60: ouro/cristais, XP individual até nível 60, sete melhorias, quatro poderes por personagem, abertura de baús com chave e treino na última fase vencida. Fórmulas, percentuais, fontes de pesquisa e resultados estão em [ECONOMIA-MIDGAME.md](docs/ECONOMIA-MIDGAME.md). Equipamentos colecionáveis, álbum e novas regiões continuam pendentes. A interface ainda precisa de revisão no Unity e em aparelho Android.
+O checkpoint **0.0.18** tem ouro/cristais, XP individual até nível 60, sete melhorias, quatro poderes por personagem, baús com chave e treino. Vencer as fases **10, 20, 30, 40, 50 e 60** concede novas brocas, sempre no nível 0. A dificuldade sobe em degraus a cada cinco fases. Catálogo, contas e resultados atuais em [BROCAS-POR-FASE.md](docs/BROCAS-POR-FASE.md); pesquisa e base monetária em [ECONOMIA-MIDGAME.md](docs/ECONOMIA-MIDGAME.md). Equipamentos colecionáveis, álbum e novas regiões continuam pendentes. A interface ainda precisa de revisão no Unity e em aparelho Android.
 
 A amostra visual da Broca Pioneira agora tem locomoção de chão separada da lógica: caminhada curta, avanço de ataque, reação a dano e derrota. Uma folha PNG transparente derivada da arte enviada já está no checkout; a importação e a ligação dos frames estão documentadas em [SPRITE-BROCA-UNITY.md](docs/SPRITE-BROCA-UNITY.md).
 
 O Acampamento é uma tela de hub separada do HUD de combate: oficina, garagem, baús, álbum e bloqueios de fase ficam na base; a escavação mantém apenas informações e controles da tentativa.
 
-A Oficina abre uma tela de personagem com a Pioneira no pedestal ciano e abas **Oficina, Poderes e Tesouro**. As setas percorrem as melhorias/poderes; itens bloqueados mostram o requisito. Pode ser acessada também pelas abas **Personagem/Melhorias** no combate; **Baús** abre o Tesouro. A expedição pausa enquanto o menu está aberto. XP e poderes são próprios de cada broca; melhorias da oficina são compartilhadas. Save Unity esquema 3 migra os esquemas 1 e 2 e mantém backup.
+A Oficina abre uma tela de personagem com vitrine e abas **Oficina, Poderes, Tesouro e Brocas**. A **Garagem** do hub abre a coleção; brocas bloqueadas mostram a fase necessária e as possuídas podem ser equipadas entre tentativas. Existem sete brocas funcionais, com arte provisória da Pioneira reutilizada em cores distintas. XP e poderes são individuais; melhorias da oficina são compartilhadas. Save Unity esquema 3 preserva a coleção e migra esquemas 1/2 com backup.
 
-O smoke test histórico em Play Mode (sete ataques/10 segundos, sete de ouro e 112/120 PV) pertence ao protótipo anterior ao novo balanceamento. A 0.0.17 foi verificada por checks de domínio, simulações e compilação C# contra DLLs reais; importação e Play Mode desta versão estão pendentes por falta de licença do Editor na nuvem. Não há medição Android.
+O smoke test histórico em Play Mode (sete ataques/10 segundos, sete de ouro e 112/120 PV) pertence ao protótipo anterior ao novo balanceamento. A 0.0.18 passou em **74 checks de domínio**, nove simulações e compilação C# contra DLLs reais; importação e Play Mode desta versão estão pendentes por falta de licença do Editor na nuvem. Não há medição Android.
 
 ## Abrir e executar
 

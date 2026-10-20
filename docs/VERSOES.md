@@ -282,3 +282,16 @@ Tag: `v0.0.16`.
 Regras, pesquisa, CSV, gráfico e instruções: [ECONOMIA-MIDGAME.md](ECONOMIA-MIDGAME.md).
 
 Tag: `v0.0.17`.
+
+## 0.0.18 — brocas por vitória de fase
+
+- Regra esclarecida: vencer fases 10/20/30/40/50/60 concede Rebite, Centelha, Bastião, Prisma, Sísmica e Aurora. A inicial é Pioneira. Não há desbloqueio por nível da personagem nem novo nível geral de jogador.
+- Recompensas começam com XP/nível/poderes zerados; anteriores são preservadas. Equipagem entre tentativas, garagem paginada e identificação na vitrine/HUD. A arte ainda reutiliza a folha da Pioneira com cores distintas.
+- Bases melhores e padrões reais: três tiros leves, disparos pesados, estilhaço inato, especial em até três alvos e combinação desses efeitos. Sem novo sistema de estados ou alteração de posições lógicas.
+- Degraus extras de dificuldade nas fases 5/10/15… e XP com aumento mínimo de um ponto por fase; requisitos de XP individual continuam crescendo até 60.
+- Save esquema 3 mantido: perfil guarda personagens/XP/poderes/fase; reconciliação concede marcos já vencidos sem reset. Prêmios completos antes dos eventos e da gravação.
+- 74 checks aprovados; C# com stubs/DLLs reais sem erros/avisos. Nove ensaios até fase 60 com trocas e treino passaram. Importação/Play Mode bloqueados por licença nesta nuvem; sem APK novo ou medição Android.
+
+Catálogo, cálculos, resultados e roteiro: [BROCAS-POR-FASE.md](BROCAS-POR-FASE.md).
+
+Tag: `v0.0.18`.

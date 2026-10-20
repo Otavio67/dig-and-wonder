@@ -27,9 +27,9 @@ namespace DigAndWonder
 
         private readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
         private readonly List<TMP_FontAsset> ownedFonts = new List<TMP_FontAsset>();
-        private readonly RectTransform[] panes = new RectTransform[3];
-        private readonly Image[] tabFaces = new Image[3];
-        private readonly RectTransform[] tabVisuals = new RectTransform[3];
+        private readonly RectTransform[] panes = new RectTransform[4];
+        private readonly Image[] tabFaces = new Image[4];
+        private readonly RectTransform[] tabVisuals = new RectTransform[4];
         private AutoBattleDriver driver;
         private CombatBalanceDefinition balance;
         private RectTransform root;
@@ -65,6 +65,13 @@ namespace DigAndWonder
         private TextMeshProUGUI moduleValue;
         private readonly Image[] passiveFaces = new Image[3];
         private readonly Image[] passiveLocks = new Image[3];
+        private Image showcaseImage;
+        private TextMeshProUGUI showcaseFallback;
+        private DrillSpriteSheetPlayer2D showcaseFrames;
+        private Image garageImage;
+        private int garageIndex;
+        private TextMeshProUGUI garagePage, garageDetails, garagePrice;
+        private Button garageEquip;
 
         public void Initialize(RectTransform parent, AutoBattleDriver battleDriver, Action returnToHub)
         {
@@ -126,6 +133,7 @@ namespace DigAndWonder
             BuildUpgradeRows();
             BuildPowerRows();
             BuildTreasury();
+            BuildGarage();
             lockSummary = Label(root, "Novas melhorias em preparação", 22, Dim, 0.05f, 0.193f, 0.95f, 0.217f, false);
             status = Label(root, "Escolha uma melhoria para turbinar a broca.", 26, Cream,
                 0.055f, 0.12f, 0.61f, 0.19f, false, TextAlignmentOptions.Left);
@@ -140,9 +148,10 @@ namespace DigAndWonder
             // O pedestal e a broca são independentes; não se anima a posição lógica da unidade.
             Icon(chamber, "pedestal", 0.195f, 0.025f, 0.805f, 0.36f);
             TextMeshProUGUI fallback = Label(chamber, "PIONEIRA", 22, Cyan, 0.29f, 0.28f, 0.71f, 0.79f, true);
+            showcaseFallback = fallback;
             RectTransform drill = Region("Drill Visual", fallback.transform, -0.19f, -0.2f, 1.19f, 1.2f);
-            drill.gameObject.AddComponent<Image>();
-            drill.gameObject.AddComponent<DrillSpriteSheetPlayer2D>();
+            showcaseImage = drill.gameObject.AddComponent<Image>();
+            showcaseFrames = drill.gameObject.AddComponent<DrillSpriteSheetPlayer2D>();
             // Idle discreto. O pedestal permanece fixo para transmitir contato com o chão.
             drill.gameObject.AddComponent<ProceduralAnimator2D>();
             Slot(chamber, "BROCA", "drill", 0.015f, 0.53f, 0.22f, 0.97f,
@@ -280,13 +289,13 @@ namespace DigAndWonder
         private void BuildNavigation()
         {
             RectTransform tread = ArtRegion("Navigation tread", root, "tread", Petroleum, 0.015f, 0.018f, 0.985f, 0.112f);
-            string[] names = { "OFICINA", "PODERES", "TESOURO" };
-            string[] icons = { "repair", "bolt", "gear" };
+            string[] names = { "OFICINA", "PODERES", "TESOURO", "BROCAS" };
+            string[] icons = { "repair", "bolt", "gear", "drill" };
             for (int i = 0; i < names.Length; i++)
             {
                 int index = i;
-                float left = 0.075f + i * 0.287f;
-                Button button = ButtonAt(tread, "Tab " + names[i], "", Teal, left, 0.10f, left + 0.277f, 0.96f,
+                float left = 0.045f + i * 0.23f;
+                Button button = ButtonAt(tread, "Tab " + names[i], "", Teal, left, 0.10f, left + 0.22f, 0.96f,
                     () => SelectTab(index), out TextMeshProUGUI ignoredLabel, out Image face);
                 tabFaces[i] = face;
                 tabVisuals[i] = (RectTransform)button.transform;
@@ -294,6 +303,37 @@ namespace DigAndWonder
                 Label(face.transform, names[i], 24, Cream, 0.04f, 0.06f, 0.96f, 0.43f, true);
             }
             SelectTab(0);
+        }
+
+        private void BuildGarage()
+        {
+            RectTransform pane = panes[3];
+            BuildPager(pane, () => BrowseGarage(-1), () => BrowseGarage(1), out garagePage);
+            RectTransform body = Plate("Drill catalog", pane, Steel, 0, 0.01f, 1, 0.73f);
+            RectTransform art = Region("Catalog Visual", body, 0.015f, 0.46f, 0.29f, 0.94f);
+            garageImage = art.gameObject.AddComponent<Image>();
+            art.gameObject.AddComponent<DrillSpriteSheetPlayer2D>();
+            garageDetails = Label(body, "BROCAS", 32, Cream, 0.31f, 0.43f, 0.96f, 0.98f, false, TextAlignmentOptions.Left);
+            garageEquip = ButtonAt(body, "Equip character", "EQUIPAR", Cyan, 0.03f, 0.03f, 0.97f, 0.41f,
+                EquipGarageCharacter, out garagePrice, out Image face);
+            garagePrice.fontSize = 34;
+        }
+
+        private void BrowseGarage(int offset)
+        {
+            if (driver.CharacterCatalog.Length < 1) return;
+            garageIndex = (garageIndex + offset + driver.CharacterCatalog.Length) % driver.CharacterCatalog.Length;
+            Refresh();
+        }
+
+        private void EquipGarageCharacter()
+        {
+            CharacterCombatData definition = driver.CharacterCatalog[garageIndex];
+            bool equipped = driver.TryEquipCharacter(definition.Id);
+            Refresh();
+            status.text = driver.IsSaveBlocked ? driver.LastSaveError : equipped
+                ? definition.DisplayName + " equipada. XP e poderes anteriores preservados."
+                : "Vença a fase indicada e termine a tentativa atual para trocar.";
         }
 
         private void SelectTab(int index)
@@ -322,6 +362,9 @@ namespace DigAndWonder
             root.gameObject.SetActive(true);
             status.text = "Melhorias são da oficina; XP e poderes pertencem a cada broca.";
             if (tab >= 0 && tab < panes.Length) selectedTab = tab;
+            if (tab == 3)
+                for (int i = 0; i < driver.CharacterCatalog.Length; i++)
+                    if (CharacterProgression.Find(driver.Profile, driver.CharacterCatalog[i].Id) != null) garageIndex = i;
             SelectTab(selectedTab);
             Refresh();
         }
@@ -344,6 +387,7 @@ namespace DigAndWonder
                 healthButton.interactable = false;
                 foreach (Button button in powerButtons) if (button != null) button.interactable = false;
                 foreach (Button button in treasureButtons) if (button != null) button.interactable = false;
+                if (garageEquip != null) garageEquip.interactable = false;
                 status.text = "Não foi possível carregar o progresso. Dados preservados.";
                 return;
             }
@@ -357,9 +401,30 @@ namespace DigAndWonder
             experienceFill.rectTransform.anchorMax = new Vector2(level.IsMaximum ? 1f : level.ExperienceToNextLevel > 0
                 ? (float)level.ExperienceInLevel / level.ExperienceToNextLevel : 0f, 1f);
             if (driver.Economy == null) return;
+            CharacterCombatData equippedCharacter = driver.EquippedCharacter;
+            if (equippedCharacter != null)
+            {
+                showcaseImage.color = CharacterColor(equippedCharacter);
+                showcaseFallback.text = showcaseFrames.IsReady ? string.Empty : equippedCharacter.DisplayName;
+            }
+            if (driver.CharacterCatalog.Length > 0)
+            {
+                CharacterCombatData option = driver.CharacterCatalog[garageIndex % driver.CharacterCatalog.Length];
+                CharacterProgressData progress = CharacterProgression.Find(profile, option.Id);
+                bool owns = progress != null;
+                bool selected = profile.EquippedCharacterId == option.Id;
+                bool active = driver.Simulation != null && driver.Simulation.IsActive;
+                garagePage.text = "BROCAS " + (garageIndex + 1) + " / " + driver.CharacterCatalog.Length;
+                garageImage.color = CharacterColor(option);
+                garageDetails.text = option.DisplayName + "\n" + (owns ? "NÍVEL " + CharacterProgression.GetLevel(progress, option.Experience).Level : "VENÇA A FASE " + option.UnlockStage) +
+                    " • ATQ BASE x" + Number(option.AttackMultiplier) + "\n" + option.Description;
+                garagePrice.text = !owns ? "BLOQUEADA • FASE " + option.UnlockStage : selected ? "EQUIPADA" : active ? "TROCA ENTRE TENTATIVAS" : "EQUIPAR";
+                garageEquip.interactable = driver.IsReady && owns && !selected && !active;
+            }
             float specialDamage = balance.specialAbility.damage * driver.CurrentStats.AttackDamage / balance.drillAttackDamage *
                 driver.CurrentStats.SpecialMultiplier * (1f + EconomyProgression.PowerBonus(profile, driver.Economy, profile.EquippedCharacterId, AttackPowerKind.Resonance));
-            moduleValue.text = balance.specialAbility.hitCount + " impactos\n" + Number(specialDamage) + " de dano";
+            moduleValue.text = balance.specialAbility.hitCount + " impactos\n" + Number(specialDamage) + " por alvo" +
+                (equippedCharacter != null && equippedCharacter.SpecialTargetCount > 1 ? "\nAté " + equippedCharacter.SpecialTargetCount + " alvos" : "");
             UpgradeKind[] passiveKinds = { UpgradeKind.Health, UpgradeKind.Repair, UpgradeKind.CriticalChance };
             for (int i = 0; i < passiveKinds.Length; i++)
             {
@@ -409,6 +474,7 @@ namespace DigAndWonder
         }
 
         private static string Number(float value) => value.ToString("0.##", Portuguese);
+        private static Color CharacterColor(CharacterCombatData character) => new Color(character.TintR, character.TintG, character.TintB);
 
         private RectTransform Region(string name, Transform parent, float x0, float y0, float x1, float y1)
         {

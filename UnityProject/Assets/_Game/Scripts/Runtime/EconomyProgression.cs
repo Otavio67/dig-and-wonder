@@ -51,6 +51,7 @@ namespace DigAndWonder
         public double EnemyHealthBase, EnemyDamageBase, EnemyHealthGrowth, EnemyDamageGrowth;
         public double BossHealthMultiplier, BossDamageMultiplier, GoldGrowth, ExperienceGrowth;
         public int EnemyGoldBase, BossGoldMultiplier;
+        public int MinimumExperienceStep;
         public int WaveCount, LateWaveAfter, LateWaveSize;
         public float WaveInterval;
         public double CharacterDamagePerLevel, CharacterHealthPerLevel;
@@ -61,6 +62,9 @@ namespace DigAndWonder
         public EconomyUpgradeRule[] Upgrades;
         public AttackPowerRule[] Powers;
         public ChestRewardRule[] ChestRewards;
+        public CharacterCombatData[] CharacterRoster;
+        public int DifficultyStepInterval;
+        public double DifficultyHealthStep, DifficultyDamageStep;
 
         public void Validate()
         {
@@ -71,11 +75,30 @@ namespace DigAndWonder
                 throw new ArgumentException("Contadores inválidos na economia.");
             RequireRange(EnemyHealthBase, 1, 10000); RequireRange(EnemyDamageBase, 0.1, 1000);
             RequireRange(EnemyHealthGrowth, 1, 1.2); RequireRange(EnemyDamageGrowth, 1, 1.2);
+            if (MinimumExperienceStep < 1 || MinimumExperienceStep > 10) throw new ArgumentException("Passo mínimo de XP inválido.");
             RequireRange(GoldGrowth, 1, 1.2); RequireRange(ExperienceGrowth, 1, 1.2);
             RequireRange(BossHealthMultiplier, 1, 20); RequireRange(BossDamageMultiplier, 1, 10);
             RequireRange(CharacterDamagePerLevel, 0, 0.1); RequireRange(CharacterHealthPerLevel, 0, 0.1);
             RequireRange(AttackLevelMultiplier, 1, 1.2); RequireRange(HealthLevelMultiplier, 1, 1.2);
             RequireRange(BaseCriticalChance, 0, 0.5); RequireRange(BaseCriticalMultiplier, 1, 5);
+            if (DifficultyStepInterval < 1 || DifficultyStepInterval > MaximumStage) throw new ArgumentException("Degrau de dificuldade inválido.");
+            RequireRange(DifficultyHealthStep, 1, 1.5); RequireRange(DifficultyDamageStep, 1, 1.5);
+            if (CharacterRoster == null || CharacterRoster.Length == 0 || CharacterRoster.Any(x => x == null) ||
+                CharacterRoster.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count() != CharacterRoster.Length)
+                throw new ArgumentException("Catálogo de brocas vazio ou duplicado.");
+            foreach (CharacterCombatData character in CharacterRoster)
+            {
+                if (string.IsNullOrWhiteSpace(character.Id) || string.IsNullOrWhiteSpace(character.DisplayName) || character.UnlockStage < 0 ||
+                    character.UnlockStage > MaximumStage || character.BasicHitCount < 0 || character.BasicHitCount > 3 ||
+                    character.SpecialTargetCount < 1 || character.SpecialTargetCount > 3)
+                    throw new ArgumentException("Broca inválida no catálogo.");
+                RequireRange(character.AttackMultiplier, .1, 20); RequireRange(character.HealthMultiplier, .1, 20);
+                RequireRange(character.SpeedMultiplier, .5, 1.5); RequireRange(character.ProjectileDamageMultiplier, .5, 2);
+                RequireRange(character.InnateRicochet, 0, .75);
+                RequireRange(character.TintR, 0, 1); RequireRange(character.TintG, 0, 1); RequireRange(character.TintB, 0, 1);
+            }
+            if (!CharacterRoster.Any(x => x.Id == CharacterProgression.StarterCharacterId && x.UnlockStage == 0))
+                throw new ArgumentException("Broca inicial ausente.");
             if (Experience == null || Upgrades == null || Powers == null || ChestRewards == null ||
                 Upgrades.Length != 7 || Powers.Length != 4 || ChestRewards.Length < 1)
                 throw new ArgumentException("Economia sem tabelas completas.");
@@ -115,8 +138,8 @@ namespace DigAndWonder
             }
             if (totalWeight != 10000) throw new ArgumentException("Probabilidades dos baús devem somar 100%.");
             // A fase final também precisa caber nos tipos usados no combate e na carteira.
-            RequireRange(EnemyHealthBase * Math.Pow(EnemyHealthGrowth, MaximumStage - 1) * BossHealthMultiplier, 1, 1e9);
-            RequireRange(EnemyDamageBase * Math.Pow(EnemyDamageGrowth, MaximumStage - 1) * BossDamageMultiplier, 0, 1e8);
+            RequireRange(EnemyHealth(MaximumStage) * BossHealthMultiplier, 1, 1e9);
+            RequireRange(EnemyDamage(MaximumStage) * BossDamageMultiplier, 0, 1e8);
             if ((long)NormalGold(MaximumStage) * Math.Max(BossGoldMultiplier, Math.Max(GoldPackMultiplier, ChestRewards.Max(x => x.GoldMultiplier))) > int.MaxValue)
                 throw new ArgumentException("Recompensa excede o limite da carteira.");
             foreach (UpgradeKind kind in Enum.GetValues(typeof(UpgradeKind)))
@@ -144,9 +167,13 @@ namespace DigAndWonder
         public int ExperienceReward(int stage, bool boss, CharacterExperienceRules characterExperience = null)
         {
             CharacterExperienceRules xp = characterExperience ?? Experience;
-            return Scale(boss ? xp.BossExperience : xp.RegularEnemyExperience, ExperienceGrowth, StageIndex(stage));
+            int basis = boss ? xp.BossExperience : xp.RegularEnemyExperience;
+            return Math.Max(Scale(basis, ExperienceGrowth, StageIndex(stage)), checked(basis + MinimumExperienceStep * StageIndex(stage)));
         }
         public int StageIndex(int stage) => Math.Max(0, Math.Min(MaximumStage, stage) - 1);
+        public int DifficultyTier(int stage) => Math.Max(1, Math.Min(MaximumStage, stage)) / DifficultyStepInterval;
+        public double EnemyHealth(int stage) => EnemyHealthBase * Math.Pow(EnemyHealthGrowth, StageIndex(stage)) * Math.Pow(DifficultyHealthStep, DifficultyTier(stage));
+        public double EnemyDamage(int stage) => EnemyDamageBase * Math.Pow(EnemyDamageGrowth, StageIndex(stage)) * Math.Pow(DifficultyDamageStep, DifficultyTier(stage));
         public EconomyUpgradeRule Upgrade(UpgradeKind kind) => Upgrades.FirstOrDefault(x => x.Kind == kind);
         public AttackPowerRule Power(string id) => Powers.FirstOrDefault(x => x.Id == id);
     }
@@ -204,13 +231,14 @@ namespace DigAndWonder
         }
 
         public static DrillStats Stats(GameSaveData save, EconomyRules rules, string characterId, CharacterExperienceRules xp,
-            float baseDamage = 6f, float baseHealth = 120f)
+            float baseDamage = 6f, float baseHealth = 120f, CharacterCombatData definition = null)
         {
+            if (definition == null) definition = rules.CharacterRoster.FirstOrDefault(x => x.Id == characterId);
             int level = CharacterProgression.GetLevel(CharacterProgression.Find(save, characterId), xp).Level;
-            float attack = (float)(baseDamage * Math.Pow(rules.AttackLevelMultiplier, save.AttackLevel) * (1 + rules.CharacterDamagePerLevel * level));
-            float health = (float)(baseHealth * Math.Pow(rules.HealthLevelMultiplier, save.HealthLevel) * (1 + rules.CharacterHealthPerLevel * level));
+            float attack = (float)(baseDamage * Math.Pow(rules.AttackLevelMultiplier, save.AttackLevel) * (1 + rules.CharacterDamagePerLevel * level) * (definition?.AttackMultiplier ?? 1));
+            float health = (float)(baseHealth * Math.Pow(rules.HealthLevelMultiplier, save.HealthLevel) * (1 + rules.CharacterHealthPerLevel * level) * (definition?.HealthMultiplier ?? 1));
             return new DrillStats(attack, health,
-                (float)(1 + save.AttackSpeedLevel * rules.Upgrade(UpgradeKind.AttackSpeed).Bonus),
+                (float)(1 + save.AttackSpeedLevel * rules.Upgrade(UpgradeKind.AttackSpeed).Bonus) * (definition?.SpeedMultiplier ?? 1),
                 (float)(1 + save.SpecialLevel * rules.Upgrade(UpgradeKind.Special).Bonus),
                 (float)(rules.BaseCriticalChance + save.CriticalChanceLevel * rules.Upgrade(UpgradeKind.CriticalChance).Bonus),
                 (float)(rules.BaseCriticalMultiplier + save.CriticalDamageLevel * rules.Upgrade(UpgradeKind.CriticalDamage).Bonus),

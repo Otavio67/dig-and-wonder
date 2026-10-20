@@ -1,8 +1,10 @@
 # Economia, XP e progressão — 0.0.17
 
+> Histórico de balanceamento da **0.0.17**. A regra foi esclarecida e implementada na **0.0.18**: brocas gratuitas ao vencer fases 10/20/30…, dificuldade em degraus a cada cinco fases e XP comum com aumento mínimo por fase. Veja [BROCAS-POR-FASE.md](BROCAS-POR-FASE.md) para o catálogo, fórmulas e ensaios atuais. Moedas, custos e poderes desta base permanecem.
+
 ## Decisões e alcance
 
-> Direção adicional solicitada após o ensaio: broca inicial deliberadamente fraca, novas brocas a cada dez níveis e degraus de dificuldade a cada cinco. Este checkpoint registra a base monetária funcional; a escolha entre contagem geral contínua ou dez níveis de cada broca está em esclarecimento. O nível 60 não será requisito para trocar a broca inicial. O ritmo de desbloqueios e a força de cada broca precisam entrar no próximo ensaio.
+> O nível 60 individual não é requisito para trocar a broca inicial. O restante abaixo registra a economia e os resultados do checkpoint 0.0.17, anterior à coleção jogável.
 
 Esta é a primeira tabela autoral de balanceamento Unity, solicitada pelo usuário em 20/10/2026. Não representa paridade com os números históricos do Godot. A correção posterior do usuário foi incorporada: **nível 60 da broca deve demorar bastante**, com referência inicial de **60–100 horas ativas por personagem**. Essa referência é hipótese de design, não tempo de jogadores medido.
 

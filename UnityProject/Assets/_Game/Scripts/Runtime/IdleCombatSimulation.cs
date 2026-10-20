@@ -24,7 +24,7 @@ namespace DigAndWonder
         public float PlayerMaximumHealth => config.Economy == null
             ? config.PlayerBaseHealth + profile.HealthLevel * config.HealthUpgrade.Bonus : CurrentStats.MaximumHealth;
         public DrillStats CurrentStats => EconomyProgression.Stats(profile, config.Economy,
-            currentCharacter.Id, currentCharacter.Experience, config.BasicAttackDamage, config.PlayerBaseHealth);
+            currentCharacter.Id, currentCharacter.Experience, config.BasicAttackDamage, config.PlayerBaseHealth, currentCharacter);
         public EconomyRules Economy => config.Economy;
         public float PlayerHealth => run.PlayerHealth;
         public int Gold => profile.Gold;
@@ -76,6 +76,7 @@ namespace DigAndWonder
             }
             profile.CriticalChanceLevel = Math.Max(0, profile.CriticalChanceLevel);
             profile.CriticalDamageLevel = Math.Max(0, profile.CriticalDamageLevel);
+            CharacterProgression.GrantStageRewards(profile, config.Characters);
         }
 
         public void BeginStage(StageCombatData stage, uint randomSeed)
@@ -241,13 +242,26 @@ namespace DigAndWonder
         {
             EnemySnapshot target = enemies.FirstOrDefault(e => e.Id == run.SpecialTargetId && e.Health > 0f);
             if (target == null) return;
+            // Captura os alvos antes dos impactos: uma morte pode liberar inimigos da fila.
+            EnemySnapshot[] secondary = currentCharacter.SpecialTargetCount > 1
+                ? enemies.Where(e => e.Id != target.Id && e.Health > 0).Take(currentCharacter.SpecialTargetCount - 1).ToArray()
+                : Array.Empty<EnemySnapshot>();
             float damage = config.Special.Damage / config.Special.HitCount * GetDamageMultiplier();
             if (config.Economy != null)
-                damage *= CurrentStats.SpecialMultiplier * (1f + PowerBonus(AttackPowerKind.Resonance)) * BossMultiplier(target);
-            target.Health = Math.Max(0f, target.Health - damage);
-            Emit(CombatEventType.SpecialStrike, target.Id, damage, "Especial");
-            Emit(CombatEventType.Hit, target.Id, damage, "Especial");
+                damage *= CurrentStats.SpecialMultiplier * (1f + PowerBonus(AttackPowerKind.Resonance));
+            float primaryDamage = damage * BossMultiplier(target);
+            target.Health = Math.Max(0f, target.Health - primaryDamage);
+            Emit(CombatEventType.SpecialStrike, target.Id, primaryDamage, "Especial");
+            Emit(CombatEventType.Hit, target.Id, primaryDamage, "Especial");
             if (target.Health <= 0f) DefeatEnemy(target);
+            foreach (EnemySnapshot other in secondary)
+            {
+                if (!IsActive) return;
+                float areaDamage = damage * BossMultiplier(other);
+                other.Health = Math.Max(0, other.Health - areaDamage);
+                Emit(CombatEventType.Hit, other.Id, areaDamage, "Especial em área");
+                if (other.Health <= 0) DefeatEnemy(other);
+            }
         }
 
         private void UpdateBasicAttack(float step)
@@ -271,7 +285,7 @@ namespace DigAndWonder
             if (target == null) return;
             run.AttackTimer += config.BasicAttackInterval / AttackSpeed;
             run.AttackTargetId = target.Id;
-            run.AttackHitsRemaining = config.BasicAttackHitCount;
+            run.AttackHitsRemaining = currentCharacter.BasicHitCount > 0 ? currentCharacter.BasicHitCount : config.BasicAttackHitCount;
             run.AttackHitTimer = 0f;
             LaunchBasicHit();
             run.AttackHitsRemaining--;
@@ -283,7 +297,7 @@ namespace DigAndWonder
         {
             EnemySnapshot target = enemies.FirstOrDefault(e => e.Id == run.AttackTargetId && e.Health > 0f);
             if (target == null || pendingHits.Count >= config.MaximumProjectiles) return;
-            float damage = config.BasicAttackDamage * GetDamageMultiplier();
+            float damage = config.BasicAttackDamage * GetDamageMultiplier() * currentCharacter.ProjectileDamageMultiplier;
             bool critical = false;
             if (config.Economy != null)
             {
@@ -377,6 +391,7 @@ namespace DigAndWonder
             if (config.Economy != null && newLevel > previousLevel)
                 run.PlayerHealth = Math.Min(PlayerMaximumHealth, run.PlayerHealth + PlayerMaximumHealth - previousMaximumHealth);
             profile.Gold = EconomyProgression.Credit(profile.Gold, enemy.GoldReward);
+            string[] unlockedCharacters = Array.Empty<string>();
             // Observadores recebem a transação completa, inclusive ao salvar no evento.
             if (enemy.IsBoss)
             {
@@ -394,12 +409,14 @@ namespace DigAndWonder
                         profile.HighestClearedStage = run.CampaignStage;
                     }
                     profile.CampaignStage = Math.Min(config.Economy.MaximumStage, run.CampaignStage + 1);
+                    unlockedCharacters = CharacterProgression.GrantStageRewards(profile, config.Characters);
                 }
                 profile.UnlockedStageId = GetNextStageId(currentStage.Id);
                 run.IsStageCleared = true;
                 profile.ActiveRun = null;
                 ClearCombatActions();
             }
+            foreach (string id in unlockedCharacters) Emit(CombatEventType.CharacterUnlocked, 0, run.CampaignStage, id);
             Emit(CombatEventType.EnemyDefeated, enemy.Id, enemy.GoldReward, enemy.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
             Emit(CombatEventType.GoldAwarded, enemy.Id, enemy.GoldReward, "Ouro por inimigo derrotado");
             if (awardedExperience > 0)
@@ -539,7 +556,8 @@ namespace DigAndWonder
 
         private void ApplyRicochet(int primaryId, float originalDamage)
         {
-            float bonus = PowerBonus(AttackPowerKind.Ricochet);
+            // Combinação com limite natural: inato + poder não ultrapassam 100% do disparo.
+            float bonus = 1f - (1f - currentCharacter.InnateRicochet) * (1f - PowerBonus(AttackPowerKind.Ricochet));
             if (bonus <= 0f) return;
             EnemySnapshot secondary = enemies.FirstOrDefault(e => e.Id != primaryId && e.Health > 0);
             if (secondary == null) return;
@@ -572,8 +590,8 @@ namespace DigAndWonder
             return new EnemyCombatData
             {
                 Id = source.Id, DisplayName = source.DisplayName, IsBoss = boss,
-                MaxHealth = (float)(rules.EnemyHealthBase * Math.Pow(rules.EnemyHealthGrowth, index) * (boss ? rules.BossHealthMultiplier : 1)),
-                Damage = (float)(rules.EnemyDamageBase * Math.Pow(rules.EnemyDamageGrowth, index) * (boss ? rules.BossDamageMultiplier : 1)),
+                MaxHealth = (float)(rules.EnemyHealth(index + 1) * (boss ? rules.BossHealthMultiplier : 1)),
+                Damage = (float)(rules.EnemyDamage(index + 1) * (boss ? rules.BossDamageMultiplier : 1)),
                 GoldReward = checked(rules.NormalGold(index + 1) * (boss ? rules.BossGoldMultiplier : 1)),
                 FirstAttackDelay = source.FirstAttackDelay, AttackInterval = source.AttackInterval,
                 TelegraphDuration = source.TelegraphDuration, ProjectileFlight = source.ProjectileFlight

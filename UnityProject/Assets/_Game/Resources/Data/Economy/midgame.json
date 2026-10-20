@@ -4,7 +4,17 @@
   "EnemyHealthGrowth": 1.115, "EnemyDamageGrowth": 1.10,
   "BossHealthMultiplier": 8, "BossDamageMultiplier": 1.5,
   "EnemyGoldBase": 8, "GoldGrowth": 1.07, "BossGoldMultiplier": 10,
-  "ExperienceGrowth": 1.035,
+  "ExperienceGrowth": 1.035, "MinimumExperienceStep": 1,
+  "DifficultyStepInterval": 5, "DifficultyHealthStep": 1.12, "DifficultyDamageStep": 1.08,
+  "CharacterRoster": [
+    { "Id": "pioneer", "DisplayName": "Broca Pioneira", "Description": "Inicial simples: dois disparos e especial concentrado.", "UnlockStage": 0, "AttackMultiplier": 1, "HealthMultiplier": 1, "BasicHitCount": 2 },
+    { "Id": "rivet", "DisplayName": "Broca Rebite", "Description": "Chassi reforçado e ponta mais potente.", "UnlockStage": 10, "AttackMultiplier": 1.45, "HealthMultiplier": 1.4, "BasicHitCount": 2, "TintR": 1, "TintG": 0.87, "TintB": 0.68 },
+    { "Id": "spark", "DisplayName": "Broca Centelha", "Description": "Rajada de três tiros leves; cadência +15%.", "UnlockStage": 20, "AttackMultiplier": 1.9, "HealthMultiplier": 2, "SpeedMultiplier": 1.15, "ProjectileDamageMultiplier": 0.8, "BasicHitCount": 3, "TintR": 0.65, "TintG": 0.95, "TintB": 1 },
+    { "Id": "bastion", "DisplayName": "Broca Bastião", "Description": "Disparos pesados +20%; cadência -5%; muita blindagem.", "UnlockStage": 30, "AttackMultiplier": 2.75, "HealthMultiplier": 3, "SpeedMultiplier": 0.95, "ProjectileDamageMultiplier": 1.2, "BasicHitCount": 2, "TintR": 0.85, "TintG": 0.78, "TintB": 1 },
+    { "Id": "prism", "DisplayName": "Broca Prisma", "Description": "Estilhaço inato: outro alvo recebe 20% do disparo.", "UnlockStage": 40, "AttackMultiplier": 4.5, "HealthMultiplier": 4.7, "BasicHitCount": 2, "InnateRicochet": 0.2, "TintR": 0.72, "TintG": 1, "TintB": 0.8 },
+    { "Id": "seismic", "DisplayName": "Broca Sísmica", "Description": "Especial alcança três alvos; tiros +15%; cadência -10%.", "UnlockStage": 50, "AttackMultiplier": 6.8, "HealthMultiplier": 8, "SpeedMultiplier": 0.9, "ProjectileDamageMultiplier": 1.15, "BasicHitCount": 2, "SpecialTargetCount": 3, "TintR": 1, "TintG": 0.72, "TintB": 0.62 },
+    { "Id": "aurora", "DisplayName": "Broca Aurora", "Description": "Três tiros, especial em dois alvos e estilhaço inato de 15%.", "UnlockStage": 60, "AttackMultiplier": 11.5, "HealthMultiplier": 14, "SpeedMultiplier": 1.1, "ProjectileDamageMultiplier": 0.85, "BasicHitCount": 3, "SpecialTargetCount": 2, "InnateRicochet": 0.15, "TintR": 0.84, "TintG": 0.88, "TintB": 1 }
+  ],
   "WaveCount": 8, "WaveInterval": 7, "LateWaveAfter": 5, "LateWaveSize": 2,
   "CharacterDamagePerLevel": 0.02, "CharacterHealthPerLevel": 0.03,
   "AttackLevelMultiplier": 1.055, "HealthLevelMultiplier": 1.055,

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace DigAndWonder
 {
@@ -45,6 +46,23 @@ namespace DigAndWonder
         public string Id;
         public string DisplayName;
         public CharacterExperienceRules Experience;
+        public int UnlockStage;
+        public string Description;
+        public float AttackMultiplier = 1f;
+        public float HealthMultiplier = 1f;
+        public float SpeedMultiplier = 1f;
+        public float ProjectileDamageMultiplier = 1f;
+        public int BasicHitCount;
+        public int SpecialTargetCount = 1;
+        public float InnateRicochet;
+        public float TintR = 1f, TintG = 1f, TintB = 1f;
+
+        public CharacterCombatData WithExperience(CharacterExperienceRules rules)
+        {
+            var copy = (CharacterCombatData)MemberwiseClone();
+            copy.Experience = rules;
+            return copy;
+        }
     }
 
     public readonly struct CharacterLevelState
@@ -91,6 +109,21 @@ namespace DigAndWonder
             if (profile.ActiveRun != null && !profile.ActiveRun.IsPlayerDefeated && !profile.ActiveRun.IsStageCleared) return false;
             profile.EquippedCharacterId = characterId;
             return true;
+        }
+
+        /// <summary>Recompensa de fase; conceder novamente nunca reinicia XP ou poderes.</summary>
+        public static string[] GrantStageRewards(GameSaveData profile, CharacterCombatData[] catalog)
+        {
+            if (profile == null || catalog == null) return Array.Empty<string>();
+            List<string> unlocked = null;
+            foreach (CharacterCombatData character in catalog)
+            {
+                if (character == null || character.UnlockStage <= 0 || character.UnlockStage > profile.HighestClearedStage) continue;
+                if (!TryUnlock(profile, character.Id)) continue;
+                if (unlocked == null) unlocked = new List<string>();
+                unlocked.Add(character.Id);
+            }
+            return unlocked == null ? Array.Empty<string>() : unlocked.ToArray();
         }
 
         public static CharacterLevelState GetLevel(CharacterProgressData character, CharacterExperienceRules rules)

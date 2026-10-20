@@ -8,13 +8,14 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / "docs" / "balance"
+VERSION = (ROOT / "VERSION").read_text().strip()
 
 def read(name):
     with (DIRECTORY / name).open(encoding="utf-8") as source:
         return list(csv.DictReader(source))
 
-rows = read("simulation-0.0.17.csv")
-long_term = read("long-term-xp-0.0.17.csv")
+rows = read(f"simulation-{VERSION}.csv")
+long_term = read(f"long-term-xp-{VERSION}.csv")
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), constrained_layout=True)
 palette = {"balanced": "#1e6f5c", "attack": "#e59a00", "survival": "#5576c1"}
 labels = {"balanced": "Equilíbrio", "attack": "Ataque", "survival": "Sobrevivência"}
@@ -31,6 +32,6 @@ for axis in axes:
     axis.grid(alpha=.2)
     axis.set_xlim(0, 60)
     axis.set_ylim(bottom=0)
-fig.suptitle("Dig & Wonder 0.0.17 • ensaios matemáticos, sem jogadores reais", fontsize=13, fontweight="bold")
-fig.savefig(DIRECTORY / "progression-0.0.17.png", dpi=150)
-print(DIRECTORY / "progression-0.0.17.png")
+fig.suptitle(f"Dig & Wonder {VERSION} • ensaios matemáticos, sem jogadores reais", fontsize=13, fontweight="bold")
+fig.savefig(DIRECTORY / f"progression-{VERSION}.png", dpi=150)
+print(DIRECTORY / f"progression-{VERSION}.png")

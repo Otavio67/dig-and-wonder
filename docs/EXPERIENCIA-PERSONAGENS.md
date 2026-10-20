@@ -1,5 +1,7 @@
 # XP individual por personagem — 0.0.16
 
+> Atualização 0.0.18: há sete brocas jogáveis, seis concedidas por vitórias nas fases 10–60, começando zeradas. XP recebido cresce com a fase e XP necessário cresce com o nível individual. Veja [BROCAS-POR-FASE.md](BROCAS-POR-FASE.md).
+
 > Histórico da 0.0.16. A partir da **0.0.17**, a curva ativa vai até 60, há bônus de atributos por nível e poderes individuais. Os totais de XP são preservados; o nível é recalculado pela curva nova. Consulte [ECONOMIA-MIDGAME.md](ECONOMIA-MIDGAME.md) para os números atuais e o save esquema 3.
 
 ## Regra de jogo

@@ -75,10 +75,9 @@ internal static class EconomyChecks
                 HitInterval = Value("Abilities/Pioneira.asset", "hitInterval")
             },
             AttackUpgrade = new UpgradeCombatData { MaximumLevel = 100 }, HealthUpgrade = new UpgradeCombatData { MaximumLevel = 100 },
-            Characters = new[] {
-                new CharacterCombatData { Id = "pioneer", DisplayName = "Pioneira", Experience = rules.Experience },
+            Characters = rules.CharacterRoster.Select(x => x.WithExperience(rules.Experience)).Concat(new[] {
                 new CharacterCombatData { Id = "test_drill", DisplayName = "Somente fixture", Experience = rules.Experience }
-            }
+            }).ToArray()
         };
     }
 
@@ -439,15 +438,15 @@ internal static class EconomyChecks
         string output = Path.Combine(Root, "docs/balance"); Directory.CreateDirectory(output);
         var curves = new List<string> { "phase,normal_hp,boss_hp,normal_damage,normal_gold,boss_gold,normal_xp,boss_xp,first_clear_crystals" };
         for (int phase = 1; phase <= rules.MaximumStage; phase++)
-            curves.Add(FormattableString.Invariant($"{phase},{rules.EnemyHealthBase * Math.Pow(rules.EnemyHealthGrowth, phase - 1):F2},{rules.EnemyHealthBase * Math.Pow(rules.EnemyHealthGrowth, phase - 1) * rules.BossHealthMultiplier:F2},{rules.EnemyDamageBase * Math.Pow(rules.EnemyDamageGrowth, phase - 1):F2},{rules.NormalGold(phase)},{rules.NormalGold(phase) * rules.BossGoldMultiplier},{rules.ExperienceReward(phase, false)},{rules.ExperienceReward(phase, true)},{rules.FirstClearCrystals + (phase % rules.MilestoneInterval == 0 ? rules.MilestoneCrystals : 0)}"));
-        File.WriteAllLines(Path.Combine(output, "campaign-0.0.17.csv"), curves);
+            curves.Add(FormattableString.Invariant($"{phase},{rules.EnemyHealth(phase):F2},{rules.EnemyHealth(phase) * rules.BossHealthMultiplier:F2},{rules.EnemyDamage(phase):F2},{rules.NormalGold(phase)},{rules.NormalGold(phase) * rules.BossGoldMultiplier},{rules.ExperienceReward(phase, false)},{rules.ExperienceReward(phase, true)},{rules.FirstClearCrystals + (phase % rules.MilestoneInterval == 0 ? rules.MilestoneCrystals : 0)}"));
+        File.WriteAllLines(Path.Combine(output, "campaign-0.0.18.csv"), curves);
         var xp = new List<string> { "level,xp_to_next,total_xp" }; long total = 0;
         for (int level = 0; level <= 60; level++)
         {
             xp.Add($"{level},{(level < 60 ? rules.Experience.RequiredForNextLevel(level) : 0)},{total}");
             if (level < 60) total += rules.Experience.RequiredForNextLevel(level);
         }
-        File.WriteAllLines(Path.Combine(output, "character-xp-0.0.17.csv"), xp);
+        File.WriteAllLines(Path.Combine(output, "character-xp-0.0.18.csv"), xp);
         var upgrades = new List<string> { "kind,level,cost,cumulative_cost,unlock_character_level" };
         foreach (EconomyUpgradeRule upgrade in rules.Upgrades)
         {
@@ -457,11 +456,11 @@ internal static class EconomyChecks
                 upgrades.Add($"{upgrade.Kind},{level},{upgrade.Cost(level)},{cumulative},{upgrade.UnlockLevel}"); cumulative += upgrade.Cost(level);
             }
         }
-        File.WriteAllLines(Path.Combine(output, "upgrade-costs-0.0.17.csv"), upgrades);
-        var results = new List<string> { "strategy,seed,phase,result,simulated_minutes,attempts,character_level,attack_level,health_level,gold,crystals,gold_earned,gold_spent,powers_bought" };
+        File.WriteAllLines(Path.Combine(output, "upgrade-costs-0.0.18.csv"), upgrades);
+        var results = new List<string> { "strategy,seed,phase,result,simulated_minutes,attempts,character_level,attack_level,health_level,gold,crystals,gold_earned,gold_spent,powers_bought,active_character,next_character" };
         foreach (string strategy in new[] { "balanced", "attack", "survival" })
             foreach (uint seed in new uint[] { 12345, 54321, 98765 }) Simulate(config, strategy, seed, results);
-        File.WriteAllLines(Path.Combine(output, "simulation-0.0.17.csv"), results);
+        File.WriteAllLines(Path.Combine(output, "simulation-0.0.18.csv"), results);
         WriteLongTermExperienceReport(config, output);
         Console.WriteLine("Relatórios gerados em docs/balance; tempos simulados, sem anúncios, sem dinheiro real e sem usar cristais.");
         foreach (string strategy in new[] { "balanced", "attack", "survival" })
@@ -475,6 +474,9 @@ internal static class EconomyChecks
     {
         EconomyRules rules = config.Economy;
         var save = new GameSaveData { CampaignStage = rules.MaximumStage, HighestClearedStage = rules.MaximumStage, LootRandomState = 54321 };
+        CharacterProgression.GrantStageRewards(save, config.Characters);
+        CharacterProgression.TryEquip(save, rules.CharacterRoster.OrderBy(x => x.UnlockStage).Last().Id);
+        CharacterProgressData characterProgress = CharacterProgression.Find(save, save.EquippedCharacterId);
         save.AttackLevel = rules.Upgrade(UpgradeKind.Attack).MaximumLevel;
         save.HealthLevel = rules.Upgrade(UpgradeKind.Health).MaximumLevel;
         save.SpecialLevel = rules.Upgrade(UpgradeKind.Special).MaximumLevel;
@@ -482,7 +484,7 @@ internal static class EconomyChecks
         save.CriticalDamageLevel = rules.Upgrade(UpgradeKind.CriticalDamage).MaximumLevel;
         save.AttackSpeedLevel = rules.Upgrade(UpgradeKind.AttackSpeed).MaximumLevel;
         save.RepairLevel = rules.Upgrade(UpgradeKind.Repair).MaximumLevel;
-        foreach (AttackPowerRule power in rules.Powers) save.Characters[0].Powers.Add(new PowerProgressData { PowerId = power.Id, Rank = power.MaximumRank });
+        foreach (AttackPowerRule power in rules.Powers) characterProgress.Powers.Add(new PowerProgressData { PowerId = power.Id, Rank = power.MaximumRank });
         var rows = new List<string> { "level,total_xp,projected_active_hours,measured_cycle_seconds,measured_xp_per_cycle,cycles_projected" };
         double elapsed = 0; int cycles = 0;
         rows.Add("0,0,0,0,0,0");
@@ -490,23 +492,23 @@ internal static class EconomyChecks
         {
             long target = 0;
             for (int i = 0; i <= level; i++) target += rules.Experience.RequiredForNextLevel(i);
-            long before = save.Characters[0].TotalExperience;
+            long before = characterProgress.TotalExperience;
             var sim = new IdleCombatSimulation(config, save, "prado_cristalino", 54321u + (uint)level);
             int ticks = 0;
             while (sim.IsActive && ticks < 7200) { sim.Step(.05f); ticks++; }
             if (!sim.Run.IsStageCleared) throw new InvalidOperationException("Cenário de farm favorável não concluiu a fase 60.");
-            long gained = save.Characters[0].TotalExperience - before;
+            long gained = characterProgress.TotalExperience - before;
             if (gained < 1) throw new InvalidOperationException("Ciclo sem XP.");
-            int extraCycles = (int)Math.Ceiling(Math.Max(0, target - save.Characters[0].TotalExperience) / (double)gained);
-            if (extraCycles > 0) CharacterProgression.Award(save, "pioneer", rules.Experience, checked((int)(gained * extraCycles)));
+            int extraCycles = (int)Math.Ceiling(Math.Max(0, target - characterProgress.TotalExperience) / (double)gained);
+            if (extraCycles > 0) CharacterProgression.Award(save, save.EquippedCharacterId, rules.Experience, checked((int)(gained * extraCycles)));
             int currentCycles = extraCycles + 1;
             elapsed += sim.Run.ElapsedSeconds * currentCycles; cycles += currentCycles;
-            int measuredLevel = CharacterProgression.GetLevel(save.Characters[0], rules.Experience).Level;
-            rows.Add(FormattableString.Invariant($"{measuredLevel},{save.Characters[0].TotalExperience},{elapsed / 3600:F3},{sim.Run.ElapsedSeconds:F2},{gained},{cycles}"));
+            int measuredLevel = CharacterProgression.GetLevel(characterProgress, rules.Experience).Level;
+            rows.Add(FormattableString.Invariant($"{measuredLevel},{characterProgress.TotalExperience},{elapsed / 3600:F3},{sim.Run.ElapsedSeconds:F2},{gained},{cycles}"));
             // Um único ciclo pode pular níveis iniciais; segue do nível realmente alcançado.
             level = measuredLevel - 1;
         }
-        File.WriteAllLines(Path.Combine(output, "long-term-xp-0.0.17.csv"), rows);
+        File.WriteAllLines(Path.Combine(output, "long-term-xp-0.0.18.csv"), rows);
         Console.WriteLine("XP longo prazo: " + rows.Last() + " (projeção por ciclos medidos, oficina/poderes no máximo desde o início; não é partida humana)");
     }
 
@@ -535,11 +537,17 @@ internal static class EconomyChecks
             int beforeChest = save.Gold;
             while (EconomyProgression.TryOpenChest(save, rules, out _)) { }
             goldEarned += save.Gold - beforeChest;
+            string foughtCharacter = sim.ActiveCharacterId;
+            int level = CharacterProgression.GetLevel(CharacterProgression.Find(save, foughtCharacter), rules.Experience).Level;
+            if (!sim.IsActive)
+            {
+                CharacterCombatData next = config.Characters.Where(x => x.Id != "test_drill" && CharacterProgression.Find(save, x.Id) != null).OrderBy(x => x.UnlockStage).Last();
+                CharacterProgression.TryEquip(save, next.Id);
+            }
             int beforePurchase = save.Gold; Spend(sim, rules, strategy, ref powersBought); goldSpent += beforePurchase - save.Gold;
-            int level = CharacterProgression.GetLevel(save.Characters[0], rules.Experience).Level;
             if (sim.Run.IsPlayerDefeated) stageFailures[phase] = stageFailures.GetValueOrDefault(phase) + 1;
             bool blocked = stageFailures.GetValueOrDefault(phase) >= 20 || sim.IsActive;
-            report.Add(FormattableString.Invariant($"{strategy},{seed},{phase},{(blocked ? "blocked" : sim.Run.IsStageCleared ? training ? "training" : "clear" : "defeat")},{time / 60:F2},{attempts},{level},{save.AttackLevel},{save.HealthLevel},{save.Gold},{save.Crystals},{goldEarned},{goldSpent},{powersBought}"));
+            report.Add(FormattableString.Invariant($"{strategy},{seed},{phase},{(blocked ? "blocked" : sim.Run.IsStageCleared ? training ? "training" : "clear" : "defeat")},{time / 60:F2},{attempts},{level},{save.AttackLevel},{save.HealthLevel},{save.Gold},{save.Crystals},{goldEarned},{goldSpent},{powersBought},{foughtCharacter},{save.EquippedCharacterId}"));
             if (blocked) break;
             if (sim.Run.IsPlayerDefeated) EconomyProgression.TrySelectTrainingStage(save);
         }
@@ -548,7 +556,8 @@ internal static class EconomyChecks
     private static void Spend(IdleCombatSimulation sim, EconomyRules rules, string strategy, ref int powersBought)
     {
         GameSaveData save = sim.Profile;
-        int level = CharacterProgression.GetLevel(save.Characters[0], rules.Experience).Level;
+        int level = CharacterProgression.GetLevel(CharacterProgression.Find(save, save.EquippedCharacterId), rules.Experience).Level;
+        int workshopLevel = EconomyProgression.WorkshopLevel(save, rules.Experience);
         for (int count = 0; count < 5; count++)
         {
             // Estratégias explícitas e repetíveis. Não representam comportamento humano medido.
@@ -556,7 +565,7 @@ internal static class EconomyChecks
             foreach (EconomyUpgradeRule upgrade in rules.Upgrades)
             {
                 int rank = EconomyProgression.Level(save, upgrade.Kind);
-                if (level < upgrade.UnlockLevel || rank >= upgrade.MaximumLevel) continue;
+                if (workshopLevel < upgrade.UnlockLevel || rank >= upgrade.MaximumLevel) continue;
                 double gain = upgrade.Kind switch
                 {
                     UpgradeKind.Attack => .055,
@@ -574,7 +583,7 @@ internal static class EconomyChecks
             }
             foreach (AttackPowerRule power in rules.Powers)
             {
-                int rank = EconomyProgression.PowerRank(save, "pioneer", power.Id);
+                int rank = EconomyProgression.PowerRank(save, save.EquippedCharacterId, power.Id);
                 if (level < power.UnlockLevel || rank >= power.MaximumRank) continue;
                 double weight = power.Kind == AttackPowerKind.Resonance ? .4 : power.Kind == AttackPowerKind.Serration ? .6 : .3;
                 double score = power.Bonus * weight / (1 + power.Bonus * rank) / power.Cost(rank);
