@@ -1,0 +1,40 @@
+{
+  "MaximumStage": 60,
+  "EnemyHealthBase": 24, "EnemyDamageBase": 4,
+  "EnemyHealthGrowth": 1.115, "EnemyDamageGrowth": 1.10,
+  "BossHealthMultiplier": 8, "BossDamageMultiplier": 1.5,
+  "EnemyGoldBase": 8, "GoldGrowth": 1.07, "BossGoldMultiplier": 10,
+  "ExperienceGrowth": 1.035,
+  "WaveCount": 8, "WaveInterval": 7, "LateWaveAfter": 5, "LateWaveSize": 2,
+  "CharacterDamagePerLevel": 0.02, "CharacterHealthPerLevel": 0.03,
+  "AttackLevelMultiplier": 1.055, "HealthLevelMultiplier": 1.055,
+  "BaseCriticalChance": 0.05, "BaseCriticalMultiplier": 1.5,
+  "FirstClearCrystals": 5, "MilestoneInterval": 5, "MilestoneCrystals": 20,
+  "KeyCrystalCost": 10, "GoldPackCrystalCost": 20, "GoldPackMultiplier": 20,
+  "Experience": {
+    "RegularEnemyExperience": 10, "BossExperience": 60,
+    "FirstLevelExperience": 20, "ExperiencePerLevelStep": 12,
+    "Growth": 1.125, "MaximumLevel": 60
+  },
+  "Upgrades": [
+    { "Kind": "Attack", "Name": "Ataque", "Description": "+5,5% de dano por nível (multiplicativo)", "BaseCost": 18, "CostGrowth": 1.105, "MaximumLevel": 100, "UnlockLevel": 0, "Bonus": 0.055 },
+    { "Kind": "Health", "Name": "Blindagem", "Description": "+5,5% de vida por nível (multiplicativo)", "BaseCost": 20, "CostGrowth": 1.10, "MaximumLevel": 100, "UnlockLevel": 0, "Bonus": 0.055 },
+    { "Kind": "Special", "Name": "Especial", "Description": "+10% do dano do especial por nível", "BaseCost": 70, "CostGrowth": 1.14, "MaximumLevel": 30, "UnlockLevel": 3, "Bonus": 0.10 },
+    { "Kind": "CriticalChance", "Name": "Chance crítica", "Description": "+1 ponto percentual por nível (5% a 35%)", "BaseCost": 90, "CostGrowth": 1.15, "MaximumLevel": 30, "UnlockLevel": 5, "Bonus": 0.01 },
+    { "Kind": "AttackSpeed", "Name": "Cadência", "Description": "+2% de cadência por nível (até +50%)", "BaseCost": 100, "CostGrowth": 1.16, "MaximumLevel": 25, "UnlockLevel": 8, "Bonus": 0.02 },
+    { "Kind": "CriticalDamage", "Name": "Dano crítico", "Description": "+0,05x por nível (1,5x a 3x)", "BaseCost": 120, "CostGrowth": 1.14, "MaximumLevel": 30, "UnlockLevel": 10, "Bonus": 0.05 },
+    { "Kind": "Repair", "Name": "Autorreparo", "Description": "+0,1% da vida máxima por segundo por nível", "BaseCost": 140, "CostGrowth": 1.18, "MaximumLevel": 10, "UnlockLevel": 12, "Bonus": 0.001 }
+  ],
+  "Powers": [
+    { "Id": "serration", "Kind": "Serration", "Name": "Dentes de titânio", "Description": "+3% de dano dos disparos por rank", "UnlockLevel": 2, "MaximumRank": 5, "BaseCost": 80, "CostGrowth": 1.65, "Bonus": 0.03 },
+    { "Id": "resonance", "Kind": "Resonance", "Name": "Ressonância de cristal", "Description": "+8% de dano do especial por rank", "UnlockLevel": 5, "MaximumRank": 5, "BaseCost": 140, "CostGrowth": 1.70, "Bonus": 0.08 },
+    { "Id": "boss_breaker", "Kind": "BossBreaker", "Name": "Quebra-guardiões", "Description": "+6% de dano contra chefes por rank", "UnlockLevel": 10, "MaximumRank": 5, "BaseCost": 260, "CostGrowth": 1.75, "Bonus": 0.06 },
+    { "Id": "ricochet", "Kind": "Ricochet", "Name": "Estilhaço magnético", "Description": "Disparo atinge outro inimigo: 15% do dano por rank", "UnlockLevel": 15, "MaximumRank": 5, "BaseCost": 420, "CostGrowth": 1.80, "Bonus": 0.15 }
+  ],
+  "ChestRewards": [
+    { "Name": "Comum", "Weight": 7000, "GoldMultiplier": 8, "Crystals": 0 },
+    { "Name": "Raro", "Weight": 2300, "GoldMultiplier": 14, "Crystals": 2 },
+    { "Name": "Épico", "Weight": 600, "GoldMultiplier": 24, "Crystals": 5 },
+    { "Name": "Lendário", "Weight": 100, "GoldMultiplier": 40, "Crystals": 12 }
+  ]
+}

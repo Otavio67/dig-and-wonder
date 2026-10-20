@@ -20,12 +20,13 @@ namespace DigAndWonder
             ? CharacterProgression.GetLevel(CharacterProgression.Find(Profile, Profile.EquippedCharacterId), characterExperienceRules[Profile.EquippedCharacterId])
             : default;
 
-        public int CurrentAttackMaximum => balance != null && balance.progression != null && balance.progression.attackUpgrade != null
-            ? balance.progression.attackUpgrade.maxLevel : 0;
-        public int CurrentHealthMaximum => balance != null && balance.progression != null && balance.progression.healthUpgrade != null
-            ? balance.progression.healthUpgrade.maxLevel : 0;
-        public float CurrentAttackDamage => balance == null || balance.progression == null || balance.progression.attackUpgrade == null || Profile == null
-            ? 0f : balance.drillAttackDamage * (1f + Profile.AttackLevel * balance.progression.attackUpgrade.additiveBonus);
+        public EconomyRules Economy { get; private set; }
+        public int CurrentAttackMaximum => Economy?.Upgrade(UpgradeKind.Attack).MaximumLevel ?? 0;
+        public int CurrentHealthMaximum => Economy?.Upgrade(UpgradeKind.Health).MaximumLevel ?? 0;
+        public DrillStats CurrentStats => Profile != null && Economy != null && characterExperienceRules.ContainsKey(Profile.EquippedCharacterId)
+            ? EconomyProgression.Stats(Profile, Economy, Profile.EquippedCharacterId, characterExperienceRules[Profile.EquippedCharacterId],
+                balance.drillAttackDamage, balance.playerBaseHealth) : default;
+        public float CurrentAttackDamage => CurrentStats.AttackDamage;
 
         private AtomicSaveRepository saveRepository;
         private GameSaveData loadedProfile;
@@ -53,6 +54,9 @@ namespace DigAndWonder
 
             try
             {
+                EconomyDefinition economy = Resources.Load<EconomyDefinition>("Data/Economy");
+                if (economy == null) throw new InvalidOperationException("Tabela de economia não encontrada.");
+                Economy = economy.ToRuntime();
                 foreach (CharacterDefinition definition in Resources.LoadAll<CharacterDefinition>("Data/Characters"))
                 {
                     if (definition == null || !definition.implemented) continue;
@@ -84,7 +88,7 @@ namespace DigAndWonder
 
             if (!hasValidSave)
             {
-                loadedProfile = new GameSaveData();
+                loadedProfile = CreateProfile();
                 return;
             }
 
@@ -97,7 +101,7 @@ namespace DigAndWonder
                 Debug.LogError("Personagem equipada ausente nesta versão. O save foi preservado.", this);
                 return;
             }
-            if (profile.ActiveRun != null || profile.Gold > 0 || profile.Keys > 0 || profile.Chests > 0 ||
+            if (profile.ActiveRun != null || profile.Gold > 0 || profile.Keys > 0 || profile.Chests > 0 || profile.Crystals > 0 || profile.HighestClearedStage > 0 ||
                 profile.AttackLevel > 0 || profile.HealthLevel > 0 || profile.UnlockedStageId != "prado_cristalino")
                 CreateSimulation(profile);
         }
@@ -107,7 +111,7 @@ namespace DigAndWonder
             if (!IsReady) return;
             if (Simulation != null && Simulation.IsActive) return;
             if (Simulation != null) loadedProfile = Simulation.Profile;
-            if (loadedProfile == null) loadedProfile = new GameSaveData();
+            if (loadedProfile == null) loadedProfile = CreateProfile();
             loadedProfile.ActiveRun = null;
             CreateSimulation(loadedProfile);
             SaveNow();
@@ -117,16 +121,35 @@ namespace DigAndWonder
         {
             if (!IsReady) return false;
             StartNewGame();
-            return Simulation != null;
+            return IsReady && Simulation != null;
+        }
+
+        private static GameSaveData CreateProfile() => new GameSaveData { LootRandomState = (uint)DateTime.UtcNow.Ticks };
+
+        public bool TryStartTraining()
+        {
+            if (!IsReady || applicationPaused || Simulation != null && Simulation.IsActive || Profile == null ||
+                !EconomyProgression.TrySelectTrainingStage(Profile)) return false;
+            StartNewGame();
+            return IsReady && Simulation != null && Simulation.IsActive;
         }
 
         private void CreateSimulation(GameSaveData profile)
         {
             if (Simulation != null) Simulation.EventRaised -= OnSimulationEvent;
-            CombatConfiguration config = CombatConfigurationFactory.Create(balance);
             string stageId = profile.ActiveRun != null ? profile.ActiveRun.StageId : profile.UnlockedStageId;
             uint seed = (uint)DateTime.UtcNow.Ticks;
-            Simulation = new IdleCombatSimulation(config, profile, stageId, seed);
+            try
+            {
+                CombatConfiguration config = CombatConfigurationFactory.Create(balance);
+                Simulation = new IdleCombatSimulation(config, profile, stageId, seed);
+            }
+            catch (Exception exception)
+            {
+                startupBlocked = true;
+                Debug.LogError("O perfil não é compatível com o conteúdo atual. Progresso preservado. " + exception.Message, this);
+                return;
+            }
             Simulation.EventRaised += OnSimulationEvent;
             accumulator = 0f;
             saveTimer = 0f;
@@ -186,7 +209,7 @@ namespace DigAndWonder
 
         private void SaveNow()
         {
-            if (saveRepository == null || Profile == null) return;
+            if (startupBlocked || saveRepository == null || Profile == null) return;
             try
             {
                 if (Simulation != null && Simulation.IsActive) Simulation.Profile.ActiveRun = Simulation.CaptureRun();
@@ -203,8 +226,9 @@ namespace DigAndWonder
             saveTimer = 0f;
         }
 
-        public int GetAttackUpgradeCost() => balance.progression.attackUpgrade.GetCost(Simulation.Profile.AttackLevel);
-        public int GetHealthUpgradeCost() => balance.progression.healthUpgrade.GetCost(Simulation.Profile.HealthLevel);
+        public int GetUpgradeCost(UpgradeKind kind) => Economy.Upgrade(kind).Cost(EconomyProgression.Level(Profile, kind));
+        public int GetAttackUpgradeCost() => GetUpgradeCost(UpgradeKind.Attack);
+        public int GetHealthUpgradeCost() => GetUpgradeCost(UpgradeKind.Health);
         public void SetMenuPaused(bool paused)
         {
             menuPaused = paused;
@@ -222,10 +246,45 @@ namespace DigAndWonder
 
         public bool TryPurchaseUpgradeAtBase(UpgradeKind kind)
         {
-            if (Simulation == null || IsSaveBlocked || applicationPaused) return false;
-            bool purchased = Simulation.TryPurchaseUpgradeAtBase(kind);
+            if (!IsReady || applicationPaused || Profile == null) return false;
+            bool purchased = Simulation != null ? Simulation.TryPurchaseUpgradeAtBase(kind) :
+                EconomyProgression.TryBuyUpgrade(Profile, Economy, characterExperienceRules[Profile.EquippedCharacterId], kind);
             if (purchased) SaveNow();
             return purchased;
+        }
+
+        public bool TryPurchasePower(string id)
+        {
+            if (!IsReady || applicationPaused || Profile == null) return false;
+            bool bought = EconomyProgression.TryBuyPower(Profile, Economy, characterExperienceRules[Profile.EquippedCharacterId], id);
+            if (bought) CommitEconomyChange("Poder melhorado");
+            return bought;
+        }
+
+        public bool TryOpenChest(out ChestOpening opening)
+        {
+            opening = default;
+            if (!IsReady || applicationPaused || Profile == null) return false;
+            if (!EconomyProgression.TryOpenChest(Profile, Economy, out opening)) return false;
+            CommitEconomyChange("Baú aberto"); return true;
+        }
+
+        public bool TryPurchaseKey()
+        {
+            if (!IsReady || applicationPaused || Profile == null || !EconomyProgression.TryBuyKey(Profile, Economy)) return false;
+            CommitEconomyChange("Chave comprada"); return true;
+        }
+
+        public bool TryPurchaseGoldPack()
+        {
+            if (!IsReady || applicationPaused || Profile == null || !EconomyProgression.TryBuyGoldPack(Profile, Economy)) return false;
+            CommitEconomyChange("Reserva de ouro comprada"); return true;
+        }
+
+        private void CommitEconomyChange(string description)
+        {
+            SaveNow();
+            CombatEventRaised?.Invoke(new CombatEvent(CombatEventType.EconomyChanged, text: description));
         }
 
         /// <summary>Ponto de entrada para futuras recompensas; só aceita personagens registradas e implementadas.</summary>

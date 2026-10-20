@@ -10,17 +10,33 @@ namespace DigAndWonder
         public int FirstLevelExperience;
         public int ExperiencePerLevelStep;
         public int MaximumLevel;
+        public double Growth = 1d;
 
         public void Validate()
         {
             if (RegularEnemyExperience < 0 || BossExperience < 0 || FirstLevelExperience < 1 ||
-                ExperiencePerLevelStep < 0 || MaximumLevel < 1 || MaximumLevel > 1000)
+                ExperiencePerLevelStep < 0 || MaximumLevel < 1 || MaximumLevel > 1000 ||
+                double.IsNaN(Growth) || Growth < 1d || Growth > 1.2d)
                 throw new ArgumentException("A curva de XP do personagem contém valores inválidos.");
         }
 
-        public long RequiredForNextLevel(int currentLevel) => (long)FirstLevelExperience + (long)ExperiencePerLevelStep * currentLevel;
-        public long MaximumExperience => (long)MaximumLevel * FirstLevelExperience +
-            (long)ExperiencePerLevelStep * MaximumLevel * (MaximumLevel - 1) / 2;
+        public long RequiredForNextLevel(int currentLevel)
+        {
+            if (currentLevel < 0 || currentLevel > MaximumLevel) throw new ArgumentOutOfRangeException(nameof(currentLevel));
+            double value = Math.Ceiling((FirstLevelExperience + (double)ExperiencePerLevelStep * currentLevel) * Math.Pow(Growth, currentLevel));
+            if (double.IsNaN(value) || double.IsInfinity(value) || value < 1 || value > int.MaxValue)
+                throw new ArgumentException("Requisito de XP fora do intervalo suportado.");
+            return (long)value;
+        }
+        public long MaximumExperience
+        {
+            get
+            {
+                long total = 0;
+                for (int level = 0; level < MaximumLevel; level++) total = checked(total + RequiredForNextLevel(level));
+                return total;
+            }
+        }
     }
 
     [Serializable]

@@ -1,5 +1,7 @@
 # XP individual por personagem — 0.0.16
 
+> Histórico da 0.0.16. A partir da **0.0.17**, a curva ativa vai até 60, há bônus de atributos por nível e poderes individuais. Os totais de XP são preservados; o nível é recalculado pela curva nova. Consulte [ECONOMIA-MIDGAME.md](ECONOMIA-MIDGAME.md) para os números atuais e o save esquema 3.
+
 ## Regra de jogo
 
 Cada personagem possuída tem um ID estável e seu próprio XP acumulado. A Pioneira (`pioneer`) começa no nível 0. Uma personagem concedida pela primeira vez começa com zero XP e nível 0; receber novamente o mesmo ID conserva seu progresso. Trocar de broca e voltar não transfere nem apaga XP.

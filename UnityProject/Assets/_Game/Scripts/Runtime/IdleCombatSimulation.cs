@@ -13,13 +13,19 @@ namespace DigAndWonder
         private ActiveRunSnapshot run;
         private StageCombatData currentStage;
         private CharacterCombatData currentCharacter;
+        private EnemyCombatData regularDefinition;
+        private EnemyCombatData bossDefinition;
 
         public event Action<CombatEvent> EventRaised;
 
         public GameSaveData Profile => profile;
         public ActiveRunSnapshot Run => run;
         public IReadOnlyList<EnemySnapshot> Enemies => enemies;
-        public float PlayerMaximumHealth => config.PlayerBaseHealth + profile.HealthLevel * config.HealthUpgrade.Bonus;
+        public float PlayerMaximumHealth => config.Economy == null
+            ? config.PlayerBaseHealth + profile.HealthLevel * config.HealthUpgrade.Bonus : CurrentStats.MaximumHealth;
+        public DrillStats CurrentStats => EconomyProgression.Stats(profile, config.Economy,
+            currentCharacter.Id, currentCharacter.Experience, config.BasicAttackDamage, config.PlayerBaseHealth);
+        public EconomyRules Economy => config.Economy;
         public float PlayerHealth => run.PlayerHealth;
         public int Gold => profile.Gold;
         public int Keys => profile.Keys;
@@ -32,6 +38,7 @@ namespace DigAndWonder
         {
             config = configuration ?? throw new ArgumentNullException(nameof(configuration));
             profile = saveData ?? throw new ArgumentNullException(nameof(saveData));
+            config.Economy?.Validate();
             NormalizeProfile();
 
             if (profile.ActiveRun != null && !profile.ActiveRun.IsPlayerDefeated && !profile.ActiveRun.IsStageCleared)
@@ -49,11 +56,24 @@ namespace DigAndWonder
         {
             if (profile.SchemaVersion != GameSaveData.CurrentSchemaVersion)
                 throw new InvalidOperationException("O perfil deve ser migrado antes de iniciar a simulação.");
+            if (config.Economy != null)
+            {
+                if (profile.CampaignStage < 1 || profile.CampaignStage > config.Economy.MaximumStage ||
+                    profile.HighestClearedStage < 0 || profile.HighestClearedStage > config.Economy.MaximumStage ||
+                    profile.ActiveRun != null && (profile.ActiveRun.CampaignStage < 1 || profile.ActiveRun.CampaignStage > config.Economy.MaximumStage))
+                    throw new InvalidOperationException("A campanha salva não está disponível nesta tabela de conteúdo.");
+                foreach (EconomyUpgradeRule upgrade in config.Economy.Upgrades)
+                    if (EconomyProgression.Level(profile, upgrade.Kind) < 0 || EconomyProgression.Level(profile, upgrade.Kind) > upgrade.MaximumLevel)
+                        throw new InvalidOperationException("Melhoria salva fora da tabela atual. Progresso preservado.");
+            }
             if (profile.Gold < 0) profile.Gold = 0;
             if (profile.Keys < 0) profile.Keys = 0;
             if (profile.Chests < 0) profile.Chests = 0;
-            profile.AttackLevel = ClampLevel(profile.AttackLevel, config.AttackUpgrade.MaximumLevel);
-            profile.HealthLevel = ClampLevel(profile.HealthLevel, config.HealthUpgrade.MaximumLevel);
+            if (config.Economy == null)
+            {
+                profile.AttackLevel = ClampLevel(profile.AttackLevel, config.AttackUpgrade.MaximumLevel);
+                profile.HealthLevel = ClampLevel(profile.HealthLevel, config.HealthUpgrade.MaximumLevel);
+            }
             profile.CriticalChanceLevel = Math.Max(0, profile.CriticalChanceLevel);
             profile.CriticalDamageLevel = Math.Max(0, profile.CriticalDamageLevel);
         }
@@ -62,13 +82,14 @@ namespace DigAndWonder
         {
             if (stage == null) throw new ArgumentNullException(nameof(stage));
             currentCharacter = ResolveCharacter(profile.EquippedCharacterId);
-            currentStage = stage;
+            ConfigureStage(stage, profile.CampaignStage);
             enemies.Clear();
             pendingHits.Clear();
             run = new ActiveRunSnapshot
             {
                 StageId = stage.Id,
                 CharacterId = currentCharacter.Id,
+                CampaignStage = profile.CampaignStage,
                 PlayerHealth = PlayerMaximumHealth,
                 AttackTimer = 0f,
                 AttackHitTimer = 0f,
@@ -99,6 +120,8 @@ namespace DigAndWonder
         private void StepFixed(float step)
         {
             run.ElapsedSeconds += step;
+            if (config.Economy != null && profile.RepairLevel > 0)
+                run.PlayerHealth = Math.Min(PlayerMaximumHealth, run.PlayerHealth + PlayerMaximumHealth * CurrentStats.RepairPerSecond * step);
             SpawnTimedWaves(step);
             UpdateEnemyAttacks(step);
             UpdateSpecial(step);
@@ -123,7 +146,7 @@ namespace DigAndWonder
             if (run.WavesSpawned >= currentStage.WaveCount && !run.BossSpawned)
             {
                 run.BossSpawned = true;
-                SpawnEnemy(currentStage.Boss, true);
+                SpawnEnemy(bossDefinition, true);
             }
         }
 
@@ -131,7 +154,7 @@ namespace DigAndWonder
         {
             if (ActiveEnemyCount() < config.MaximumEnemies)
             {
-                SpawnEnemy(config.RegularEnemy, false);
+                SpawnEnemy(regularDefinition, false);
                 return;
             }
 
@@ -144,7 +167,7 @@ namespace DigAndWonder
             while (run.PendingSpawns > 0 && ActiveEnemyCount() < config.MaximumEnemies)
             {
                 run.PendingSpawns--;
-                SpawnEnemy(config.RegularEnemy, false);
+                SpawnEnemy(regularDefinition, false);
             }
         }
 
@@ -167,7 +190,7 @@ namespace DigAndWonder
             foreach (EnemySnapshot enemy in enemies.ToArray())
             {
                 if (enemy.Health <= 0f) continue;
-                EnemyCombatData definition = enemy.IsBoss ? currentStage.Boss : config.RegularEnemy;
+                EnemyCombatData definition = enemy.IsBoss ? bossDefinition : regularDefinition;
                 enemy.AttackTimer -= step;
                 if (enemy.AttackTimer > 0f) continue;
                 enemy.AttackTimer += definition.AttackInterval;
@@ -211,7 +234,7 @@ namespace DigAndWonder
             run.SpecialTravelTimer = config.Special.TravelTime;
             run.SpecialHitTimer = 0f;
             run.SpecialCooldown += config.Special.Cooldown;
-            Emit(CombatEventType.SpecialStarted, target.Id, config.Special.Damage, target.IsBoss ? currentStage.Boss.DisplayName : config.RegularEnemy.DisplayName);
+            Emit(CombatEventType.SpecialStarted, target.Id, config.Special.Damage, target.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
         }
 
         private void ApplySpecialHit()
@@ -219,6 +242,8 @@ namespace DigAndWonder
             EnemySnapshot target = enemies.FirstOrDefault(e => e.Id == run.SpecialTargetId && e.Health > 0f);
             if (target == null) return;
             float damage = config.Special.Damage / config.Special.HitCount * GetDamageMultiplier();
+            if (config.Economy != null)
+                damage *= CurrentStats.SpecialMultiplier * (1f + PowerBonus(AttackPowerKind.Resonance)) * BossMultiplier(target);
             target.Health = Math.Max(0f, target.Health - damage);
             Emit(CombatEventType.SpecialStrike, target.Id, damage, "Especial");
             Emit(CombatEventType.Hit, target.Id, damage, "Especial");
@@ -234,7 +259,7 @@ namespace DigAndWonder
                 {
                     LaunchBasicHit();
                     run.AttackHitsRemaining--;
-                    run.AttackHitTimer += config.BasicAttackHitInterval;
+                    run.AttackHitTimer += config.BasicAttackHitInterval / AttackSpeed;
                     if (run.AttackHitsRemaining == 0) run.AttackTargetId = 0;
                 }
                 return;
@@ -244,13 +269,13 @@ namespace DigAndWonder
             if (run.AttackTimer > 0f) return;
             EnemySnapshot target = SelectTarget();
             if (target == null) return;
-            run.AttackTimer += config.BasicAttackInterval;
+            run.AttackTimer += config.BasicAttackInterval / AttackSpeed;
             run.AttackTargetId = target.Id;
             run.AttackHitsRemaining = config.BasicAttackHitCount;
             run.AttackHitTimer = 0f;
             LaunchBasicHit();
             run.AttackHitsRemaining--;
-            run.AttackHitTimer = config.BasicAttackHitInterval;
+            run.AttackHitTimer = config.BasicAttackHitInterval / AttackSpeed;
             if (run.AttackHitsRemaining == 0) run.AttackTargetId = 0;
         }
 
@@ -259,10 +284,20 @@ namespace DigAndWonder
             EnemySnapshot target = enemies.FirstOrDefault(e => e.Id == run.AttackTargetId && e.Health > 0f);
             if (target == null || pendingHits.Count >= config.MaximumProjectiles) return;
             float damage = config.BasicAttackDamage * GetDamageMultiplier();
+            bool critical = false;
+            if (config.Economy != null)
+            {
+                damage *= 1f + PowerBonus(AttackPowerKind.Serration);
+                run.RandomState = EconomyProgression.NextRandom(run.RandomState);
+                critical = run.RandomState % 10000u < (uint)Math.Round(CurrentStats.CriticalChance * 10000);
+                if (critical) damage *= CurrentStats.CriticalMultiplier;
+            }
             pendingHits.Add(new PendingHitSnapshot
             {
                 TargetEntityId = target.Id,
                 Damage = damage,
+                IsBasic = true,
+                IsCritical = critical,
                 RemainingTravel = config.BasicAttackTravelTime
             });
             Emit(CombatEventType.DrillAttack, target.Id, damage, "Disparo automático da broca");
@@ -309,12 +344,16 @@ namespace DigAndWonder
                     continue;
                 }
 
-                target.Health = Math.Max(0f, target.Health - hit.Damage);
-                Emit(CombatEventType.ProjectileImpact, target.Id, hit.Damage,
-                    target.IsBoss ? currentStage.Boss.DisplayName : config.RegularEnemy.DisplayName);
-                Emit(CombatEventType.Hit, target.Id, hit.Damage,
-                    target.IsBoss ? currentStage.Boss.DisplayName : config.RegularEnemy.DisplayName);
+                float damage = hit.Damage * BossMultiplier(target);
+                target.Health = Math.Max(0f, target.Health - damage);
+                Emit(CombatEventType.ProjectileImpact, target.Id, damage,
+                    target.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
+                Emit(CombatEventType.Hit, target.Id, damage,
+                    hit.IsCritical ? "CRÍTICO!" : target.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
+                if (hit.IsCritical) Emit(CombatEventType.CriticalHit, target.Id, damage, "Crítico");
                 if (target.Health <= 0f) DefeatEnemy(target);
+                if (!IsActive) return;
+                if (hit.IsBasic && config.Economy != null) ApplyRicochet(target.Id, hit.Damage);
                 if (!IsActive) return;
             }
         }
@@ -330,21 +369,38 @@ namespace DigAndWonder
             if (!enemies.Remove(enemy)) return;
             CharacterProgressData character = CharacterProgression.Find(profile, run.CharacterId);
             int previousLevel = CharacterProgression.GetLevel(character, currentCharacter.Experience).Level;
+            float previousMaximumHealth = PlayerMaximumHealth;
             int awardedExperience = CharacterProgression.Award(profile, run.CharacterId, currentCharacter.Experience,
-                enemy.IsBoss ? currentCharacter.Experience.BossExperience : currentCharacter.Experience.RegularEnemyExperience);
+                config.Economy != null ? config.Economy.ExperienceReward(run.CampaignStage, enemy.IsBoss, currentCharacter.Experience) :
+                    enemy.IsBoss ? currentCharacter.Experience.BossExperience : currentCharacter.Experience.RegularEnemyExperience);
             int newLevel = CharacterProgression.GetLevel(character, currentCharacter.Experience).Level;
-            profile.Gold += enemy.GoldReward;
+            if (config.Economy != null && newLevel > previousLevel)
+                run.PlayerHealth = Math.Min(PlayerMaximumHealth, run.PlayerHealth + PlayerMaximumHealth - previousMaximumHealth);
+            profile.Gold = EconomyProgression.Credit(profile.Gold, enemy.GoldReward);
             // Observadores recebem a transação completa, inclusive ao salvar no evento.
             if (enemy.IsBoss)
             {
-                profile.Keys += currentStage.KeyCount;
-                profile.Chests += currentStage.ChestCount;
+                profile.Keys = EconomyProgression.Credit(profile.Keys, currentStage.KeyCount);
+                int previousChests = profile.Chests;
+                profile.Chests = EconomyProgression.Credit(profile.Chests, currentStage.ChestCount);
+                if (config.Economy != null)
+                {
+                    EconomyProgression.RecordChestStage(profile, run.CampaignStage, profile.Chests - previousChests);
+                    if (run.CampaignStage > profile.HighestClearedStage)
+                    {
+                        int crystals = config.Economy.FirstClearCrystals +
+                            (run.CampaignStage % config.Economy.MilestoneInterval == 0 ? config.Economy.MilestoneCrystals : 0);
+                        profile.Crystals = EconomyProgression.Credit(profile.Crystals, crystals);
+                        profile.HighestClearedStage = run.CampaignStage;
+                    }
+                    profile.CampaignStage = Math.Min(config.Economy.MaximumStage, run.CampaignStage + 1);
+                }
                 profile.UnlockedStageId = GetNextStageId(currentStage.Id);
                 run.IsStageCleared = true;
                 profile.ActiveRun = null;
                 ClearCombatActions();
             }
-            Emit(CombatEventType.EnemyDefeated, enemy.Id, enemy.GoldReward, enemy.IsBoss ? currentStage.Boss.DisplayName : config.RegularEnemy.DisplayName);
+            Emit(CombatEventType.EnemyDefeated, enemy.Id, enemy.GoldReward, enemy.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
             Emit(CombatEventType.GoldAwarded, enemy.Id, enemy.GoldReward, "Ouro por inimigo derrotado");
             if (awardedExperience > 0)
                 Emit(CombatEventType.CharacterExperienceAwarded, enemy.Id, awardedExperience, run.CharacterId);
@@ -355,7 +411,7 @@ namespace DigAndWonder
                 SpawnPendingEnemies();
                 return;
             }
-            Emit(CombatEventType.BossDefeated, enemy.Id, enemy.GoldReward, currentStage.Boss.DisplayName);
+            Emit(CombatEventType.BossDefeated, enemy.Id, enemy.GoldReward, bossDefinition.DisplayName);
             Emit(CombatEventType.ChestAwarded, enemy.Id, currentStage.ChestCount, currentStage.DisplayName);
             Emit(CombatEventType.KeyAwarded, enemy.Id, currentStage.KeyCount, currentStage.DisplayName);
             Emit(CombatEventType.StageCleared, enemy.Id, 0f, profile.UnlockedStageId);
@@ -375,6 +431,18 @@ namespace DigAndWonder
         private bool TryPurchaseUpgradeInternal(UpgradeKind kind, bool requireActiveRun)
         {
             if (requireActiveRun && !IsActive) return false;
+            if (config.Economy != null)
+            {
+                float previousHealth = PlayerMaximumHealth;
+                EconomyUpgradeRule economyUpgrade = config.Economy.Upgrade(kind);
+                if (economyUpgrade == null) return false;
+                int economyCost = economyUpgrade.Cost(EconomyProgression.Level(profile, kind));
+                if (!EconomyProgression.TryBuyUpgrade(profile, config.Economy, currentCharacter.Experience, kind)) return false;
+                if (IsActive && kind == UpgradeKind.Health)
+                    run.PlayerHealth = Math.Min(PlayerMaximumHealth, run.PlayerHealth + PlayerMaximumHealth - previousHealth);
+                Emit(CombatEventType.UpgradePurchased, 0, economyCost, kind.ToString());
+                return true;
+            }
             UpgradeCombatData upgrade = kind == UpgradeKind.Attack ? config.AttackUpgrade :
                 kind == UpgradeKind.Health ? config.HealthUpgrade :
                 kind == UpgradeKind.CriticalChance ? config.CriticalChanceUpgrade :
@@ -440,7 +508,7 @@ namespace DigAndWonder
             if (snapshot.CharacterId != profile.EquippedCharacterId)
                 throw new InvalidOperationException("A personagem equipada diverge da tentativa salva.");
             currentCharacter = ResolveCharacter(snapshot.CharacterId);
-            currentStage = FindStage(snapshot.StageId) ?? FirstStage();
+            ConfigureStage(FindStage(snapshot.StageId) ?? FirstStage(), snapshot.CampaignStage);
             run = CloneRun(snapshot);
             enemies.Clear();
             if (snapshot.Enemies != null)
@@ -462,7 +530,55 @@ namespace DigAndWonder
             return definition;
         }
 
-        private float GetDamageMultiplier() => 1f + profile.AttackLevel * config.AttackUpgrade.Bonus;
+        private float AttackSpeed => config.Economy == null ? 1f : CurrentStats.AttackSpeed;
+        private float GetDamageMultiplier() => config.Economy == null ? 1f + profile.AttackLevel * config.AttackUpgrade.Bonus
+            : CurrentStats.AttackDamage / config.BasicAttackDamage;
+        private float PowerBonus(AttackPowerKind kind) => EconomyProgression.PowerBonus(profile, config.Economy, run.CharacterId, kind);
+        private float BossMultiplier(EnemySnapshot enemy) => config.Economy != null && enemy.IsBoss
+            ? 1f + PowerBonus(AttackPowerKind.BossBreaker) : 1f;
+
+        private void ApplyRicochet(int primaryId, float originalDamage)
+        {
+            float bonus = PowerBonus(AttackPowerKind.Ricochet);
+            if (bonus <= 0f) return;
+            EnemySnapshot secondary = enemies.FirstOrDefault(e => e.Id != primaryId && e.Health > 0);
+            if (secondary == null) return;
+            float damage = originalDamage * bonus * BossMultiplier(secondary);
+            secondary.Health = Math.Max(0, secondary.Health - damage);
+            Emit(CombatEventType.Hit, secondary.Id, damage, "Estilhaço magnético");
+            if (secondary.Health <= 0) DefeatEnemy(secondary);
+        }
+
+        private void ConfigureStage(StageCombatData stage, int campaignStage)
+        {
+            currentStage = stage;
+            regularDefinition = config.RegularEnemy;
+            bossDefinition = stage.Boss;
+            if (config.Economy == null) return;
+            EconomyRules rules = config.Economy;
+            int index = rules.StageIndex(campaignStage);
+            regularDefinition = ScaleEnemy(config.RegularEnemy, false, index, rules);
+            bossDefinition = ScaleEnemy(stage.Boss, true, index, rules);
+            currentStage = new StageCombatData
+            {
+                Id = stage.Id, DisplayName = stage.DisplayName, LengthSegments = stage.LengthSegments,
+                ChestCount = 1, KeyCount = 1, WaveCount = rules.WaveCount, WaveInterval = rules.WaveInterval,
+                LateWaveAfter = rules.LateWaveAfter, LateWaveSize = rules.LateWaveSize, Boss = bossDefinition
+            };
+        }
+
+        private static EnemyCombatData ScaleEnemy(EnemyCombatData source, bool boss, int index, EconomyRules rules)
+        {
+            return new EnemyCombatData
+            {
+                Id = source.Id, DisplayName = source.DisplayName, IsBoss = boss,
+                MaxHealth = (float)(rules.EnemyHealthBase * Math.Pow(rules.EnemyHealthGrowth, index) * (boss ? rules.BossHealthMultiplier : 1)),
+                Damage = (float)(rules.EnemyDamageBase * Math.Pow(rules.EnemyDamageGrowth, index) * (boss ? rules.BossDamageMultiplier : 1)),
+                GoldReward = checked(rules.NormalGold(index + 1) * (boss ? rules.BossGoldMultiplier : 1)),
+                FirstAttackDelay = source.FirstAttackDelay, AttackInterval = source.AttackInterval,
+                TelegraphDuration = source.TelegraphDuration, ProjectileFlight = source.ProjectileFlight
+            };
+        }
         private int ActiveEnemyCount() => enemies.Count(e => e.Health > 0f);
 
         private StageCombatData FindStage(string id)
@@ -515,6 +631,7 @@ namespace DigAndWonder
         {
             StageId = value.StageId,
             CharacterId = value.CharacterId,
+            CampaignStage = value.CampaignStage,
             ElapsedSeconds = value.ElapsedSeconds,
             PlayerHealth = value.PlayerHealth,
             AttackTimer = value.AttackTimer,
@@ -545,7 +662,9 @@ namespace DigAndWonder
             Damage = value.Damage,
             RemainingTravel = value.RemainingTravel,
             TargetsPlayer = value.TargetsPlayer,
-            IsSpecial = value.IsSpecial
+            IsSpecial = value.IsSpecial,
+            IsBasic = value.IsBasic,
+            IsCritical = value.IsCritical
         };
     }
 }

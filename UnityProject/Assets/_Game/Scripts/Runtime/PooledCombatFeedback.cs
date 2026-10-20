@@ -102,7 +102,7 @@ namespace DigAndWonder
                     AnimateProjectile(combatEvent);
                     break;
                 case CombatEventType.Hit:
-                    ShowDamage(combatEvent.Amount, combatEvent.EntityId);
+                    ShowDamage(combatEvent.Amount, combatEvent.EntityId, combatEvent.Text == "CRÍTICO!");
                     break;
                 case CombatEventType.GoldAwarded:
                     ShowCoin(combatEvent.Amount);
@@ -130,13 +130,13 @@ namespace DigAndWonder
             tween.OnComplete(() => { activeTweens.Remove(item); activeProjectiles.Remove(item); projectiles.Release(item); });
         }
 
-        private void ShowDamage(float amount, int entityId)
+        private void ShowDamage(float amount, int entityId, bool critical)
         {
             GameObject item = damageNumbers.Get();
             activeDamage.Add(item);
             item.GetComponent<Image>().color = Color.clear;
-            item.GetComponentInChildren<TextMeshProUGUI>().text = "-" + Mathf.CeilToInt(amount);
-            item.GetComponentInChildren<TextMeshProUGUI>().color = new Color(1f, 0.88f, 0.59f);
+            item.GetComponentInChildren<TextMeshProUGUI>().text = "-" + Mathf.CeilToInt(amount) + (critical ? "!" : "");
+            item.GetComponentInChildren<TextMeshProUGUI>().color = critical ? new Color(1f, 0.4f, 0.37f) : new Color(1f, 0.88f, 0.59f);
             AnimatePopup(item, new Vector2(180 + (entityId % 3) * 55, -10), 0.72f, damageNumbers, activeDamage);
         }
 

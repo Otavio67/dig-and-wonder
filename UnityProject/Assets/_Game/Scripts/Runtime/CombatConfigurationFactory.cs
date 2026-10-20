@@ -8,7 +8,7 @@ namespace DigAndWonder
         public static CombatConfiguration Create(CombatBalanceDefinition balance)
         {
             ProgressionDefinition progression = balance.progression;
-            return new CombatConfiguration
+            CombatConfiguration result = new CombatConfiguration
             {
                 PlayerBaseHealth = balance.playerBaseHealth,
                 BasicAttackDamage = balance.drillAttackDamage,
@@ -42,6 +42,10 @@ namespace DigAndWonder
                             : character.experience.ToRuntime()
                     }).ToArray()
             };
+            EconomyDefinition economy = Resources.Load<EconomyDefinition>("Data/Economy");
+            if (economy == null) throw new System.InvalidOperationException("Economia do mid-game não encontrada.");
+            result.Economy = economy.ToRuntime();
+            return result;
         }
 
         private static EnemyCombatData ToRuntime(EnemyDefinition source)

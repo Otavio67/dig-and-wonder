@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace UnityEngine
 {
+    public class TextAsset : Object { public string text; }
     public class Object { public static void DontDestroyOnLoad(Object target) { } public static void Destroy(Object target) { } public static T FindFirstObjectByType<T>() where T : Object => null; }
     public class ScriptableObject : Object
     {
@@ -152,6 +153,7 @@ namespace DG.Tweening
     public static class DOTween { public static void Kill(UnityEngine.Object target, bool complete = false) { } public static Sequence Sequence() => new Sequence(); }
     public static class TweenExtensions
     {
+        public static int DOKill(this UnityEngine.Transform target, bool complete = false) => 0;
         public static Tween DOAnchorPosX(this UnityEngine.RectTransform target, float x, float duration) => new Tween();
         public static Tween DOAnchorPos(this UnityEngine.RectTransform target, UnityEngine.Vector2 pos, float duration) => new Tween();
         public static Tween DOAnchorPosY(this UnityEngine.RectTransform target, float y, float duration) => new Tween();

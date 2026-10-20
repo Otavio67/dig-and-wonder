@@ -10,10 +10,12 @@ namespace DigAndWonder
         public int firstLevelExperience;
         public int experiencePerLevelStep;
         public int maximumLevel;
+        public EconomyDefinition economy;
         [TextArea] public string designNote;
 
         public CharacterExperienceRules ToRuntime()
         {
+            if (economy != null) return economy.ToRuntime().Experience;
             var rules = new CharacterExperienceRules
             {
                 RegularEnemyExperience = regularEnemyExperience,

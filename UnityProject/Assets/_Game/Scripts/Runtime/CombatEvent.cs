@@ -24,7 +24,9 @@ namespace DigAndWonder
         PlayerDefeated,
         Checkpoint,
         CharacterExperienceAwarded,
-        CharacterLeveledUp
+        CharacterLeveledUp,
+        CriticalHit,
+        EconomyChanged
     }
 
     public readonly struct CombatEvent

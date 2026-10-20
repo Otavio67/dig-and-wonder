@@ -7,7 +7,7 @@ namespace DigAndWonder
     [Serializable]
     public sealed class GameSaveData
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
         public int SchemaVersion = CurrentSchemaVersion;
         public int Gold;
         public int Keys;
@@ -16,6 +16,15 @@ namespace DigAndWonder
         public int HealthLevel;
         public int CriticalChanceLevel;
         public int CriticalDamageLevel;
+        public int SpecialLevel;
+        public int AttackSpeedLevel;
+        public int RepairLevel;
+        public int Crystals;
+        public int CampaignStage = 1;
+        public int HighestClearedStage;
+        public uint LootRandomState = 0xA341316Cu;
+        [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
+        public List<ChestStackData> ChestStacks = new List<ChestStackData>();
         public string UnlockedStageId = "prado_cristalino";
         public string EquippedCharacterId = CharacterProgression.StarterCharacterId;
         [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
@@ -27,10 +36,26 @@ namespace DigAndWonder
     }
 
     [Serializable]
+    public sealed class ChestStackData
+    {
+        public int Stage;
+        public int Count;
+    }
+
+    [Serializable]
     public sealed class CharacterProgressData
     {
         public string CharacterId;
         public long TotalExperience;
+        [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
+        public List<PowerProgressData> Powers = new List<PowerProgressData>();
+    }
+
+    [Serializable]
+    public sealed class PowerProgressData
+    {
+        public string PowerId;
+        public int Rank;
     }
 
     [Serializable]
@@ -38,6 +63,7 @@ namespace DigAndWonder
     {
         public string StageId;
         public string CharacterId = CharacterProgression.StarterCharacterId;
+        public int CampaignStage = 1;
         public float ElapsedSeconds;
         public float PlayerHealth;
         public float AttackTimer;
@@ -80,5 +106,7 @@ namespace DigAndWonder
         public float RemainingTravel;
         public bool TargetsPlayer;
         public bool IsSpecial;
+        public bool IsBasic;
+        public bool IsCritical;
     }
 }

@@ -9,7 +9,8 @@ namespace DigAndWonder
         Special,
         CriticalChance,
         CriticalDamage,
-        AttackSpeed
+        AttackSpeed,
+        Repair
     }
 
     [Serializable]
@@ -90,5 +91,6 @@ namespace DigAndWonder
         public StageCombatData[] Stages;
         public StageCombatData SurpriseStage;
         public CharacterCombatData[] Characters;
+        public EconomyRules Economy;
     }
 }

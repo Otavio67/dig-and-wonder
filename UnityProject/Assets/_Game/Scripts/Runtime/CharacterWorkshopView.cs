@@ -53,6 +53,18 @@ namespace DigAndWonder
         private bool initialized;
         private bool dirty;
         private bool lastReady;
+        private int upgradePage;
+        private int powerPage;
+        private readonly TextMeshProUGUI[] powerValues = new TextMeshProUGUI[2];
+        private readonly TextMeshProUGUI[] powerPrices = new TextMeshProUGUI[2];
+        private readonly Button[] powerButtons = new Button[2];
+        private readonly Image[] powerFaces = new Image[2];
+        private readonly Button[] treasureButtons = new Button[3];
+        private readonly TextMeshProUGUI[] treasurePrices = new TextMeshProUGUI[3];
+        private TextMeshProUGUI upgradePageLabel, powerPageLabel, treasureSummary;
+        private TextMeshProUGUI moduleValue;
+        private readonly Image[] passiveFaces = new Image[3];
+        private readonly Image[] passiveLocks = new Image[3];
 
         public void Initialize(RectTransform parent, AutoBattleDriver battleDriver, Action returnToHub)
         {
@@ -100,7 +112,7 @@ namespace DigAndWonder
             Icon(closeFace.transform, "close", 0.2f, 0.15f, 0.8f, 0.85f);
             characterName = Label(root, "BROCA PIONEIRA", 32, Cream, 0.045f, 0.877f, 0.63f, 0.910f, true, TextAlignmentOptions.Left);
             Icon(root, "gear", 0.69f, 0.877f, 0.75f, 0.909f);
-            wallet = Label(root, "0", 32, Gold, 0.76f, 0.877f, 0.96f, 0.909f, true, TextAlignmentOptions.Right);
+            wallet = Label(root, "0", 23, Gold, 0.76f, 0.877f, 0.96f, 0.915f, true, TextAlignmentOptions.Right);
 
             BuildShowcase();
             RectTransform experienceTrack = Plate("Character XP track", root, Teal, 0.04f, 0.561f, 0.96f, 0.602f);
@@ -112,8 +124,8 @@ namespace DigAndWonder
             for (int i = 0; i < panes.Length; i++)
                 panes[i] = Region("Workshop tab " + i, root, 0.04f, 0.218f, 0.96f, 0.464f);
             BuildUpgradeRows();
-            BuildPartsPane(panes[1]);
-            BuildDronePane(panes[2]);
+            BuildPowerRows();
+            BuildTreasury();
             lockSummary = Label(root, "Novas melhorias em preparação", 22, Dim, 0.05f, 0.193f, 0.95f, 0.217f, false);
             status = Label(root, "Escolha uma melhoria para turbinar a broca.", 26, Cream,
                 0.055f, 0.12f, 0.61f, 0.19f, false, TextAlignmentOptions.Left);
@@ -166,7 +178,7 @@ namespace DigAndWonder
             string specialText = balance != null && balance.specialAbility != null
                 ? balance.specialAbility.hitCount + " impactos\n" + Number(balance.specialAbility.damage) + " de dano base"
                 : "Pioneira\nDados indisponíveis";
-            Label(cartridge, specialText, 28, Cream, 0.18f, 0.12f, 0.58f, 0.69f, false, TextAlignmentOptions.Left);
+            moduleValue = Label(cartridge, specialText, 28, Cream, 0.18f, 0.12f, 0.58f, 0.69f, false, TextAlignmentOptions.Left);
             string[] passiveIcons = { "shield", "repair", "bolt" };
             for (int i = 0; i < passiveIcons.Length; i++)
             {
@@ -174,57 +186,102 @@ namespace DigAndWonder
                 RectTransform passive = Plate("Locked passive " + i, cartridge, Petroleum, left, 0.1f, left + 0.1f, 0.68f);
                 Image art = Icon(passive, passiveIcons[i], 0.05f, 0.05f, 0.95f, 0.95f);
                 art.color = Dim;
-                Icon(passive, "lock", 0.53f, -0.02f, 1.02f, 0.47f);
+                passiveFaces[i] = art;
+                passiveLocks[i] = Icon(passive, "lock", 0.53f, -0.02f, 1.02f, 0.47f);
             }
         }
 
         private void BuildUpgradeRows()
         {
-            RectTransform attack = Plate("Attack row", panes[0], Steel, 0f, 0.53f, 1f, 1f);
+            BuildPager(panes[0], () => { upgradePage = (upgradePage + 3) % 4; Refresh(); },
+                () => { upgradePage = (upgradePage + 1) % 4; Refresh(); }, out upgradePageLabel);
+            RectTransform attack = Plate("Attack row", panes[0], Steel, 0f, 0.37f, 1f, 0.73f);
             Icon(attack, "attack", 0.015f, 0.1f, 0.17f, 0.9f);
-            attackValue = Label(attack, "ATQ", 36, Cream, 0.19f, 0.09f, 0.55f, 0.93f, false, TextAlignmentOptions.Left);
+            attackValue = Label(attack, "ATQ", 27, Cream, 0.19f, 0.04f, 0.57f, 0.96f, false, TextAlignmentOptions.Left);
             attackButton = ButtonAt(attack, "Upgrade attack", "TURBINAR", Gold, 0.59f, 0.16f, 0.97f, 0.87f,
-                () => Purchase(UpgradeKind.Attack), out attackPrice, out attackFace);
-            RectTransform health = Plate("Health row", panes[0], Steel, 0f, 0.02f, 1f, 0.49f);
+                () => Purchase(VisibleUpgrade(0).Kind), out attackPrice, out attackFace);
+            RectTransform health = Plate("Health row", panes[0], Steel, 0f, 0.005f, 1f, 0.365f);
             Icon(health, "health", 0.015f, 0.1f, 0.17f, 0.9f);
-            healthValue = Label(health, "VIDA", 36, Cream, 0.19f, 0.09f, 0.55f, 0.93f, false, TextAlignmentOptions.Left);
+            healthValue = Label(health, "VIDA", 27, Cream, 0.19f, 0.04f, 0.57f, 0.96f, false, TextAlignmentOptions.Left);
             healthButton = ButtonAt(health, "Upgrade health", "TURBINAR", Gold, 0.59f, 0.16f, 0.97f, 0.87f,
-                () => Purchase(UpgradeKind.Health), out healthPrice, out healthFace);
+                () => { if (VisibleUpgrade(1) != null) Purchase(VisibleUpgrade(1).Kind); }, out healthPrice, out healthFace);
+            attackPrice.fontSize = healthPrice.fontSize = 27;
         }
 
-        private void BuildPartsPane(RectTransform parent)
+        private void BuildPager(RectTransform parent, Action previous, Action next, out TextMeshProUGUI label)
         {
-            RectTransform plate = Plate("Parts inventory", parent, Steel, 0f, 0.02f, 1f, 1f);
-            Label(plate, "PEÇAS DA PIONEIRA", 29, Gold, 0.06f, 0.79f, 0.94f, 0.97f, true);
-            string[] names = { "BROCA", "CHASSI", "MOTOR", "NÚCLEO" };
-            string[] icons = { "drill", "chassis", "motor", "core" };
-            for (int i = 0; i < names.Length; i++)
+            ButtonAt(parent, "Previous page", "<", Teal, 0, 0.74f, 0.18f, 0.995f, previous, out TextMeshProUGUI ignored, out Image face);
+            label = Label(parent, "1 / 4", 28, Cream, 0.19f, 0.74f, 0.81f, 1f, true);
+            ButtonAt(parent, "Next page", ">", Teal, 0.82f, 0.74f, 1, 0.995f, next, out ignored, out face);
+        }
+
+        private EconomyUpgradeRule VisibleUpgrade(int row)
+        {
+            int index = upgradePage * 2 + row;
+            return driver.Economy != null && index < driver.Economy.Upgrades.Length ? driver.Economy.Upgrades[index] : null;
+        }
+
+        private void BuildPowerRows()
+        {
+            BuildPager(panes[1], () => { powerPage = 1 - powerPage; Refresh(); },
+                () => { powerPage = 1 - powerPage; Refresh(); }, out powerPageLabel);
+            for (int row = 0; row < 2; row++)
             {
-                float left = 0.025f + i * 0.245f;
-                Icon(plate, "slot", left, 0.33f, left + 0.215f, 0.8f);
-                Icon(plate, icons[i], left + 0.03f, 0.4f, left + 0.185f, 0.72f);
-                Label(plate, names[i], 20, Cream, left, 0.24f, left + 0.215f, 0.34f, true);
+                int index = row;
+                float bottom = row == 0 ? 0.37f : 0.005f;
+                RectTransform panel = Plate("Power row " + row, panes[1], Steel, 0, bottom, 1, bottom + 0.36f);
+                powerValues[row] = Label(panel, "PODER", 27, Cream, 0.035f, 0.04f, 0.60f, 0.96f, false, TextAlignmentOptions.Left);
+                powerButtons[row] = ButtonAt(panel, "Buy power " + row, "APRENDER", Gold, 0.63f, 0.12f, 0.97f, 0.88f,
+                    () => BuyPower(index), out powerPrices[row], out powerFaces[row]);
+                powerPrices[row].fontSize = 27;
             }
-            Label(plate, "Peças originais equipadas.\nNovas peças e trocas chegam em uma próxima atualização.", 28, Cream,
-                0.06f, 0.025f, 0.94f, 0.23f, false);
         }
 
-        private void BuildDronePane(RectTransform parent)
+        private void BuyPower(int row)
         {
-            RectTransform plate = Plate("Drone hangar", parent, Steel, 0f, 0.02f, 1f, 1f);
-            Icon(plate, "drone", 0.34f, 0.40f, 0.66f, 0.95f);
-            Icon(plate, "lock", 0.56f, 0.41f, 0.69f, 0.66f);
-            AbilityDefinition drone = Resources.Load<AbilityDefinition>("Data/Abilities/drone");
-            string requirement = drone != null ? "Projeto previsto para a fase " + drone.unlockPhase : "Projeto em preparação";
-            Label(plate, "HANGAR DE DRONES", 27, Gold, 0.05f, 0.26f, 0.95f, 0.43f, true);
-            Label(plate, requirement + "\nNovos aliados ainda estão em preparação.", 28, Cream, 0.05f, 0.04f, 0.95f, 0.26f, false);
+            bool bought = driver.TryPurchasePower(driver.Economy.Powers[powerPage * 2 + row].Id);
+            Refresh();
+            status.text = driver.IsSaveBlocked ? driver.LastSaveError : bought ? "Poder da broca melhorado e salvo!" : "Requer nível, ouro ou rank disponível.";
+        }
+
+        private void BuildTreasury()
+        {
+            RectTransform plate = Plate("Treasury", panes[2], Steel, 0, 0.01f, 1, 1);
+            treasureSummary = Label(plate, "TESOURO", 27, Cream, 0.035f, 0.51f, 0.965f, 0.98f, false);
+            Action[] actions = { OpenChest, BuyKey, BuyGold };
+            for (int i = 0; i < 3; i++)
+            {
+                float left = 0.025f + i * 0.325f;
+                treasureButtons[i] = ButtonAt(plate, "Treasury action " + i, "", i == 0 ? Gold : Teal,
+                    left, 0.05f, left + 0.3f, 0.46f, actions[i], out treasurePrices[i], out Image face);
+                treasurePrices[i].fontSize = 25;
+            }
+        }
+
+        private void OpenChest()
+        {
+            bool opened = driver.TryOpenChest(out ChestOpening reward);
+            Refresh();
+            status.text = driver.IsSaveBlocked ? driver.LastSaveError : opened ? reward.Rarity + ": +" + reward.Gold + " ouro, +" + reward.Crystals + " cristais." : "Você precisa de um baú e uma chave.";
+        }
+
+        private void BuyKey()
+        {
+            bool bought = driver.TryPurchaseKey(); Refresh();
+            status.text = driver.IsSaveBlocked ? driver.LastSaveError : bought ? "Chave comprada e salva." : "Cristais insuficientes.";
+        }
+
+        private void BuyGold()
+        {
+            bool bought = driver.TryPurchaseGoldPack(); Refresh();
+            status.text = driver.IsSaveBlocked ? driver.LastSaveError : bought ? "Reserva de ouro recebida e salva." : "Cristais insuficientes ou carteira cheia.";
         }
 
         private void BuildNavigation()
         {
             RectTransform tread = ArtRegion("Navigation tread", root, "tread", Petroleum, 0.015f, 0.018f, 0.985f, 0.112f);
-            string[] names = { "OFICINA", "PEÇAS", "DRONES" };
-            string[] icons = { "repair", "gear", "drone" };
+            string[] names = { "OFICINA", "PODERES", "TESOURO" };
+            string[] icons = { "repair", "bolt", "gear" };
             for (int i = 0; i < names.Length; i++)
             {
                 int index = i;
@@ -260,10 +317,11 @@ namespace DigAndWonder
             else status.text = purchased ? "Broca turbinada! Progresso salvo." : "Ouro insuficiente ou melhoria no máximo.";
         }
 
-        public void Show()
+        public void Show(int tab = -1)
         {
             root.gameObject.SetActive(true);
-            status.text = driver.Simulation == null ? "Inicie uma expedição para liberar as compras." : "Escolha uma melhoria para turbinar a broca.";
+            status.text = "Melhorias são da oficina; XP e poderes pertencem a cada broca.";
+            if (tab >= 0 && tab < panes.Length) selectedTab = tab;
             SelectTab(selectedTab);
             Refresh();
         }
@@ -284,11 +342,13 @@ namespace DigAndWonder
             {
                 attackButton.interactable = false;
                 healthButton.interactable = false;
+                foreach (Button button in powerButtons) if (button != null) button.interactable = false;
+                foreach (Button button in treasureButtons) if (button != null) button.interactable = false;
                 status.text = "Não foi possível carregar o progresso. Dados preservados.";
                 return;
             }
             lastReady = driver.IsReady;
-            wallet.text = profile.Gold.ToString("N0", Portuguese);
+            wallet.text = profile.Gold.ToString("N0", Portuguese) + " ouro\n" + profile.Crystals + " cristais";
             CharacterLevelState level = driver.CurrentCharacterLevel;
             CharacterDefinition definition = driver.EquippedCharacterDefinition;
             characterName.text = definition != null ? definition.displayName.ToUpperInvariant() : "PERSONAGEM INDISPONÍVEL";
@@ -296,24 +356,55 @@ namespace DigAndWonder
                 "  •  XP " + level.ExperienceInLevel + " / " + level.ExperienceToNextLevel);
             experienceFill.rectTransform.anchorMax = new Vector2(level.IsMaximum ? 1f : level.ExperienceToNextLevel > 0
                 ? (float)level.ExperienceInLevel / level.ExperienceToNextLevel : 0f, 1f);
-            float hp = driver.Simulation != null ? driver.Simulation.PlayerMaximumHealth : balance == null ? 0f : balance.playerBaseHealth;
-            attackValue.text = "ATQ  " + Number(driver.CurrentAttackDamage) + "\nNv. " + profile.AttackLevel + " / " + driver.CurrentAttackMaximum;
-            healthValue.text = "VIDA  " + Number(hp) + "\nNv. " + profile.HealthLevel + " / " + driver.CurrentHealthMaximum;
-            ConfigureUpgrade(attackButton, attackFace, attackPrice, profile.Gold, profile.AttackLevel,
-                balance == null || balance.progression == null ? null : balance.progression.attackUpgrade);
-            ConfigureUpgrade(healthButton, healthFace, healthPrice, profile.Gold, profile.HealthLevel,
-                balance == null || balance.progression == null ? null : balance.progression.healthUpgrade);
-            lockSummary.text = "Reparo: VIDA " + driver.CurrentHealthMaximum + " • Crítico: ATQ " + driver.CurrentAttackMaximum + " • Em preparação";
+            if (driver.Economy == null) return;
+            float specialDamage = balance.specialAbility.damage * driver.CurrentStats.AttackDamage / balance.drillAttackDamage *
+                driver.CurrentStats.SpecialMultiplier * (1f + EconomyProgression.PowerBonus(profile, driver.Economy, profile.EquippedCharacterId, AttackPowerKind.Resonance));
+            moduleValue.text = balance.specialAbility.hitCount + " impactos\n" + Number(specialDamage) + " de dano";
+            UpgradeKind[] passiveKinds = { UpgradeKind.Health, UpgradeKind.Repair, UpgradeKind.CriticalChance };
+            for (int i = 0; i < passiveKinds.Length; i++)
+            {
+                bool unlocked = EconomyProgression.WorkshopLevel(profile, driver.Economy.Experience) >= driver.Economy.Upgrade(passiveKinds[i]).UnlockLevel;
+                passiveLocks[i].gameObject.SetActive(!unlocked);
+                passiveFaces[i].color = unlocked && EconomyProgression.Level(profile, passiveKinds[i]) > 0 ? Cyan : Dim;
+            }
+            ConfigureEconomyRow(0, attackButton, attackFace, attackPrice, attackValue);
+            ConfigureEconomyRow(1, healthButton, healthFace, healthPrice, healthValue);
+            upgradePageLabel.text = "MELHORIAS " + (upgradePage + 1) + " / 4";
+            powerPageLabel.text = "PODERES " + (powerPage + 1) + " / 2";
+            for (int i = 0; i < 2; i++)
+            {
+                AttackPowerRule power = driver.Economy.Powers[powerPage * 2 + i];
+                int rank = EconomyProgression.PowerRank(profile, profile.EquippedCharacterId, power.Id);
+                bool locked = level.Level < power.UnlockLevel;
+                bool maximum = rank >= power.MaximumRank;
+                powerValues[i].text = power.Name + "  " + rank + "/" + power.MaximumRank + "\n" + power.Description;
+                powerPrices[i].text = locked ? "REQUER\nNV. " + power.UnlockLevel : maximum ? "MÁXIMO" : "MELHORAR\n" + power.Cost(rank) + " OURO";
+                powerButtons[i].interactable = driver.IsReady && !locked && !maximum && profile.Gold >= power.Cost(rank);
+                powerFaces[i].color = powerButtons[i].interactable ? Gold : Steel;
+            }
+            lockSummary.text = "Fase " + profile.CampaignStage + "/" + driver.Economy.MaximumStage + " • ATQ " + Number(driver.CurrentStats.AttackDamage) + " • PV " + Number(driver.CurrentStats.MaximumHealth);
+            treasureSummary.text = "BAÚS " + profile.Chests + "  •  CHAVES " + profile.Keys + "\n" +
+                "1 chave por abertura. Ouro e cristais.\nComum 70% • Raro 23% • Épico 6% • Lendário 1%\n" +
+                "Cristais por primeira vitória; +20 a cada 5 fases.";
+            treasurePrices[0].text = "ABRIR BAÚ\n1 CHAVE";
+            treasurePrices[1].text = "1 CHAVE\n" + driver.Economy.KeyCrystalCost + " CRISTAIS";
+            treasurePrices[2].text = "+" + driver.Economy.NormalGold(Math.Max(1, profile.HighestClearedStage)) * driver.Economy.GoldPackMultiplier + " OURO\n" + driver.Economy.GoldPackCrystalCost + " CRISTAIS";
+            treasureButtons[0].interactable = driver.IsReady && profile.Chests > 0 && profile.Keys > 0;
+            treasureButtons[1].interactable = driver.IsReady && profile.Crystals >= driver.Economy.KeyCrystalCost;
+            treasureButtons[2].interactable = driver.IsReady && profile.Crystals >= driver.Economy.GoldPackCrystalCost;
             if (driver.IsSaveBlocked) status.text = driver.LastSaveError;
         }
 
-        private void ConfigureUpgrade(Button button, Image face, TextMeshProUGUI label, int gold, int level, UpgradeDefinition definition)
+        private void ConfigureEconomyRow(int row, Button button, Image face, TextMeshProUGUI price, TextMeshProUGUI value)
         {
-            bool available = definition != null && definition.implemented;
-            bool maximum = available && level >= definition.maxLevel;
-            int cost = available ? definition.GetCost(level) : 0;
-            label.text = maximum ? "MÁXIMO" : available ? "TURBINAR\n" + cost.ToString("N0", Portuguese) + " OURO" : "EM PREPARAÇÃO";
-            button.interactable = available && !maximum && driver.Simulation != null && driver.IsReady && gold >= cost;
+            EconomyUpgradeRule rule = VisibleUpgrade(row);
+            if (rule == null) { value.text = "Novas melhorias em futuras expedições."; price.text = "—"; button.interactable = false; return; }
+            int level = EconomyProgression.Level(driver.Profile, rule.Kind);
+            bool locked = EconomyProgression.WorkshopLevel(driver.Profile, driver.Economy.Experience) < rule.UnlockLevel;
+            bool maximum = level >= rule.MaximumLevel;
+            value.text = rule.Name + "  " + level + "/" + rule.MaximumLevel + "\n" + rule.Description;
+            price.text = locked ? "REQUER\nNV. " + rule.UnlockLevel : maximum ? "MÁXIMO" : "TURBINAR\n" + rule.Cost(level) + " OURO";
+            button.interactable = driver.IsReady && !locked && !maximum && driver.Profile.Gold >= rule.Cost(level);
             face.color = button.interactable ? Gold : Steel;
         }
 

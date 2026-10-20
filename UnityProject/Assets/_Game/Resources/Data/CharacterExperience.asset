@@ -17,4 +17,5 @@ MonoBehaviour:
   firstLevelExperience: 20
   experiencePerLevelStep: 10
   maximumLevel: 50
-  designNote: "Curva inicial de prototipo autorizada para XP individual. Nao existia na origem Godot. Nivel inicial 0. Sem bonus automatico de dano ou vida nesta etapa."
+  economy: {fileID: 11400000, guid: 2f4ff87e3e1f8318893ac52efb47e02b, type: 2}
+  designNote: "0.0.17: a referencia Economy tem prioridade sobre os campos legados acima. Curva ativa no JSON Economy/midgame.json: maximo 60, crescimento 1.125. XP individual e poderes por personagem; nivel 60 e meta de longo prazo."

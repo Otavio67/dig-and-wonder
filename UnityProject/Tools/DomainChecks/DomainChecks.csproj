@@ -11,6 +11,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="EconomyChecks.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/EconomyProgression.cs" Link="EconomyProgression.cs" />
     <Compile Include="../../Assets/_Game/Scripts/Runtime/CombatData.cs" Link="CombatData.cs" />
     <Compile Include="../../Assets/_Game/Scripts/Runtime/CombatEvent.cs" Link="CombatEvent.cs" />
     <Compile Include="../../Assets/_Game/Scripts/Runtime/SaveData.cs" Link="SaveData.cs" />

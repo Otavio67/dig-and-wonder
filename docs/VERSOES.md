@@ -268,3 +268,17 @@ Tag: `v0.0.15`.
 Regras, exemplos, detalhes da migração e pendências: [EXPERIENCIA-PERSONAGENS.md](EXPERIENCIA-PERSONAGENS.md).
 
 Tag: `v0.0.16`.
+
+## 0.0.17 — economia e progressão até o mid-game
+
+- Duas moedas obtidas jogando: ouro e cristais. Custos exponenciais, sete melhorias reais (ataque, blindagem, especial, críticos, cadência e reparo), quatro poderes individuais com cinco ranks e requisitos de nível.
+- XP individual até 60 com curva longa, recalibrada após o usuário considerar o avanço rápido: `ceil((20 + 12 × nível) × 1,125^nível)`. A referência é 60–100 horas ativas por broca; o cenário artificialmente favorável de farm projetou 66,5 h por ciclos medidos, sem afirmar tempo humano real.
+- Campanha numérica até fase 60, usando os biomas existentes. Nove simulações terminaram a campanha em 159–188 min simulados, com personagem nível 32. Fase da campanha e nível individual são progressos diferentes.
+- Tesouro abre baús consumindo chave, com categorias Comum/Raro/Épico/Lendário (70/23/6/1%). Procedência por fase impede inflação ao guardar baús. Cristais de primeira vitória e marcos não se repetem no treino.
+- Treino na última fase vencida entre tentativas. Aba Oficina/Poderes/Tesouro substitui as consultas provisórias Peças/Drones. Novos personagens, coleção de peças, álbum, anúncios, XP offline e dinheiro real não foram implementados.
+- Save Unity 3 migra versões 1/2 em memória, preserva quantidades/XP, mantém os bytes antigos no backup e salva estado do sorteio, campanha, poderes e pilhas de baús. Nível antigo é recalculado pela nova curva sem apagar XP.
+- 61 checks de domínio, compilação C# com stubs e contra DLLs reais; Editor batch bloqueado por licença antes da importação. Sem Play Mode desta versão, APK novo, revisão visual no Unity ou medição Android.
+
+Regras, pesquisa, CSV, gráfico e instruções: [ECONOMIA-MIDGAME.md](ECONOMIA-MIDGAME.md).
+
+Tag: `v0.0.17`.

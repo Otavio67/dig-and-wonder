@@ -1,5 +1,7 @@
 # Oficina da personagem — 0.0.15
 
+> Atualização 0.0.17: as abas ativas são **Oficina, Poderes e Tesouro**, com compras e abertura de baús reais. Os quatro slots de peças permanecem como apresentação de conteúdo futuro. A imagem deste documento é uma composição histórica fora do Unity. Regras atuais em [ECONOMIA-MIDGAME.md](ECONOMIA-MIDGAME.md).
+
 > Atualização 0.0.16: a barra de reforços desta composição foi substituída por XP/nível individual por personagem. Consulte [EXPERIENCIA-PERSONAGENS.md](EXPERIENCIA-PERSONAGENS.md) para o comportamento atual e a migração do save. O restante deste documento registra a composição e validação da 0.0.15.
 
 ## Resultado e acesso

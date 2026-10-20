@@ -69,6 +69,7 @@ namespace DigAndWonder
         private string currentTab = "MELHORIAS";
         private float refreshTimer;
         private int displayedGold = -1;
+        private int displayedCrystals = -1;
         private readonly Dictionary<string, Image> tabButtonImages = new Dictionary<string, Image>();
         private ProgressionDefinition progression;
         private AbilityDefinition[] abilityCatalog;
@@ -167,7 +168,7 @@ namespace DigAndWonder
                 string tab = tabs[i];
                 float left = i / 5f;
                 RectTransform tabButton = MakeButton("Tab " + tab, bottomBar, tab, 18, left + 0.006f, 0.04f, left + 0.194f, 0.96f,
-                    () => { if (tab == "PERSONAGEM") OpenProgression(); else SelectTab(tab); }, tab == currentTab ? Sand : White);
+                    () => { if (tab == "PERSONAGEM" || tab == "MELHORIAS") OpenProgression(); else if (tab == "BAÚS") OpenTreasury(); else SelectTab(tab); }, tab == currentTab ? Sand : White);
                 tabButtonImages.Add(tab, tabButton.GetComponent<Image>());
             }
 
@@ -237,8 +238,8 @@ namespace DigAndWonder
             hubDrillObject.AddComponent<ProceduralAnimator2D>();
 
             MakeHubCard(panel, "Oficina", "ATQ  •  VIDA\nMelhorias disponíveis", new Vector2(0.06f, 0.3f), new Vector2(0.47f, 0.45f), Mint);
-            MakeHubCard(panel, "Garagem", "Brocas alternativas\n🔒 FASE 2", new Vector2(0.53f, 0.3f), new Vector2(0.94f, 0.45f), new Color(0.25f, 0.28f, 0.36f));
-            MakeHubCard(panel, "Baús", "Baús 0  •  Chaves 0\nRecompensas da fase", new Vector2(0.06f, 0.17f), new Vector2(0.47f, 0.29f), Sand);
+            MakeHubCard(panel, "Treino", "Repetir a última fase vencida\nGanhe ouro e XP", new Vector2(0.53f, 0.3f), new Vector2(0.94f, 0.45f), new Color(0.25f, 0.44f, 0.46f));
+            MakeHubCard(panel, "Baús", "Abrir com chaves\nOuro e cristais", new Vector2(0.06f, 0.17f), new Vector2(0.47f, 0.29f), Sand);
             MakeHubCard(panel, "Álbum", "Descobertas da caverna\n🔒 FASE 2", new Vector2(0.53f, 0.17f), new Vector2(0.94f, 0.29f), new Color(0.25f, 0.28f, 0.36f));
             hubLockLabel = MakeLabel("Hub lock status", panel, "Equipamentos e álbum desbloqueiam na Fase 2", 15, White,
                 new Vector2(0.06f, 0.12f), new Vector2(0.94f, 0.17f), TextAlignmentOptions.Center);
@@ -262,6 +263,19 @@ namespace DigAndWonder
                 Button button = card.gameObject.AddComponent<Button>();
                 button.onClick.AddListener(OpenProgression);
             }
+            else if (title == "Baús")
+            {
+                Button button = card.gameObject.AddComponent<Button>();
+                button.onClick.AddListener(OpenTreasury);
+            }
+            else if (title == "Treino")
+            {
+                Button button = card.gameObject.AddComponent<Button>();
+                button.onClick.AddListener(() => {
+                    if (driver.TryStartTraining()) EnterGame(false);
+                    else hubMissionLabel.text = "Vença uma fase e termine a tentativa atual para treinar.";
+                });
+            }
         }
 
         private void OpenProgression()
@@ -273,6 +287,12 @@ namespace DigAndWonder
             hubPanel.gameObject.SetActive(false);
             combatRoot.gameObject.SetActive(false);
             workshop.Show();
+        }
+
+        private void OpenTreasury()
+        {
+            OpenProgression();
+            workshop.Show(2);
         }
 
         private void CloseProgression()
@@ -308,7 +328,7 @@ namespace DigAndWonder
             }
 
             IdleCombatSimulation sim = driver.Simulation;
-            int stageNumber = GetStageNumber(sim.Profile.UnlockedStageId);
+            int stageNumber = sim.Profile.CampaignStage;
             string stageName = sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant();
             hubStageLabel.text = "EXPEDIÇÃO " + stageNumber.ToString("00") + "  •  " + stageName;
             hubWalletLabel.text = "◉ " + sim.Gold;
@@ -372,12 +392,15 @@ namespace DigAndWonder
             IdleCombatSimulation sim = driver.Simulation;
             if (sim == null) return;
             stageLabel.text = sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant();
-            int stageNumber = GetStageNumber(sim.Profile.UnlockedStageId);
+            int stageNumber = sim.Run.CampaignStage;
             missionLabel.text = "MISSÃO " + stageNumber.ToString("00") + "  •  DERROTE O GUARDIÃO  •  " + (sim.Run.IsStageCleared ? "CONCLUÍDA" : "EM ANDAMENTO");
-            if (displayedGold != sim.Gold)
+            if (displayedGold != sim.Gold || displayedCrystals != sim.Profile.Crystals)
             {
                 displayedGold = sim.Gold;
-                walletLabel.text = "◉ " + sim.Gold;
+                displayedCrystals = sim.Profile.Crystals;
+                walletLabel.text = sim.Gold + " ouro\n" + sim.Profile.Crystals + " cristais";
+                walletLabel.transform.DOKill(false);
+                walletLabel.transform.localScale = Vector3.one;
                 walletLabel.transform.DOPunchScale(new Vector3(0.08f, 0.08f, 0), 0.22f, 5, 0.7f);
             }
             healthLabel.text = "BROCA NV. " + driver.CurrentCharacterLevel.Level + "  •  " + Mathf.CeilToInt(sim.PlayerHealth) + " / " + Mathf.CeilToInt(sim.PlayerMaximumHealth);
@@ -439,7 +462,7 @@ namespace DigAndWonder
             {
                 case "MINA":
                     menuTitle.text = "CENTRAL DA EXPEDIÇÃO";
-                    menuBody.text = sim.Run.IsPlayerDefeated ? "A escavação terminou. Toque para recomeçar." : "A broca avança e luta automaticamente.\nO guardião é a única condição de avanço.\n\nFASE " + GetStageNumber(sim.CurrentStageId) + "  •  " + sim.CurrentStageDisplayName;
+                    menuBody.text = sim.Run.IsPlayerDefeated ? "A escavação terminou. Toque para recomeçar." : "A broca avança e luta automaticamente.\nO guardião é a única condição de avanço.\n\nFASE " + sim.Run.CampaignStage + "  •  " + sim.CurrentStageDisplayName;
                     break;
                 case "MELHORIAS":
                     menuTitle.text = "OFICINA DA BROCA";

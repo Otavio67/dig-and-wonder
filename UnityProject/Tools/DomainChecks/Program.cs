@@ -47,6 +47,9 @@ var checks = new (string Name, Action Test)[]
     ("ScriptableObject mapping stays tied to Godot source numbers", GodotNumbersMatchMappedData)
 };
 
+checks = checks.Concat(EconomyChecks.All()).ToArray();
+if (args.Contains("--economy-report")) return EconomyChecks.WriteSimulationReports();
+
 int failed = 0;
 foreach ((string name, Action test) in checks)
 {
@@ -647,14 +650,14 @@ static void LegacySaveMigratesCharacterProgress() => WithSaveDirectory(directory
     byte[] original = File.ReadAllBytes(primary);
     var repository = new AtomicSaveRepository(directory);
     Assert(repository.TryLoad(out GameSaveData migrated, out bool recovered) && !recovered, "save 1 não foi lido");
-    Assert(migrated.SchemaVersion == 2 && migrated.Gold == 137 && migrated.Keys == 2 && migrated.Chests == 3 &&
+    Assert(migrated.SchemaVersion == GameSaveData.CurrentSchemaVersion && migrated.Gold == 137 && migrated.Keys == 2 && migrated.Chests == 3 &&
         migrated.AttackLevel == 4 && migrated.HealthLevel == 2, "migração alterou economia ou níveis existentes");
     Assert(migrated.Characters.Count == 1 && migrated.Characters[0].TotalExperience == 0 && migrated.EquippedCharacterId == "pioneer" &&
         migrated.ActiveRun.CharacterId == "pioneer" && migrated.ActiveRun.ElapsedSeconds == 2f, "migração perdeu tentativa ou inventou XP retroativo");
     Assert(File.ReadAllBytes(primary).SequenceEqual(original), "somente ler já sobrescreveu o save antigo");
     repository.Save(migrated);
     Assert(File.ReadAllBytes(primary + ".bak").SequenceEqual(original), "backup não preservou os bytes originais");
-    Assert(repository.TryLoad(out GameSaveData reopened, out _) && reopened.Characters.Count == 1 && reopened.SchemaVersion == 2,
+    Assert(repository.TryLoad(out GameSaveData reopened, out _) && reopened.Characters.Count == 1 && reopened.SchemaVersion == GameSaveData.CurrentSchemaVersion,
         "save migrado não reabriu sem duplicação");
 });
 
@@ -744,8 +747,8 @@ static void FutureCharacterSaveIsPreserved() => WithSaveDirectory(directory =>
     repository.Save(new GameSaveData { Gold = 7 });
     repository.Save(new GameSaveData { Gold = 14 });
     JObject payload = JObject.FromObject(new GameSaveData());
-    payload["SchemaVersion"] = 3;
-    WriteEnvelope(primary, payload.ToString(Formatting.None), 3);
+    payload["SchemaVersion"] = GameSaveData.CurrentSchemaVersion + 1;
+    WriteEnvelope(primary, payload.ToString(Formatting.None), GameSaveData.CurrentSchemaVersion + 1);
     byte[] original = File.ReadAllBytes(primary);
     Assert(!repository.TryLoad(out _, out _) && repository.HasAnySaveFile && File.ReadAllBytes(primary).SequenceEqual(original),
         "backup antigo substituiu uma versão futura íntegra");
