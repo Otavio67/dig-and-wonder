@@ -33,6 +33,8 @@ bash scripts/check-unity.sh
 
 O Editor fornece a interface de linha de comando, incluindo `-batchmode`; não é necessário um CLI Unity separado. A tentativa real de importação parou por falta de licença Unity ativada nesta máquina. O registro `packages.unity.com` também está bloqueado pela política de rede. Detalhes, fontes e resultados em [UNITY-NUVEM.md](../docs/UNITY-NUVEM.md).
 
+O servidor Coplay MCP 10.0.0 está preparado e registrado no Codex CLI remoto. O protocolo respondeu, mas a consulta encontrou zero Editores conectados. A ponte foi declarada no manifesto; sua importação e a ativação Personal aguardam autenticação/rede. Comandos e evidências em [UNITY-MCP.md](../docs/UNITY-MCP.md).
+
 ## Checagens que rodam sem Unity Editor
 
 No checkout do repositório, com .NET 8:

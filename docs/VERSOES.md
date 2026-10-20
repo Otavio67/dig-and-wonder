@@ -153,3 +153,12 @@ Tag: `v0.0.7`. O projeto Unity e seus limites estão em [UnityProject/README.md]
 - A tentativa real de importação Android foi bloqueada por licença Unity não ativada. Registro de pacotes Unity bloqueado pela política de rede. Sem Play Mode, APK, vídeo ou conexão Unity MCP confirmada.
 
 Checkpoint de preparação, sem nova versão/tag de jogo. Instruções e evidências em [UNITY-NUVEM.md](UNITY-NUVEM.md).
+
+## Preparação MCP e ativação Personal — 20/10/2026
+
+- Coplay MCP 10.0.0 preparado com revisão fixa, dependências Python instaladas pelo lock upstream e cliente HTTP registrado no Codex CLI remoto.
+- Handshake real MCP passou e anunciou 29 ferramentas; consulta de instâncias retornou zero Editores. Ponte declarada no manifesto, com importação ainda pendente.
+- Método Personal confirmado no cliente oficial. Ativação exige autenticação da conta; login/licença/registro de pacotes estão bloqueados pela política de rede atual. Auxiliar de ativação preparado para segredo do ambiente, sem credenciais versionadas.
+- Não houve edição do gameplay, Play Mode, hierarquia pelo Editor, APK ou ativação de licença confirmada. Sem nova versão/tag de jogo.
+
+Instruções e bloqueios: [UNITY-MCP.md](UNITY-MCP.md).

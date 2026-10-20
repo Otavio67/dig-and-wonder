@@ -17,7 +17,7 @@ A instalação ocupa aproximadamente 13 GiB. Reserve pelo menos 16 GiB livres pa
 | DOTween | DLL e módulos do projeto disponíveis; incluídos na checagem C# contra DLLs reais |
 | uGUI 2.0 / TextMeshPro | Presentes nos pacotes embutidos do Editor; TMP vem de `com.unity.ugui` |
 | Demais pacotes UPM do manifesto | Resolução/importação pendente: licença não ativada e registro Unity bloqueado |
-| Unity MCP | Nenhum bridge configurado ou ferramenta MCP Unity exposta nesta sessão |
+| Unity MCP | Coplay 10.0.0 instalado no servidor e registrado no Codex CLI; handshake e 29 ferramentas confirmados, zero Editores conectados; ponte declarada no manifesto, importação pendente |
 
 ## Reproduzir
 
@@ -74,4 +74,4 @@ Logs locais: `.tools/logs/unity-install.log`, `unity-check.log` e `unity-import.
 
 Para continuar a importação e preparar APK, é necessário ativar uma licença Unity válida nesta máquina pelo método oficial adequado à conta e liberar o registro de pacotes no fluxo de configuração do ambiente. Não é necessário aparelho para essas duas etapas. Depois, executar `bash scripts/check-unity.sh` e corrigir os erros reais eventualmente registrados pelo Editor.
 
-Unity Essentials é o pacote de orientações disponível nesta conversa. A conexão MCP exige um bridge adicional com o Editor ativo; o Editor instalado e a checagem CLI não comprovam essa conexão. Nenhum segundo bridge foi adicionado nesta preparação.
+Unity Essentials é o pacote de orientações disponível nesta conversa. A preparação MCP posterior adicionou uma única ponte Coplay e validou a conexão cliente/servidor; o Editor ainda não se conectou. Autenticação Personal, comandos e resultados em [UNITY-MCP.md](UNITY-MCP.md).
