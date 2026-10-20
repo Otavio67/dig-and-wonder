@@ -91,3 +91,24 @@ Validação no Godot 4.7.2 Windows: importação, boot e harnesses de lógica, g
 Evidências locais ignoradas pelo Git: `builds/review/etapa1-20261020/antes/`, `depois/`, `depois/sequencia/` (96 quadros reais, 12 fps), `depois/personagens-animados.gif` e `depois/personagens-detalhe.gif`. A captura é desktop em viewport 540×960; não mede FPS, toque ou memória em Android. Para reproduzir a sequência, execute Godot com `--path . --fixed-fps 12 --audio-driver Dummy --script res://scripts/capture_characters.gd` usando dados de usuário isolados.
 
 Esta etapa não redesenha blocos nem interface. A aparência destes elementos ainda limita a unidade visual. Próxima etapa, após aprovação: materiais dos blocos (etapa 2). A versão publicada continua 0.0.5, sem novo APK ou tag.
+
+
+## Direção de arte aprovada — integração de 20/10/2026
+
+A direção em `docs/DIRECAO-DE-ARTE.md` foi aprovada pelo usuário e recebeu uma correção de estilo durante a execução: fundos pintados, sem contorno, menos saturados, com textura sutil de pincel e sem aparência plástica. A revisão é uma integração artística para avaliação no jogo, sem nova versão/tag ou APK.
+
+- Broca como único protagonista visível; Lia e Bento continuam nos arquivos/rigs, ocultos e sem receber eventos de escavação. A cabine pintada tem visor animado, ponta independente e silhuetas decorativas dos seis modelos existentes.
+- Cinco tratamentos de ambiente em um atlas de fundo, mais duas camadas transparentes ilustradas. Parallax só na cenografia; transição de 1,5 s entre tratamentos e névoa com borda suave. As faixas visuais usam profundidade já existente; Fenda Aurora acompanha a região especial existente. Não são regiões novas.
+- Terreno ilustrado com três variantes por família de material, escolha determinística por coordenada, cores moduladas pelo catálogo existente e fissuras sobre o dano real. Nenhum consumo adicional do RNG de geração/recompensa.
+- Placas de metal com rebites e relevo, ações principais coral, secundárias latão, estados pressionado/desabilitado e ícones próprios. Telas existentes reorganizadas; controles continuam nas mesmas rotinas, com os harnesses usando o layout vigente.
+- Perfuração, impacto visual curto, partículas de material, número da venda calculado a partir do valor real, reação de melhoria e poses fechada/aberta do baú. Confete limitado a 16 traços para Lendária/Única/Mística após abertura real. Falas ocasionais por texto de rádio, sem renderizar os mineiros e com intervalo de 30 s.
+
+### Evidência e validação
+
+Capturas reais: `builds/review/aprovada-20261020/antes/` e `depois/`; GIF `depois/jogo-em-movimento.gif`, com 144 quadros em 12 fps. A gravação demonstra compra real da Prisma e abertura real de um baú. As imagens `ambiente-*.png` são fixtures visuais isoladas das cinco faixas; não comprovam progressão conquistada pelo jogador. Tudo é **execução desktop em viewport de celular** (540×960), além da captura em paisagem com área segura preservada. As saídas ficam locais, ignoradas pelo Git e excluídas do APK.
+
+Importação, boot e harnesses de lógica, gameplay, save, interface e personagens executados no Godot 4.7.2 Windows. O harness de personagens foi adequado à retirada dos mineiros da tela e verifica que permanecem ocultos, além de eventos reais, RNG, pivôs, foco e limite de Tweens. O Bash permaneceu indisponível pelo bloqueio de sandbox já registrado; os comandos equivalentes foram executados diretamente no Windows.
+
+### Limites desta revisão
+
+A avaliação artística final depende da revisão das capturas pelo usuário. Os fundos intermediário/próximo são reutilizados entre faixas; as seis brocas ainda compartilham a carenagem principal e recebem acessórios próprios. Os cartões pequenos podem exigir mais simplificação para melhorar a leitura. O foco está definido no Theme, mas navegação por teclado ainda requer integração própria. Tamanho em dp, toque, FPS, memória, consumo, anúncios e APK não foram validados em aparelho. Nenhuma alteração de balanceamento, formato de save ou fluxo de anúncios foi feita.

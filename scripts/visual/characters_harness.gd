@@ -32,7 +32,8 @@ func _run() -> void:
 	var input_before: Vector2i = game._cell_at(hit_position)
 	var actor_origin: Vector2 = game.crew.companion.position
 	game._perform_dig(cell)
-	assert(game.crew.lia.event_count == 1 and game.crew.bento.event_count == 1)
+	assert(game.crew.lia.event_count == 0 and game.crew.bento.event_count == 0)
+	assert(not game.crew.lia.visible and not game.crew.bento.visible)
 	assert(game.crew.companion.break_count == 1)
 	var inventory_after: int = game.state.inventory
 	game._perform_dig(cell)
@@ -59,9 +60,9 @@ func _run() -> void:
 	await create_timer(0.5).timeout
 	assert(get_processed_tweens().size() <= 7)
 	game._set_app_active(false)
-	var frozen_scale: Vector2 = game.crew.lia.idle_pivot.scale
+	var frozen_scale: Vector2 = game.crew.companion.idle_pivot.scale
 	await create_timer(0.15).timeout
-	assert(game.crew.lia.idle_pivot.scale.is_equal_approx(frozen_scale))
+	assert(game.crew.companion.idle_pivot.scale.is_equal_approx(frozen_scale))
 	game._set_app_active(true)
 	assert(game.state.keys() == game.SaveStore.fresh().keys())
 	print("CHARACTERS_OK event_sync=true empty_cells_idle=true damage_vs_break=true local_pivots=true bounded_tweens=true focus_pause=true rng_unchanged=true save_schema_unchanged=true")

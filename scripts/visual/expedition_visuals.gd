@@ -11,6 +11,11 @@ func _ready() -> void:
 	lia = _actor("lia", "Lia")
 	bento = _actor("bento", "Bento")
 	companion = _actor("drill", "BrocaCompanheira")
+	# Retained for future use; absent from all current game screens.
+	lia.hide()
+	bento.hide()
+	lia.process_mode = Node.PROCESS_MODE_DISABLED
+	bento.process_mode = Node.PROCESS_MODE_DISABLED
 
 func _actor(kind: String, title: String) -> Node2D:
 	var actor := Actor.new()
@@ -26,24 +31,24 @@ func present(mode: String, viewport: Vector2, world_top: float, model: String, a
 	process_mode = Node.PROCESS_MODE_DISABLED if suspended or not visible else Node.PROCESS_MODE_INHERIT
 	if not visible:
 		return
-	var drill_center := Vector2(viewport.x * 0.5, world_top - 44)
-	var drill_size := Vector2(122, 101)
-	var left := Rect2(34, world_top - 104, 55, 82)
-	var right := Rect2(viewport.x - 89, world_top - 104, 55, 82)
+	var drill_center := Vector2(viewport.x * 0.5, world_top - 120)
+	var drill_size := Vector2(270, 204)
+	var left := Rect2(34, world_top - 125, 64, 96)
+	var right := Rect2(viewport.x - 98, world_top - 125, 64, 96)
 	if mode == "start":
 		drill_center = Vector2(viewport.x * 0.5, 296)
 		drill_size = Vector2(224, 185)
 		left = Rect2(50, 251, 67, 101)
 		right = Rect2(viewport.x - 117, 251, 67, 101)
-	elif mode == "character":
-		drill_center = Vector2(viewport.x * 0.5, 306)
-		drill_size = Vector2(102, 84)
-		left = Rect2(49, 270, 43, 65)
-		right = Rect2(viewport.x - 92, 270, 43, 65)
+	elif mode == "character" or mode == "workshop":
+		drill_center = Vector2(viewport.x * 0.5, 218)
+		drill_size = Vector2(204, 136)
+		left = Rect2(38, 198, 61, 91)
+		right = Rect2(viewport.x - 99, 198, 61, 91)
 	_place_miner(lia, left)
 	_place_miner(bento, right)
 	companion.position = drill_center
-	companion.scale = drill_size / Vector2(240, 190)
+	companion.scale = Vector2.ONE * drill_size.y / 240.0
 	companion.set_model(model, accent)
 
 func _place_miner(actor: Node2D, rect: Rect2) -> void:
@@ -54,8 +59,6 @@ func _place_miner(actor: Node2D, rect: Rect2) -> void:
 func mining_event(broke_block: bool) -> void:
 	if not is_node_ready():
 		return
-	lia.mining_event(broke_block)
-	bento.mining_event(broke_block)
 	companion.mining_event(broke_block)
 
 func suspend(value: bool) -> void:

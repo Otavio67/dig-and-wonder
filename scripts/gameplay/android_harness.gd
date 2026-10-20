@@ -18,10 +18,10 @@ func _run() -> void:
 	game.drill.level = 100
 	game._start_game()
 	game.state.inventory = 5
-	game._press_at(Vector2(270, 830)) # Centro do botão Vender, antes executava upgrade.
+	game._press_at(Layout.button("sell", game.size).get_center()) # Centro do botão Vender, antes executava upgrade.
 	assert(game.state.coins == 13 and game.state.inventory == 0 and game.drill.id == "basic")
 	game.state.coins = 30
-	game._press_at(Vector2(270, 910)) # Centro do botão de transformação, antes não respondia.
+	game._press_at(Layout.button("upgrade", game.size).get_center()) # Centro do botão de transformação, antes não respondia.
 	assert(game.drill.id == "prism" and game.state.coins == 0)
 	assert(not Layout.button("sell", game.size).intersects(Layout.button("upgrade", game.size)))
 	game.position = Vector2(38, 54)
@@ -44,7 +44,7 @@ func _run() -> void:
 	var other := InputEventScreenTouch.new()
 	other.index = 1
 	other.pressed = true
-	other.position = Vector2(270, 830)
+	other.position = Layout.button("sell", game.size).get_center()
 	var coins_before: int = game.state.coins
 	game._input(other)
 	assert(game.held and game.active_touch == 0 and game.state.coins == coins_before)

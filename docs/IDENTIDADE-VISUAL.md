@@ -51,7 +51,7 @@ Consulta feita em 20/10/2026 a páginas oficiais do Google Play e ao guia oficia
 
 Os três títulos foram usados como referências de categoria e apresentação. Não são uma avaliação comparativa de qualidade nem autorização para reutilizar seus ativos. As três imagens anexadas pelo usuário são a referência mais direta para composição vertical, máquinas centrais, pequenos mineiros, contraste e energia dos botões.
 
-## Ativos e animação — etapa 1
+## Ativos e animação — etapa 1 (histórico)
 
 Ativos ativos: `assets/personagens/lia_{cabeca,corpo,braco}.svg`, `bento_{cabeca,corpo,braco}.svg`, `cristal.svg`, `chave.svg`, `broca_corpo.svg`, `broca_ponta.svg` e `broca_nucleo.svg`. As formas são originais, escritas em SVG para este projeto a partir da direção existente. A importação em 2× e o filtro linear evitam aparência de pixel art nas peças.
 
@@ -62,3 +62,11 @@ Lia mantém o cristal, capacete dourado e lenço coral; Bento mantém a chave, c
 Os PNGs em `assets/characters/` são a direção anterior e ficam como legado, fora do render ativo. Blocos, tema e polimento continuam pendentes nas etapas 2–4; esta etapa não promete a transformação completa da interface.
 
 Proveniência em `assets/LICENCAS.md`. Evidências reais e limitações em README, seção Etapa visual 1.
+
+## Direção ativa após aprovação
+
+A especificação detalhada está em `DIRECAO-DE-ARTE.md`. O acabamento é cartoon 2D ilustrado: fundos com pincelada sutil, bordas suaves e sem contorno; sprites com desenho legível, metal fosco, sombra de contato e luz coerente. Aparência vetorial não exige que a arte seja SVG. A paleta principal acima permanece.
+
+Broca é a mascote visível. Lia e Bento ficam preservados e ocultos; texto de rádio pode citar seus nomes. O render ativo usa `assets/ilustracoes/maquina-baus-atlas.png`, `assets/terreno/materiais-atlas.png`, `assets/ambientes/ambientes-atlas.png`, `intermediario.png` e `proximo.png`. As peças SVG de mineiros ficam disponíveis para uso futuro. A broca SVG anterior é legado.
+
+O atlas distante contém cinco composições; os dois planos transparentes próximos são reutilizados, com deslocamento independente. As faixas são tratamentos cenográficos da profundidade, sem novas regiões. Placas de ação são coral; secundárias são latão, com rebites e volume curto. A revisão e seus limites estão registrados no README; capturas em `builds/review/aprovada-20261020/`.

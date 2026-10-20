@@ -21,6 +21,7 @@ var tool: Sprite2D
 var eyes: Eyes
 var tip_drive: Node2D
 var core: Sprite2D
+var model_details: Node2D
 var extra_tips: Array[Sprite2D] = []
 var idle_tween: Tween
 var blink_tween: Tween
@@ -31,7 +32,7 @@ var tip_tween: Tween
 var mining_left := 0.0
 var event_count := 0
 var break_count := 0
-const TIP_REST := -0.35
+const TIP_REST := 0.0
 const ARM_REST := -0.8
 
 func _ready() -> void:
@@ -83,25 +84,40 @@ func _build_miner() -> void:
 	head_pivot.add_child(eyes)
 
 func _build_drill() -> void:
-	for at in [Vector2(-27, 10), Vector2(-14, 35)]:
+	for at in [Vector2(-53, 72), Vector2(53, 72)]:
 		var mount := _pivot(impact_pivot, "PontaAuxiliar", at)
 		mount.rotation = TIP_REST
 		mount.scale = Vector2(0.6, 0.6)
-		var extra := _part(mount, "broca_ponta.svg", Vector2(-79, -34))
+		var extra := _illustration(mount, Rect2(730, 35, 490, 615), Rect2(-40, -5, 80, 108))
 		extra.visible = false
 		extra_tips.append(extra)
-	_part(impact_pivot, "broca_corpo.svg", Vector2(-110, -90))
-	var core_pivot := _pivot(impact_pivot, "Nucleo", Vector2(7, -68))
+	_illustration(impact_pivot, Rect2(15, 15, 685, 625), Rect2(-110, -100, 220, 200))
+	model_details = preload("res://scripts/visual/model_details.gd").new()
+	impact_pivot.add_child(model_details)
+	var core_pivot := _pivot(impact_pivot, "Nucleo", Vector2(0, -79))
 	core_pivot.scale = Vector2(0.7, 0.7)
 	core = _part(core_pivot, "broca_nucleo.svg", Vector2(-25, -30))
-	tip_drive = _pivot(impact_pivot, "EixoPonta", Vector2(-50, 9))
+	core.hide()
+	tip_drive = _pivot(impact_pivot, "EixoPonta", Vector2(0, 70))
 	tip_drive.rotation = TIP_REST
-	_part(tip_drive, "broca_ponta.svg", Vector2(-79, -34))
+	_illustration(tip_drive, Rect2(730, 35, 490, 615), Rect2(-40, -5, 80, 108))
 	eyes = Eyes.new()
 	eyes.name = "Olhos"
 	eyes.mechanical = true
-	eyes.position = Vector2(3, -12)
+	eyes.position = Vector2(0, -31)
 	impact_pivot.add_child(eyes)
+
+func _illustration(parent: Node, region: Rect2, target: Rect2) -> Sprite2D:
+	var atlas := AtlasTexture.new()
+	atlas.atlas = load("res://assets/ilustracoes/maquina-baus-atlas.png")
+	atlas.region = region
+	var sprite := Sprite2D.new()
+	sprite.texture = atlas
+	sprite.centered = false
+	sprite.position = target.position
+	sprite.scale = target.size / region.size
+	parent.add_child(sprite)
+	return sprite
 
 func _start_idle() -> void:
 	idle_tween = create_tween().set_loops()
@@ -161,5 +177,6 @@ func set_model(model: String, accent: Color) -> void:
 		return
 	for extra in extra_tips:
 		extra.visible = model in ["prism", "trinca"]
+	model_details.set_model(model)
 	# Skin accent stays visual; modifiers remain in the existing equipment system.
 	core.modulate = Color(accent.r, accent.g, accent.b).lightened(0.25)

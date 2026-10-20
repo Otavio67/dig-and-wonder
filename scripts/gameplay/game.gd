@@ -8,13 +8,20 @@ const EquipmentSystem = preload("res://scripts/progression/equipment_system.gd")
 const PhaseSystem = preload("res://scripts/progression/phase_system.gd")
 const Layout = preload("res://scripts/gameplay/ui_layout.gd")
 const CrewVisuals = preload("res://scripts/visual/expedition_visuals.gd")
+const ArtDirection = preload("res://scripts/visual/art_direction.gd")
+const TerrainArt = preload("res://scripts/visual/terrain_art.gd")
+const ExpeditionTheme = preload("res://assets/ui/expedition_theme.tres")
 const AUTOSAVE_INTERVAL := 1.0
 const BIOME_PATH := "res://content/biomes/prado_cristalino.json"
 const PHASE_PATH := "res://content/phases/catalog.json"
 
-const BG := Color("#82dfd4")
-const INK := Color("#294456")
-const PANEL := Color("#fff9e8")
+const BG := Color("#123448")
+const INK := Color("#173746")
+const PANEL := Color("#fff4d8")
+const OUTLINE := Color("#17303d")
+const TEAL := Color("#39d4c1")
+const CORAL := Color("#f27c67")
+const BRASS := Color("#f2b84b")
 
 var biome: Dictionary
 var state: Dictionary
@@ -55,10 +62,25 @@ var save_elapsed := 0.0
 var save_failed := false
 var panel_styles: Dictionary = {}
 var crew
+var art := ArtDirection.new()
+var sale_float := 0.0
+var sale_value := 0
+var impact_left := 0.0
+var radio_text := ""
+var radio_left := 0.0
+var last_radio := -30.0
+var ui_press := Vector2(-1000, -1000)
+var icon_cache: Dictionary = {}
+var ui_styles: Dictionary = {}
+var block_echoes: Array[Dictionary] = []
+var loot_flash := 0.0
+var upgrade_flash := 0.0
 
 func _ready() -> void:
 	get_tree().auto_accept_quit = false
 	get_tree().quit_on_go_back = false
+	theme = ExpeditionTheme
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	custom_minimum_size = Vector2(300, 560)
 	crew = CrewVisuals.new()
 	add_child(crew)
@@ -114,6 +136,8 @@ func _cancel_pointer() -> void:
 	camera_dragging = false
 	charge = 0.0
 	active_touch = -1
+	ui_press = Vector2(-1000, -1000)
+	queue_redraw()
 
 func _release_pointer() -> void:
 	_cancel_pointer()
@@ -169,7 +193,26 @@ func _process(delta: float) -> void:
 		save_elapsed += delta
 		if save_elapsed >= AUTOSAVE_INTERVAL:
 			_commit_save()
-	var changed := false
+	var previous_environment: int = art.target
+	art.update(delta, int(state.depth) * 2, phase_system.current_id(state))
+	if previous_environment != art.target and not show_start_screen:
+		if art.target == 4:
+			_radio("Lia", "Isso não parece uma caverna comum...")
+		else:
+			_radio("Bento", "Rocha nova. Vamos com calma.")
+	radio_left = maxf(0, radio_left - delta)
+	sale_float = maxf(0, sale_float - delta)
+	impact_left = maxf(0, impact_left - delta)
+	var changed := true
+	if loot_flash > 0.0 or upgrade_flash > 0.0:
+		loot_flash = maxf(0, loot_flash - delta)
+		upgrade_flash = maxf(0, upgrade_flash - delta)
+		changed = true
+	for i in range(block_echoes.size() - 1, -1, -1):
+		block_echoes[i].life -= delta
+		if block_echoes[i].life <= 0:
+			block_echoes.remove_at(i)
+		changed = true
 	if held and not camera_dragging and not show_start_screen and not show_album and not show_workshop:
 		var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 		var dig_interval := clampf(0.17 - float(boosts.speed), 0.07, 0.42)
@@ -229,6 +272,8 @@ func _local_pointer(viewport_position: Vector2) -> Vector2:
 	return get_global_transform_with_canvas().affine_inverse() * viewport_position
 
 func _press_at(pos: Vector2) -> void:
+	ui_press = pos
+	queue_redraw()
 	if not Rect2(Vector2.ZERO, size).has_point(pos):
 		return
 	if show_start_screen:
@@ -304,6 +349,7 @@ func _perform_dig(cell: Vector2i) -> void:
 	var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 	var result := engine.dig(drill.pattern, cell.x, cell.y, maxi(1, drill.level + int(boosts.power)), int(boosts.reward), phase_system.end_depth(state))
 	if result.worked > 0 or result.broken > 0:
+		impact_left = 0.10
 		if is_instance_valid(crew):
 			crew.mining_event(result.broken > 0)
 	if result.broken <= 0:
@@ -317,7 +363,12 @@ func _perform_dig(cell: Vector2i) -> void:
 		var old_depth := int(state.depth)
 		state.depth = maxi(old_depth, target.y + 1)
 		var broken_layer: Dictionary = engine.layer_for_cell(target.y, target.x)
+		if str(broken_layer.get("name", "")).to_lower().contains("cristal"):
+			_radio("Lia", "Olha esse brilho. Tem mais coisa aqui.")
 		_spawn_particles(_cell_center(target), 4, Color(str(broken_layer.get("color", "#c98964"))))
+		block_echoes.append({"cell": target, "life": 0.22, "color": Color(str(broken_layer.color))})
+		if block_echoes.size() > 12:
+			block_echoes.pop_front()
 		_collect_phase_marker(target)
 		var active_phase: Dictionary = phase_system.phases.get(phase_system.phase_id_at(state, target.y), {})
 		var discovery: Dictionary = active_phase.get("discovery", biome.discovery)
@@ -474,6 +525,7 @@ func _open_chest() -> void:
 	var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 	var result: Dictionary = equipment.open_chest(state, int(state.depth), 7042, int(boosts.luck))
 	if result.ok:
+		loot_flash = 1.1
 		var loot: Dictionary = result.item
 		if loot.duplicate:
 			_toast("%s repetido · +%d moedas" % [loot.name, loot.coins])
@@ -526,6 +578,8 @@ func _sell() -> void:
 		_toast("A mochila ainda está vazia.")
 		return
 	var first_sale_bonus := 8 if not state.get("first_sale_bonus_claimed", false) else 0
+	sale_value = Economy.sell_coins(amount, first_sale_bonus)
+	sale_float = 0.8
 	state.coins += Economy.sell_coins(amount, first_sale_bonus)
 	state.inventory = 0
 	if first_sale_bonus > 0:
@@ -541,6 +595,7 @@ func _upgrade() -> void:
 			drill.equip("prism")
 			state.drill = drill.id
 			_toast("Broca Prisma equipada! Agora abre 3 túneis.")
+			upgrade_flash = 0.8
 			_commit_save()
 			return
 		var cost := 30
@@ -561,19 +616,27 @@ func _upgrade() -> void:
 		state.coins = Economy.buy(int(state.coins), cost)
 		drill.level += 1
 		_toast("Broca reforçada: quebra pedra mais resistente.")
+	upgrade_flash = 0.8
 	_commit_save()
 
 func _toast(message: String) -> void:
 	toast = message
 	toast_time = 2.4
 
+func _radio(speaker: String, message: String) -> void:
+	if art.clock - last_radio < 30.0:
+		return
+	last_radio = art.clock
+	radio_text = speaker + ": " + message
+	radio_left = 3.0
+
 func _draw() -> void:
 	var s := size
 	var mode := "mining"
-	if show_album or (show_workshop and menu_tab != "character"):
+	if show_album:
 		mode = "hidden"
 	elif show_workshop:
-		mode = "character"
+		mode = "character" if menu_tab == "character" else "workshop"
 	elif show_start_screen:
 		mode = "start"
 	crew.present(mode, s, Layout.WORLD_TOP, drill.id, drill.accent)
@@ -586,40 +649,40 @@ func _draw() -> void:
 		_draw_start_screen(s)
 	else:
 		_draw_hud(s)
+		var shake := Vector2(sin(impact_left * 190) * impact_left * 15, cos(impact_left * 150) * impact_left * 9)
+		draw_set_transform(shake)
 		_draw_world(s)
+		draw_set_transform(Vector2.ZERO)
 		_draw_controls(s)
 	_draw_particles()
+	if sale_float > 0 and not show_workshop and not show_album:
+		var y := s.y - 166 - (0.8 - sale_float) * 42
+		_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.27, y), "+%d moedas" % sale_value, HORIZONTAL_ALIGNMENT_CENTER, 200, 20, Color(BRASS, minf(1, sale_float * 3)))
+	if not show_workshop and not show_album and not show_start_screen:
+		for echo in block_echoes:
+			var k := float(echo.life) / 0.22
+			var center := _cell_center(echo.cell)
+			if center.y >= grid_origin_y and center.y < world_bottom:
+				draw_arc(center, (1 - k) * 30 + 7, 0, TAU, 20, Color(echo.color, k), 3 * k, true)
 	if toast_time > 0.0:
 		_draw_panel(Rect2(12, s.y - 310, s.x - 24, 64), INK, 16)
 		_wrapped_text(Rect2(24, s.y - 299, s.x - 48, 48), toast, 16, PANEL)
 
 func _draw_background(s: Vector2) -> void:
-	var phase := _active_phase()
-	draw_rect(Rect2(Vector2.ZERO, s), Color(str(phase.get("sky", "#82dfd4"))))
-	# Sol, nuvens e colinas: shapes nativas, custo baixo e contornos redondos.
-	draw_circle(Vector2(s.x - 47.0, 61.0), 35.0, Color("#fff1ae"))
-	draw_circle(Vector2(65.0, 115.0), 56.0, Color("#b8efdb"))
-	draw_circle(Vector2(9.0, 137.0), 47.0, Color("#b8efdb"))
-	draw_circle(Vector2(s.x - 15.0, 130.0), 45.0, Color("#b8efdb"))
-	draw_rect(Rect2(0, 131, s.x, s.y - 131), Color(str(phase.get("surface", "#f5d488"))).lightened(0.33))
-	# Faixa de superfície com costura sinuosa.
-	draw_rect(Rect2(0, 138, s.x, 16), Color("#a8dc79"))
-	for i in range(0, ceili(s.x / 24.0)):
-		var x := float(i) * 24.0
-		draw_circle(Vector2(x + 7.0, 138.0 + float(i % 2) * 3.0), 3.5, Color("#78ba61"))
+	art.background(self, s, camera_depth)
+	# A translucent visor supports the compact HUD without hiding the environment.
+	draw_rect(Rect2(0, 0, s.x, 153), Color("#0B202D", 0.42))
 
 func _draw_hud(s: Vector2) -> void:
-	var phase := _active_phase()
-	_draw_pill(Rect2(17, 16, 150, 43), PANEL, 18)
-	draw_string(ThemeDB.fallback_font, Vector2(31, 44), "◉  %d" % state.coins, HORIZONTAL_ALIGNMENT_LEFT, 110, 21, Color("#c18431"))
-	_draw_pill(Layout.button("album", s), PANEL, 18)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x - 156, 50), "ÁLBUM  ✦ %d/%d" % [state.discoveries.size(), phase_system.phases.size()], HORIZONTAL_ALIGNMENT_CENTER, 128, 14, INK)
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "FASE %d  ·  %s  ·  %dm" % [int(state.phase_index) + 1, phase.get("name", "Mina"), state.depth * 2], HORIZONTAL_ALIGNMENT_CENTER, s.x - 28, 13, INK)
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 92), _goal_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 44, 12, Color("#416878"))
-	var labels := ["BAÚS %d · 🔑%d" % [state.get("chests", 0), state.get("keys", 0)], "EQUIPAMENTOS", "PERSONAGEM"]
-	for i in range(3):
-		var rect := Layout.tab(i, s)
-		_draw_button(rect, Color("#e6f4db"), str(labels[i]), INK)
+	_draw_panel(Rect2(16, 14, 145, 50), Color("#204A58"), 17, true)
+	_icon("coin", Rect2(24, 21, 35, 35))
+	draw_string(ThemeDB.fallback_font, Vector2(65, 47), str(state.coins), HORIZONTAL_ALIGNMENT_LEFT, 82, 24, PANEL)
+	_draw_button(Layout.button("album", s), Color("#204A58"), "ÁLBUM  %d/%d" % [state.discoveries.size(), phase_system.phases.size()], PANEL)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 91), str(_active_phase().get("name", "Mina")).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 38, 18, PANEL)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 113), "%d m  /  EXPEDIÇÃO %02d" % [int(state.depth) * 2, int(state.phase_index) + 1], HORIZONTAL_ALIGNMENT_CENTER, s.x - 38, 12, TEAL)
+	_draw_panel(Rect2(28, 120, s.x - 56, 24), Color("#204A58"), 10)
+	var message := radio_text if radio_left > 0 and toast_time <= 0 else _goal_text()
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 136), message, HORIZONTAL_ALIGNMENT_CENTER, s.x - 68, 10, Color("#B7FFF1"))
 
 func _goal_text() -> String:
 	if _boss_is_active():
@@ -648,25 +711,32 @@ func _goal_text() -> String:
 	return "JUNTE %d ◉ · %d m ATÉ O CHEFE" % [next_cost, remaining_to_boss]
 
 func _draw_start_screen(s: Vector2) -> void:
-	draw_circle(Vector2(s.x * 0.5, 286), 88, Color("#b8efdb"))
-	draw_circle(Vector2(s.x * 0.5, 279), 68, Color("#d5f2dd"))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 402), "DIG & WONDER", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 36, Color("#3d5c6d"))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 438), "O que será que existe logo abaixo?", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 16, Color("#416878"))
-	_draw_pill(Rect2(28, 478, s.x - 56, 66), PANEL, 18)
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 505), "PRADO CRISTALINO", HORIZONTAL_ALIGNMENT_CENTER, s.x - 84, 16, INK)
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 528), "Escave · colete · descubra", HORIZONTAL_ALIGNMENT_CENTER, s.x - 84, 12, Color("#66808a"))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 592), "Segure no terreno para cavar", HORIZONTAL_ALIGNMENT_CENTER, s.x - 60, 19, INK)
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 622), "Arraste para explorar a profundidade", HORIZONTAL_ALIGNMENT_CENTER, s.x - 60, 16, Color("#416878"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 83), "EXPEDIÇÃO SUBTERRÂNEA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 56, 12, Color("#d6bd81"))
+	draw_circle(Vector2(s.x * 0.5, 287), 117, Color("#1e5a64", 0.82))
+	draw_circle(Vector2(s.x * 0.5, 282), 88, Color("#2d8f83", 0.82))
+	draw_arc(Vector2(s.x * 0.5, 282), 102, 0.3, 3.05, 36, Color("#edbd61"), 3.0, true)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 445), "DIG & WONDER", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 37, Color("#fff3d4"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 478), "Pequenas pistas. Grandes descobertas.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 15, Color("#b9d9cf"))
+	_draw_pill(Rect2(31, 516, s.x - 62, 68), Color("#f6edda"), 18)
+	draw_circle(Vector2(59, 550), 11, TEAL)
+	draw_circle(Vector2(59, 550), 5, Color("#f6edda"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5 + 23, 548), "PRADO CRISTALINO", HORIZONTAL_ALIGNMENT_CENTER, s.x - 112, 15, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5 + 23, 568), "Sua primeira expedição", HORIZONTAL_ALIGNMENT_CENTER, s.x - 112, 11, Color("#5d7778"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 637), "Segure para escavar", HORIZONTAL_ALIGNMENT_CENTER, s.x - 60, 20, Color("#fff3d4"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 665), "Arraste para descobrir o que vem depois", HORIZONTAL_ALIGNMENT_CENTER, s.x - 60, 13, Color("#b9d9cf"))
 	var button_label := "CONTINUAR" if has_existing_save else "INICIAR ESCAVAÇÃO"
-	_draw_button(Layout.button("start", s), Color("#37cbb9"), button_label, Color("#173d4b"))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 77), "PROGRESSO SALVO AUTOMATICAMENTE", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 11, Color("#55707a"))
+	_draw_button(Layout.button("start", s), BRASS, button_label, Color("#3b2b1c"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 77), "PROGRESSO SALVO AUTOMATICAMENTE", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 11, Color("#bed2c6"))
 
 func _draw_world(s: Vector2) -> void:
 	var top := Layout.WORLD_TOP
 	var bottom := s.y - Layout.FOOTER_HEIGHT
 	grid_origin_y = top
 	world_bottom = bottom
-	draw_rect(Rect2(0, top, s.x, bottom - top), Color(str(_active_phase().get("rock", "#f0cf91"))))
+	var phase := _active_phase()
+	var rock_color := Color(str(phase.get("rock", "#826277")))
+	draw_rect(Rect2(23, top, s.x - 46, bottom - top), Color("#17303D"))
+	draw_line(Vector2(28, top - 3), Vector2(s.x - 28, top - 3), Color("#9D603D"), 5, true)
 	var visible_rows := ceili((bottom - top) / cell_size) + 1
 	for screen_row in range(visible_rows):
 		var depth := camera_depth + screen_row
@@ -677,18 +747,12 @@ func _draw_world(s: Vector2) -> void:
 			var y := top + float(screen_row) * cell_size
 			var rect := Rect2(x, y, cell_size, cell_size)
 			if engine.is_dug(col, depth):
-				draw_rect(rect, Color("#f4d896"))
-				draw_rect(Rect2(x + 2, y + 3, cell_size - 4, cell_size - 5), Color("#f8e8bd"))
+				draw_rect(rect, Color("#192f3e"))
+				draw_line(Vector2(x + 6, y + cell_size - 4), Vector2(x + cell_size - 7, y + cell_size - 4), Color("#20404D"), 1.5, true)
 			else:
 				var layer: Dictionary = engine.layer_for_cell(depth, col)
-				var fill: Color = Color(layer.color)
-				draw_rect(rect, fill)
-				draw_rect(Rect2(x + 3, y + 3, cell_size - 6, cell_size - 7), fill.lightened(0.10))
-				draw_circle(Vector2(x + 12 + float(posmod(col * 13 + depth * 7, 27)), y + 16 + float(posmod(depth * 11 + col * 5, 22))), 2.4, fill.darkened(0.14))
-				if int(layer.reward) >= 8:
-					var ore_center := Vector2(x + cell_size * 0.5, y + cell_size * 0.5)
-					draw_colored_polygon(PackedVector2Array([ore_center + Vector2(0, -13), ore_center + Vector2(11, 0), ore_center + Vector2(0, 13), ore_center + Vector2(-11, 0)]), fill.lightened(0.42))
-					draw_line(ore_center + Vector2(0, -9), ore_center + Vector2(0, 7), Color.WHITE, 2.0, true)
+				var damage_key := "%d:%d" % [col, depth]
+				TerrainArt.draw_cell(self, rect, layer, col, depth, int(engine.durability.get(damage_key, 0)))
 				var phase_index := floori(float(depth) / float(phase_system.cells_per_phase))
 				var phase_id := phase_system.phase_id_at(state, depth)
 				var marker_phase: Dictionary = phase_system.phases.get(phase_id, {})
@@ -700,12 +764,17 @@ func _draw_world(s: Vector2) -> void:
 					_draw_marker_icon(Vector2(x + cell_size * 0.5, y + cell_size * 0.5), "key")
 				elif _has_phase_marker(marker_phase, "chest", phase_index, cell):
 					_draw_marker_icon(Vector2(x + cell_size * 0.5, y + cell_size * 0.5), "chest")
-	# Mina lateral, fita e broca central.
-	draw_rect(Rect2(0, top, 5, bottom - top), Color("#ddae68"))
-	var surface_line := PackedVector2Array([Vector2(0, top), Vector2(s.x * 0.5 - 39, top), Vector2(s.x * 0.5 - 25, top - 5), Vector2(s.x * 0.5 + 27, top - 5), Vector2(s.x * 0.5 + 42, top), Vector2(s.x, top)])
-	draw_polyline(surface_line, Color(str(_active_phase().get("surface", "#75b85d"))).lightened(0.2), 6.0, true)
-	_draw_pill(Rect2(s.x - 105, top + 11, 89, 30), PANEL, 13)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x - 97, top + 32), "%d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, 73, 14, INK)
+	if held and not camera_dragging and not attacking_boss:
+		var selected := Rect2(_cell_center(mine_target) - Vector2.ONE * cell_size * 0.5, Vector2.ONE * cell_size)
+		if selected.position.y >= top and selected.end.y <= bottom:
+			draw_rect(selected.grow(-2), Color("#B7FFF1"), false, 2, true)
+			if not engine.is_dug(mine_target.x, mine_target.y):
+				var contact := selected.get_center()
+				var shaft := PackedVector2Array([Vector2(s.x * 0.5, top - 13), Vector2(s.x * 0.5, top + 6), contact])
+				draw_polyline(shaft, OUTLINE, 8, true)
+				draw_polyline(shaft, TEAL, 3, true)
+	_draw_pill(Rect2(s.x - 112, top + 8, 96, 32), Color("#fff2d0"), 14)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x - 105, top + 29), "◈ %d" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, 82, 14, INK)
 	if _boss_is_active():
 		var boss_center := _boss_center()
 		if boss_center.y >= top + 50.0 and boss_center.y <= bottom - 50.0:
@@ -751,27 +820,29 @@ func _draw_boss(center: Vector2) -> void:
 	var bar := Rect2(center.x - 62, center.y + 43, 124, 8)
 	_draw_panel(bar, PANEL, 4)
 	var ratio := clampf(float(state.boss_health) / maxf(1.0, float(boss.get("health", 1))), 0.0, 1.0)
-	_draw_panel(Rect2(bar.position, Vector2(bar.size.x * ratio, bar.size.y)), Color("#ef6a65"), 4)
-	_centered_string(ThemeDB.fallback_font, Vector2(center.x, center.y - 49), str(boss.get("name", "CHEFE")), HORIZONTAL_ALIGNMENT_CENTER, 200, 13, INK)
-
+	_draw_panel(Rect2(bar.position, Vector2(bar.size.x * ratio, bar.size.y)), CORAL, 4)
+	_centered_string(ThemeDB.fallback_font, Vector2(center.x, center.y - 49), str(boss.get("name", "CHEFE")), HORIZONTAL_ALIGNMENT_CENTER, 200, 13, Color("#fff4d8"))
 
 func _draw_controls(s: Vector2) -> void:
-	draw_rect(Rect2(0, s.y - Layout.FOOTER_HEIGHT, s.x, Layout.FOOTER_HEIGHT), Color("#fff9e8"))
-	draw_line(Vector2(18, s.y - Layout.FOOTER_HEIGHT), Vector2(s.x - 18, s.y - Layout.FOOTER_HEIGHT), Color("#e3d9bd"), 2.0)
-	_draw_pill(Rect2(18, s.y - 218, s.x - 36, 40), Color("#e8f2d7"), 16)
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 192), "VALOR NA MOCHILA  %d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, s.x - 55, 15, INK)
-	_draw_button(Layout.button("sell", s), Color("#f6c15f"), "VENDER PEDRAS  ·  +%d" % state.inventory, Color("#543e23"))
-	var upgrade_text: String
-	var cost: int
+	_draw_panel(Rect2(0, s.y - Layout.FOOTER_HEIGHT, s.x, Layout.FOOTER_HEIGHT + 12), Color("#17303D"), 24)
+	_icon("bag", Rect2(21, s.y - 169, 31, 31))
+	draw_string(ThemeDB.fallback_font, Vector2(60, s.y - 147), "MOCHILA  /  %d MOEDAS" % state.inventory, HORIZONTAL_ALIGNMENT_LEFT, s.x - 95, 14, PANEL)
+	var sell_rect := Layout.button("sell", s)
+	_action(sell_rect, "coin", "VENDER PEDRAS", "+%d moedas" % state.inventory, BRASS, int(state.inventory) > 0)
+	var cost := 18 + (drill.level - 1) * 16
+	var title := "REFORÇAR NV.%d" % drill.level
 	if drill.id == "basic":
-		var has_prism: bool = state.get("drill_inventory", []).has("prism")
-		upgrade_text = "EQUIPAR PRISMA" if has_prism else "BROCA PRISMA  ·  30 ◉"
-		cost = 0 if has_prism else 30
-	else:
-		cost = 18 + (drill.level - 1) * 16
-		upgrade_text = "REFORÇAR NV.%d  ·  %d ◉" % [drill.level, cost]
-	var enabled := int(state.coins) >= cost
-	_draw_button(Layout.button("upgrade", s), Color("#37cbb9") if enabled else Color("#c5d7ce"), upgrade_text, Color("#173d4b"))
+		cost = 0 if state.get("drill_inventory", []).has("prism") else 30
+		title = "EQUIPAR PRISMA" if cost == 0 else "BROCA PRISMA"
+	_action(Layout.button("upgrade", s), "picareta", title, "%d moedas" % cost, TEAL, int(state.coins) >= cost)
+	var labels := ["BAÚS %d" % state.get("chests", 0), "EQUIPAMENTOS", "PERSONAGEM"]
+	for i in range(3):
+		var r := Layout.tab(i, s)
+		_draw_panel(r, Color("#244954"), 10)
+		_icon(["chest", "gear", "drill"][i], Rect2(r.position + Vector2(8, 9), Vector2(30, 30)))
+		draw_string(ThemeDB.fallback_font, r.position + Vector2(41, 32), labels[i], HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 46, 11, PANEL)
+	if upgrade_flash > 0:
+		_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 185 - (0.8 - upgrade_flash) * 15), "BROCA MELHORADA!", HORIZONTAL_ALIGNMENT_CENTER, s.x - 40, 20, Color(TEAL, minf(1, upgrade_flash * 2)))
 
 func _draw_album(s: Vector2) -> void:
 	_draw_panel(Rect2(16, 174, s.x - 32, s.y - 202), PANEL, 24)
@@ -782,62 +853,72 @@ func _draw_album(s: Vector2) -> void:
 	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 327), "✦" if found else "?", HORIZONTAL_ALIGNMENT_CENTER, 65, 42, Color("#55bba5"))
 	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 408), str(discovery.get("name", "Achado")) if found else "Descoberta oculta", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 18, INK)
 	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 441), str(discovery.get("description", "Continue escavando para encontrar algo.")) if found else "Continue escavando para encontrar algo.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 13, Color("#66808a"))
-	_draw_button(Layout.button("back", s), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
+	_draw_button(Layout.button("back", s), BRASS, "VOLTAR À ESCAVAÇÃO", Color("#49351d"))
 
 func _draw_workshop(s: Vector2) -> void:
-	draw_rect(Rect2(Vector2.ZERO, s), Color("#82dfd4"))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "OFICINA DE ACHADOS", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 28, INK)
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 104), "Monte sua broca e descubra novas combinações", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 16, INK)
-	_draw_panel(Rect2(14, 154, s.x - 28, s.y - 174), PANEL, 22)
+	_draw_hud(s)
+	draw_line(Vector2(26, 307), Vector2(s.x - 26, 307), BRASS, 5, true)
+	_draw_panel(Rect2(8, 324, s.x - 16, s.y - 332), Color("#17303D"), 24, true)
 	_draw_menu_tabs(s)
 	match menu_tab:
-		"equipment":
-			_draw_equipment_menu(s)
-		"character":
-			_draw_character_menu(s)
-		_:
-			_draw_chest_menu(s)
-	_draw_button(Layout.button("back", s), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
+		"equipment": _draw_equipment_menu(s)
+		"character": _draw_character_menu(s)
+		_: _draw_chest_menu(s)
+	_draw_button(Layout.button("back", s), Color("#244954"), "VOLTAR À ESCAVAÇÃO", PANEL)
 
 func _draw_menu_tabs(s: Vector2) -> void:
-	var width := (s.x - 42.0) / 3.0
-	var names := ["BAÚS", "EQUIPAMENTOS", "PERSONAGEM"]
-	var ids := ["chests", "equipment", "character"]
 	for i in range(3):
-		var color := Color("#37cbb9") if menu_tab == ids[i] else Color("#e8f2d7")
-		_draw_button(Layout.tab(i, s, true), color, names[i], INK)
+		var chosen: bool = menu_tab == ["chests", "equipment", "character"][i]
+		var r := Layout.tab(i, s, true)
+		_draw_panel(r, Color("#244954") if chosen else Color("#17303D"), 7)
+		_icon(["chest", "gear", "drill"][i], Rect2(r.position + Vector2(8, 10), Vector2(29, 29)))
+		draw_string(ThemeDB.fallback_font, r.position + Vector2(39, 32), ["BAÚS", "EQUIPAMENTOS", "PERSONAGEM"][i], HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 43, 11, BRASS if chosen else PANEL)
+		if chosen:
+			draw_line(r.position + Vector2(11, r.size.y - 3), r.end - Vector2(11, 3), BRASS, 4, true)
 
 func _draw_chest_menu(s: Vector2) -> void:
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 270), "BAÚS DE DESCOBERTA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 21, INK)
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 310), "%d baú(s) guardado(s)  ·  %d chave(s)" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 15, Color("#55707a"))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 347), "Chaves e baús aparecem cavando. Nada expira.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 12, Color("#55707a"))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 383), _chest_rule_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 11, Color("#287d6d"))
-	draw_string(ThemeDB.fallback_font, Vector2(32, 416), "CHANCES INICIAIS", HORIZONTAL_ALIGNMENT_LEFT, s.x - 84, 13, INK)
-	var odds := ["Ruim 28%", "Boa 36%", "Épica 22%", "Lendária 9%", "Única 3,5%", "Mística 1,5%"]
-	for i in range(odds.size()):
-		var y := 440.0 + float(i / 2) * 43.0
-		var x := 32.0 + float(i % 2) * (s.x * 0.5 - 22.0)
-		_draw_pill(Rect2(x, y, s.x * 0.5 - 56, 34), _rarity_color(["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"][i]).lightened(0.66), 11)
-		draw_string(ThemeDB.fallback_font, Vector2(x + 8, y + 22), odds[i], HORIZONTAL_ALIGNMENT_CENTER, s.x * 0.5 - 72, 12, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(32, 598), "ÚLTIMO ACHADO", HORIZONTAL_ALIGNMENT_LEFT, s.x - 84, 13, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 418), "BAÚS DE DESCOBERTA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 22, PANEL)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 443), "%d baú(s) guardado(s)   /   %d chave(s)" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 14, TEAL)
+	var pulse := sin(loot_flash * 18) * loot_flash * 5
+	var center := Vector2(s.x * 0.5, 527)
+	draw_circle(center, 76, Color("#244954"))
+	draw_arc(center, 79, 0.2, 2.7, 30, BRASS, 2, true)
+	if loot_flash > 0:
+		for ray in range(10):
+			var direction := Vector2.from_angle(float(ray) * TAU / 10 + loot_flash)
+			draw_line(center + direction * 79, center + direction * (84 + loot_flash * 18), Color(BRASS, minf(1, loot_flash)), 3, true)
+		var rarity := str(state.get("last_loot", {}).get("rarity", ""))
+		if rarity in ["Lendária", "Única", "Mística"]:
+			var age := 1.1 - loot_flash
+			for fragment in range(16):
+				var direction := Vector2.from_angle(float(fragment) * TAU / 16)
+				var at := center + direction * age * 120 + Vector2(0, age * age * 65)
+				draw_line(at, at + Vector2(4, 6).rotated(fragment + age * 4), Color(_rarity_color(rarity), minf(1, loot_flash * 2)), 3, true)
+	_icon("chest", Rect2(center - Vector2(104, 74) - Vector2.ONE * pulse, Vector2(208 + pulse * 2, 148 + pulse * 2)))
+	_icon("key", Rect2(center + Vector2(58, 22), Vector2(40, 40)))
+	_wrapped_text(Rect2(24, 611, s.x - 48, 32), _chest_rule_text(), 11, TEAL)
+	var rarities := ["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"]
+	var odds := ["28%", "36%", "22%", "9%", "3,5%", "1,5%"]
+	for i in range(6):
+		var r := Rect2(26 + (i % 2) * (s.x * 0.5 - 16), 645 + (i / 2) * 29, s.x * 0.5 - 36, 25)
+		_draw_panel(r, Color("#244954"), 7)
+		draw_circle(r.position + Vector2(13, 12), 4, _rarity_color(rarities[i]))
+		draw_string(ThemeDB.fallback_font, r.position + Vector2(24, 17), rarities[i] + "   " + odds[i], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 30, 11, PANEL)
 	var loot: Dictionary = state.get("last_loot", {})
-	var loot_name := str(loot.get("name", "Ainda nenhum · o próximo pode ser seu!"))
-	var kind_name := str({"gear": "Equipamento", "drill": "Broca", "skin": "Visual"}.get(str(loot.get("kind", "")), "Equipamento"))
-	var loot_detail := "%s · %s" % [loot.get("rarity", "Baú"), kind_name]
+	var detail := "%s / %s" % [loot.get("rarity", "Próximo achado"), loot.get("kind", "Equipamentos, brocas e skins")]
 	if bool(loot.get("duplicate", false)):
-		loot_detail += " · repetido: +%d moedas" % int(loot.get("coins", 0))
-	_draw_item_row(Rect2(28, 614, s.x - 56, 72), loot_name, loot_detail, not loot.is_empty(), false, _rarity_color(str(loot.get("rarity", "Boa"))))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 718), "Baús podem trazer equipamentos, brocas ou skins.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 12, Color("#55707a"))
+		detail += " / repetido: +%d moedas" % int(loot.get("coins", 0))
+	_draw_item_row(Rect2(22, 739, s.x - 44, 54), str(loot.get("name", "Seu próximo achado está aqui")), detail, not loot.is_empty(), false, _rarity_color(str(loot.get("rarity", "Boa"))))
 	var can_open := int(state.get("chests", 0)) > 0 and int(state.get("keys", 0)) > 0
-	_draw_button(Layout.button("chest", s), Color("#efb950") if can_open else Color("#d7d9c5"), "ABRIR BAÚ  ·  1 CHAVE" if can_open else "BAÚ SELADO  ·  PRECISA DE CHAVE", Color("#4b3822"))
+	_action(Layout.button("chest", s), "key", "ABRIR BAÚ" if can_open else "BAÚ SELADO", "1 chave / chaves e baús aparecem cavando", BRASS, can_open)
 
 func _draw_equipment_menu(s: Vector2) -> void:
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 263), "EQUIPAMENTOS  ·  %d/60" % state.get("gear_inventory", []).size(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 19, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 408), "EQUIPAMENTOS  ·  %d/60" % state.get("gear_inventory", []).size(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 19, PANEL)
 	var rarities: Array[String] = ["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"]
 	for i in range(rarities.size()):
-		_draw_button(Layout.rarity(i, s), Color("#37cbb9") if rarities[i] == gear_rarity else _rarity_color(rarities[i]).lightened(0.55), rarities[i], INK)
+		_draw_button(Layout.rarity(i, s), TEAL if rarities[i] == gear_rarity else _rarity_color(rarities[i]).lightened(0.55), rarities[i], INK)
 	var ids := equipment.gear_ids_for_rarity(gear_rarity)
-	draw_string(ThemeDB.fallback_font, Vector2(24, 459), "Toque no item encontrado para equipar", HORIZONTAL_ALIGNMENT_LEFT, s.x - 48, 16, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(24, 535), "Toque no item encontrado para equipar", HORIZONTAL_ALIGNMENT_LEFT, s.x - 48, 13, PANEL)
 	for row in range(Layout.GEAR_PER_PAGE):
 		var index := gear_page * Layout.GEAR_PER_PAGE + row
 		if index >= ids.size():
@@ -848,43 +929,43 @@ func _draw_equipment_menu(s: Vector2) -> void:
 	_draw_pager(gear_page, ceili(float(ids.size()) / Layout.GEAR_PER_PAGE), s)
 
 func _draw_character_menu(s: Vector2) -> void:
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 263), "MINHA BROCA É MINHA COMPANHEIRA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 46, 16, INK)
-	var skin: Dictionary = equipment.skins.get(str(state.get("equipped_skin", "pioneira")), equipment.skins.get("pioneira", {}))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 346), "%s · skin %s" % [drill.title, skin.get("name", "Pioneira")], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 16, INK)
-	_wrapped_text(Rect2(24, 352, s.x - 48, 40), "Inata: %s — %s" % [skin.get("skill", "Curiosa"), skin.get("description", "")], 13, INK)
+	var skin: Dictionary = equipment.skins.get(str(state.get("equipped_skin", "pioneira")), {})
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 418), "%s / NV.%d" % [drill.title.to_upper(), drill.level], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 21, PANEL)
+	_wrapped_text(Rect2(24, 432, s.x - 48, 34), "Inata: %s — %s" % [skin.get("skill", "Curiosa"), skin.get("description", "")], 12, TEAL)
 	var stats := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
-	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 405), "Força %+d · moedas %+d · velocidade %+d%% · sorte %+d" % [stats.power, stats.reward, roundi(float(stats.speed) * 100.0), stats.luck], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 14, Color("#287d6d"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 485), "Força %+d / moedas %+d / velocidade %+d%% / sorte %+d" % [stats.power, stats.reward, roundi(float(stats.speed) * 100.0), stats.luck], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 12, PANEL)
 	var models := character_view == "models"
-	_draw_button(Layout.button("models", s), Color("#37cbb9") if models else Color("#e8f2d7"), "MODELOS", INK)
-	_draw_button(Layout.button("skins", s), Color("#e8f2d7") if models else Color("#37cbb9"), "SKINS %d/13" % state.get("skin_inventory", []).size(), INK)
+	_draw_button(Layout.button("models", s), TEAL if models else Color("#244954"), "MODELOS", INK if models else PANEL)
+	_draw_button(Layout.button("skins", s), TEAL if not models else Color("#244954"), "SKINS %d/13" % state.get("skin_inventory", []).size(), INK if not models else PANEL)
 	var ids := _character_ids()
 	for row in range(Layout.CHARACTER_PER_PAGE):
 		var index := skin_page * Layout.CHARACTER_PER_PAGE + row
-		if index >= ids.size():
-			break
+		if index >= ids.size(): break
 		var id := str(ids[index])
 		var spec: Dictionary = equipment.drills[id] if models else equipment.skins[id]
 		var owned: bool = state.drill_inventory.has(id) if models else state.skin_inventory.has(id)
 		var equipped: bool = state.drill == id if models else state.equipped_skin == id
-		var detail := "%s · %s" % [spec.rarity, spec.description]
-		_draw_item_row(Layout.item(row, s), str(spec.name), detail, owned, equipped, Color(str(spec.color)))
+		_draw_item_row(Layout.item(row, s), str(spec.name), "%s / %s" % [spec.rarity, spec.description], owned, equipped, Color(str(spec.color)))
 	_draw_pager(skin_page, ceili(float(ids.size()) / Layout.CHARACTER_PER_PAGE), s)
 
 func _draw_pager(page_index: int, count: int, s: Vector2) -> void:
-	_draw_button(Layout.page(false, s), Color("#e8f2d7"), "%d/%d · ANTERIOR" % [page_index + 1, count], INK)
-	_draw_button(Layout.page(true, s), Color("#e8f2d7"), "PRÓXIMOS" if page_index + 1 < count else "ÚLTIMA PÁGINA", INK)
+	_draw_button(Layout.page(false, s), Color("#244954"), "%d/%d · ANTERIOR" % [page_index + 1, count], PANEL)
+	_draw_button(Layout.page(true, s), Color("#244954"), "PRÓXIMOS" if page_index + 1 < count else "ÚLTIMA PÁGINA", PANEL)
 
 func _rarity_color(rarity: String) -> Color:
 	var colors := {"Ruim": "#bd896e", "Boa": "#7fdc94", "Épica": "#55d9cb", "Lendária": "#f3ad54", "Única": "#bc91ec", "Mística": "#ff8dbe"}
 	return Color(str(colors.get(rarity, "#fff1c2")))
 
 func _draw_item_row(rect: Rect2, title: String, detail: String, owned: bool, equipped: bool, tint: Color) -> void:
-	_draw_panel(rect, tint.lightened(0.76) if owned else Color("#eee9d9"), 12)
-	_draw_panel(Rect2(rect.position.x, rect.position.y, 5, rect.size.y), tint, 3)
-	var marker := "EQUIPADO" if equipped else ("ENCONTRADO" if owned else "???")
-	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 12, rect.position.y + 25), title, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 112, 17, INK if owned else Color("#546a70"))
-	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 12, rect.position.y + 51), detail, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 24, 13, Color("#607a7b"))
-	draw_string(ThemeDB.fallback_font, Vector2(rect.end.x - 92, rect.position.y + 25), marker, HORIZONTAL_ALIGNMENT_RIGHT, 82, 9, Color("#287d6d") if equipped else Color("#718082"))
+	_draw_panel(rect, Color("#2D555D") if owned else Color("#203C49"), 10)
+	_draw_panel(Rect2(rect.position + Vector2(4, 4), Vector2(44, rect.size.y - 8)), tint.darkened(0.28), 9)
+	_icon("gear" if menu_tab == "equipment" else "drill", Rect2(rect.position + Vector2(9, 8), Vector2(34, 34)))
+	var font_size := 15 if rect.size.y > 55 else 13
+	draw_string(ThemeDB.fallback_font, rect.position + Vector2(57, 23), title, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 157, font_size, PANEL)
+	var marker := "EQUIPADO" if equipped else ("EQUIPAR" if owned else "NO BAÚ")
+	_draw_panel(Rect2(rect.end.x - 96, rect.position.y + 7, 88, 28), TEAL if equipped else (BRASS if owned else Color("#33515A")), 8)
+	draw_string(ThemeDB.fallback_font, Vector2(rect.end.x - 94, rect.position.y + 26), marker, HORIZONTAL_ALIGNMENT_CENTER, 84, 10, INK if owned else PANEL)
+	draw_string(ThemeDB.fallback_font, rect.position + Vector2(57, rect.size.y - 10), detail, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 68, 10, Color("#B7D6D3"))
 
 func _chest_rule_text() -> String:
 	if int(state.get("below_legendary_streak", 0)) >= 11:
@@ -900,10 +981,12 @@ func _draw_panel(rect: Rect2, color: Color, radius: int, shadow := false) -> voi
 		var style := StyleBoxFlat.new()
 		style.bg_color = color
 		style.set_corner_radius_all(radius)
+		style.border_color = OUTLINE
+		style.set_border_width_all(2)
 		if shadow:
-			style.shadow_color = Color(0.12, 0.24, 0.29, 0.22)
-			style.shadow_size = 2
-			style.shadow_offset = Vector2(0, 3)
+			style.shadow_color = Color(0.02, 0.08, 0.12, 0.52)
+			style.shadow_size = 4
+			style.shadow_offset = Vector2(0, 4)
 		panel_styles[key] = style
 	draw_style_box(panel_styles[key], rect)
 
@@ -911,8 +994,37 @@ func _draw_pill(rect: Rect2, color: Color, radius: float) -> void:
 	_draw_panel(rect, color, int(radius), true)
 
 func _draw_button(rect: Rect2, color: Color, label: String, text_color: Color) -> void:
-	_draw_panel(rect, color, 16, true)
-	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 7, rect.position.y + rect.size.y * 0.5 + 6), label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 14, 16, text_color)
+	var primary := label.contains("INICIAR") or label == "CONTINUAR"
+	var tint := CORAL if primary else BRASS
+	art.plate(self, rect, tint, rect.has_point(ui_press), true, primary)
+	var font_size := 14 if rect.size.x > 190 else 11
+	draw_string(ThemeDB.fallback_font, rect.position + Vector2(10, rect.size.y * 0.5 + 5 + (2 if rect.has_point(ui_press) else 0)), label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 20, font_size, INK)
+
+func _icon(id: String, rect: Rect2) -> void:
+	var key := id
+	if id == "chest" and loot_flash > 0.0 and show_workshop:
+		key = "chest_open"
+	if not icon_cache.has(key):
+		if id == "chest" or id == "drill":
+			var atlas := AtlasTexture.new()
+			atlas.atlas = load("res://assets/ilustracoes/maquina-baus-atlas.png")
+			atlas.region = Rect2(700, 670, 535, 545) if key == "chest_open" else Rect2(50, 720, 575, 495)
+			if id == "drill":
+				atlas.region = Rect2(15, 15, 685, 625)
+			icon_cache[key] = atlas
+		else:
+			icon_cache[key] = load("res://assets/ui/" + id + ".svg")
+	var texture: Texture2D = icon_cache[key]
+	var factor := minf(rect.size.x / texture.get_width(), rect.size.y / texture.get_height())
+	var fitted := texture.get_size() * factor
+	draw_texture_rect(texture, Rect2(rect.get_center() - fitted * 0.5, fitted), false)
+
+func _action(rect: Rect2, icon: String, title: String, detail: String, tint: Color, enabled: bool) -> void:
+	art.plate(self, rect, CORAL, rect.has_point(ui_press), enabled, true)
+	_icon(icon, Rect2(rect.position + Vector2(12, 12), Vector2(34, 34)))
+	var color := INK if enabled else Color("#D1E2DB")
+	draw_string(ThemeDB.fallback_font, rect.position + Vector2(49, 26), title, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 62, 12, color)
+	draw_string(ThemeDB.fallback_font, rect.position + Vector2(49, 44), detail, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 62, 10, color)
 
 func _wrapped_text(rect: Rect2, text: String, font_size: int, color: Color) -> void:
 	var paragraph := TextParagraph.new()
@@ -930,6 +1042,11 @@ func _draw_particles() -> void:
 		var angle: float = particle.angle
 		var long_axis := Vector2(cos(angle), sin(angle)) * radius
 		var short_axis := Vector2(-long_axis.y, long_axis.x) * radius * 0.52
-		var points := PackedVector2Array([particle.p + long_axis, particle.p + short_axis, particle.p - long_axis, particle.p - short_axis])
+		var points := PackedVector2Array([
+			particle.p + long_axis,
+			particle.p + short_axis,
+			particle.p - long_axis,
+			particle.p - short_axis
+		])
 		draw_colored_polygon(points, particle.color)
 		draw_line(particle.p - long_axis * 0.35, particle.p + long_axis * 0.35, Color("#fff7e6", 0.8), 1.0, true)
