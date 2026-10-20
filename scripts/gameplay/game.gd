@@ -7,6 +7,7 @@ const SaveStore = preload("res://scripts/save/save_store.gd")
 const EquipmentSystem = preload("res://scripts/progression/equipment_system.gd")
 const PhaseSystem = preload("res://scripts/progression/phase_system.gd")
 const Layout = preload("res://scripts/gameplay/ui_layout.gd")
+const CrewVisuals = preload("res://scripts/visual/expedition_visuals.gd")
 const AUTOSAVE_INTERVAL := 1.0
 const BIOME_PATH := "res://content/biomes/prado_cristalino.json"
 const PHASE_PATH := "res://content/phases/catalog.json"
@@ -53,12 +54,14 @@ var save_pending := false
 var save_elapsed := 0.0
 var save_failed := false
 var panel_styles: Dictionary = {}
-var drill_impact_time := 0.0
+var crew
 
 func _ready() -> void:
 	get_tree().auto_accept_quit = false
 	get_tree().quit_on_go_back = false
 	custom_minimum_size = Vector2(300, 560)
+	crew = CrewVisuals.new()
+	add_child(crew)
 	var biome_file := FileAccess.open(BIOME_PATH, FileAccess.READ)
 	biome = JSON.parse_string(biome_file.get_as_text())
 	var phase_file := FileAccess.open(PHASE_PATH, FileAccess.READ)
@@ -99,6 +102,8 @@ func _notification(what: int) -> void:
 
 func _set_app_active(active: bool) -> void:
 	app_suspended = not active
+	if is_instance_valid(crew):
+		crew.suspend(not active)
 	_cancel_pointer()
 	if not active:
 		_commit_save()
@@ -165,9 +170,6 @@ func _process(delta: float) -> void:
 		if save_elapsed >= AUTOSAVE_INTERVAL:
 			_commit_save()
 	var changed := false
-	if drill_impact_time > 0.0:
-		drill_impact_time = maxf(0.0, drill_impact_time - delta)
-		changed = true
 	if held and not camera_dragging and not show_start_screen and not show_album and not show_workshop:
 		var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 		var dig_interval := clampf(0.17 - float(boosts.speed), 0.07, 0.42)
@@ -302,7 +304,8 @@ func _perform_dig(cell: Vector2i) -> void:
 	var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 	var result := engine.dig(drill.pattern, cell.x, cell.y, maxi(1, drill.level + int(boosts.power)), int(boosts.reward), phase_system.end_depth(state))
 	if result.worked > 0 or result.broken > 0:
-		drill_impact_time = 0.16 if result.broken > 0 else 0.11
+		if is_instance_valid(crew):
+			crew.mining_event(result.broken > 0)
 	if result.broken <= 0:
 		if result.worked > 0:
 			var hit_layer: Dictionary = engine.layer_for_cell(cell.y, cell.x)
@@ -566,6 +569,14 @@ func _toast(message: String) -> void:
 
 func _draw() -> void:
 	var s := size
+	var mode := "mining"
+	if show_album or (show_workshop and menu_tab != "character"):
+		mode = "hidden"
+	elif show_workshop:
+		mode = "character"
+	elif show_start_screen:
+		mode = "start"
+	crew.present(mode, s, Layout.WORLD_TOP, drill.id, drill.accent)
 	_draw_background(s)
 	if show_album:
 		_draw_album(s)
@@ -639,7 +650,6 @@ func _goal_text() -> String:
 func _draw_start_screen(s: Vector2) -> void:
 	draw_circle(Vector2(s.x * 0.5, 286), 88, Color("#b8efdb"))
 	draw_circle(Vector2(s.x * 0.5, 279), 68, Color("#d5f2dd"))
-	_draw_drill(Vector2(s.x * 0.5, 257))
 	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 402), "DIG & WONDER", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 36, Color("#3d5c6d"))
 	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 438), "O que será que existe logo abaixo?", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 16, Color("#416878"))
 	_draw_pill(Rect2(28, 478, s.x - 56, 66), PANEL, 18)
@@ -694,15 +704,6 @@ func _draw_world(s: Vector2) -> void:
 	draw_rect(Rect2(0, top, 5, bottom - top), Color("#ddae68"))
 	var surface_line := PackedVector2Array([Vector2(0, top), Vector2(s.x * 0.5 - 39, top), Vector2(s.x * 0.5 - 25, top - 5), Vector2(s.x * 0.5 + 27, top - 5), Vector2(s.x * 0.5 + 42, top), Vector2(s.x, top)])
 	draw_polyline(surface_line, Color(str(_active_phase().get("surface", "#75b85d"))).lightened(0.2), 6.0, true)
-	var drill_center := Vector2(s.x * 0.5, top + 2)
-	if drill_impact_time > 0.0:
-		var impact := sin((1.0 - drill_impact_time / 0.16) * PI)
-		var recoil_center := drill_center + Vector2(0, -impact * 4.0)
-		draw_set_transform(recoil_center, -impact * 0.035, Vector2.ONE)
-		_draw_drill(Vector2.ZERO)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	else:
-		_draw_drill(drill_center)
 	_draw_pill(Rect2(s.x - 105, top + 11, 89, 30), PANEL, 13)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x - 97, top + 32), "%d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, 73, 14, INK)
 	if _boss_is_active():
@@ -753,26 +754,6 @@ func _draw_boss(center: Vector2) -> void:
 	_draw_panel(Rect2(bar.position, Vector2(bar.size.x * ratio, bar.size.y)), Color("#ef6a65"), 4)
 	_centered_string(ThemeDB.fallback_font, Vector2(center.x, center.y - 49), str(boss.get("name", "CHEFE")), HORIZONTAL_ALIGNMENT_CENTER, 200, 13, INK)
 
-func _draw_drill(center: Vector2) -> void:
-	var color := drill.accent
-	if drill.id in ["prism", "trinca"]:
-		for x_offset in [-21.0, 21.0]:
-			draw_colored_polygon(PackedVector2Array([center + Vector2(x_offset, 15), center + Vector2(x_offset - 9, 32), center + Vector2(x_offset + 10, 31)]), color.darkened(0.08))
-	# Cápsula principal e faixas metálicas.
-	draw_circle(center + Vector2(0, 9), 23, Color("#33516a"))
-	draw_circle(center, 19, color)
-	draw_circle(center + Vector2(-5, -5), 5, Color("#ffffff"))
-	# A broca também é a companheira: olhos e sorriso permanecem legíveis em tamanho pequeno.
-	draw_circle(center + Vector2(-6, 2), 2.5, Color("#294456"))
-	draw_circle(center + Vector2(6, 2), 2.5, Color("#294456"))
-	draw_arc(center + Vector2(0, 3), 7, 0.35, 2.79, 12, Color("#294456"), 1.6, true)
-	draw_rect(Rect2(center.x - 5, center.y + 14, 10, 18), Color("#fff4cd"))
-	var tip := PackedVector2Array([center + Vector2(-12, 27), center + Vector2(12, 27), center + Vector2(0, 44)])
-	draw_colored_polygon(tip, Color("#3e5d71"))
-	if drill.id in ["prism", "dynamo", "echo", "aurora"]:
-		draw_line(center + Vector2(-30, 4), center + Vector2(30, 4), Color("#ffffff"), 2.0, true)
-	if drill.id == "aurora":
-		draw_circle(center, 7, Color("#fff7d0"))
 
 func _draw_controls(s: Vector2) -> void:
 	draw_rect(Rect2(0, s.y - Layout.FOOTER_HEIGHT, s.x, Layout.FOOTER_HEIGHT), Color("#fff9e8"))
@@ -868,7 +849,6 @@ func _draw_equipment_menu(s: Vector2) -> void:
 
 func _draw_character_menu(s: Vector2) -> void:
 	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 263), "MINHA BROCA É MINHA COMPANHEIRA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 46, 16, INK)
-	_draw_drill(Vector2(s.x * 0.5, 284))
 	var skin: Dictionary = equipment.skins.get(str(state.get("equipped_skin", "pioneira")), equipment.skins.get("pioneira", {}))
 	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 346), "%s · skin %s" % [drill.title, skin.get("name", "Pioneira")], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 16, INK)
 	_wrapped_text(Rect2(24, 352, s.x - 48, 40), "Inata: %s — %s" % [skin.get("skill", "Curiosa"), skin.get("description", "")], 13, INK)

@@ -1,7 +1,7 @@
 extends RefCounted
 
 const DESIGN_SIZE := Vector2(540, 960)
-const WORLD_TOP := 202.0
+const WORLD_TOP := 300.0
 const FOOTER_HEIGHT := 226.0
 const GEAR_PER_PAGE := 4
 const CHARACTER_PER_PAGE := 3

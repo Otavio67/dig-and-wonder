@@ -84,3 +84,16 @@ O projeto está jogável em Godot 4.7.2, com APK debug, prova AdMob isolada, SDK
 ## Revisão de sensação após 0.0.5
 
 Lascas da escavação agora usam a cor do material, giram durante a queda e a broca recua levemente ao atingir ou quebrar uma célula. Capturas reais do Godot 4.7.2 em Windows ficam em `builds/review/` (saída local ignorada pelo Git). Importação, boot e harnesses de lógica, gameplay e save passaram; o harness Android ainda falha porque toca em `y=229`, acima da grade em `y=300` na revisão local de layout. O harness precisa ser alinhado antes de servir como validação; FPS e toque em Android real continuam sem medição.
+
+
+## Etapa visual 1 — equipe animada (20/10/2026)
+
+Lia, Bento e a broca-companheira usam 11 peças SVG originais em `assets/personagens/`, com silhuetas arredondadas, base/sombra, contorno escuro e reflexos pequenos. Os PNGs anteriores ficam como legado; não são carregados pelo jogo.
+
+Os rigs `Node2D` em `scripts/visual/` usam somente Tween: respiração, piscadas em intervalos distintos, balanço da broca, braço/ferramenta sincronizado ao dano real, ponta em movimento durante a escavação e squash/stretch somente na quebra. A animação atua em pivôs locais, pausa sem foco e não consome aleatoriedade da progressão. Início, mina e personagem reutilizam a mesma equipe.
+
+Validação no Godot 4.7.2 Windows: importação, boot e harnesses de lógica, gameplay, save, interface Android e personagens passaram. Os testes de toque agora usam `Layout.WORLD_TOP`, sem coordenada antiga fixa. O novo harness verifica eventos reais, célula vazia, dano versus quebra, pivôs, pausa, quantidade limitada de Tweens, RNG e esquema de save. O Git Bash foi bloqueado pelo sandbox (`NtCreateDirectoryObject`, 0xC0000022); os comandos equivalentes do `check-project.sh` e os harnesses foram executados diretamente com o Godot Windows.
+
+Evidências locais ignoradas pelo Git: `builds/review/etapa1-20261020/antes/`, `depois/`, `depois/sequencia/` (96 quadros reais, 12 fps), `depois/personagens-animados.gif` e `depois/personagens-detalhe.gif`. A captura é desktop em viewport 540×960; não mede FPS, toque ou memória em Android. Para reproduzir a sequência, execute Godot com `--path . --fixed-fps 12 --audio-driver Dummy --script res://scripts/capture_characters.gd` usando dados de usuário isolados.
+
+Esta etapa não redesenha blocos nem interface. A aparência destes elementos ainda limita a unidade visual. Próxima etapa, após aprovação: materiais dos blocos (etapa 2). A versão publicada continua 0.0.5, sem novo APK ou tag.

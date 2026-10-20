@@ -38,7 +38,7 @@ func _run() -> void:
 	var touch := InputEventScreenTouch.new()
 	touch.index = 0
 	touch.pressed = true
-	touch.position = Vector2(270, 229)
+	touch.position = Vector2(270, Layout.WORLD_TOP + 27)
 	game._input(touch)
 	assert(game.held and game.active_touch == 0)
 	var other := InputEventScreenTouch.new()

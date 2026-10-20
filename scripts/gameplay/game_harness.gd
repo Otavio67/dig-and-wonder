@@ -17,7 +17,7 @@ func _initialize() -> void:
 	game.world_bottom = 960.0 - game.Layout.FOOTER_HEIGHT
 	game._start_game()
 	assert(not game.show_start_screen)
-	assert(game._cell_at(Vector2(270, 229)) == Vector2i(0, 0))
+	assert(game._cell_at(Vector2(270, game.Layout.WORLD_TOP + 27)) == Vector2i(0, 0))
 	game._on_press(Vector2(270, 100))
 	assert(not game.held and game.engine.dug.is_empty())
 	game.state.inventory = 5

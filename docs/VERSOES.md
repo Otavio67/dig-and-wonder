@@ -78,3 +78,16 @@ Revisão visual/feedback sem nova versão ou tag.
 - Gerados com a ferramenta integrada de imagens. Direção dos prompts: cartoon 2D com aparência vetorial, cabeça grande, cores sólidas, sombras definidas, poucos detalhes e fundo transparente; Lia segura um cristal, Bento acena e segura uma chave de oficina. Os originais anteriores ficam apenas no backup local ignorado em `.tools/art-backup/miners-20261020/`.
 - Importação e sete capturas reais no Godot 4.7.2 Windows concluídas; início, escavação e personagem inspecionados. A revisão é visual, sem nova versão/tag. Não foram medidos FPS ou toque em Android.
 - Os arquivos continuam sendo poses estáticas inteiras. Animação por esqueleto no Blender depende de preparar peças separadas ou um modelo; ainda não existe rig ou animação exportada.
+
+
+## Etapa visual 1 — equipe animada (20/10/2026)
+
+Lia, Bento e a broca-companheira usam 11 peças SVG originais em `assets/personagens/`, com silhuetas arredondadas, base/sombra, contorno escuro e reflexos pequenos. Os PNGs anteriores ficam como legado; não são carregados pelo jogo.
+
+Os rigs `Node2D` em `scripts/visual/` usam somente Tween: respiração, piscadas em intervalos distintos, balanço da broca, braço/ferramenta sincronizado ao dano real, ponta em movimento durante a escavação e squash/stretch somente na quebra. A animação atua em pivôs locais, pausa sem foco e não consome aleatoriedade da progressão. Início, mina e personagem reutilizam a mesma equipe.
+
+Validação no Godot 4.7.2 Windows: importação, boot e harnesses de lógica, gameplay, save, interface Android e personagens passaram. Os testes de toque agora usam `Layout.WORLD_TOP`, sem coordenada antiga fixa. O novo harness verifica eventos reais, célula vazia, dano versus quebra, pivôs, pausa, quantidade limitada de Tweens, RNG e esquema de save. O Git Bash foi bloqueado pelo sandbox (`NtCreateDirectoryObject`, 0xC0000022); os comandos equivalentes do `check-project.sh` e os harnesses foram executados diretamente com o Godot Windows.
+
+Evidências locais ignoradas pelo Git: `builds/review/etapa1-20261020/antes/`, `depois/`, `depois/sequencia/` (96 quadros reais, 12 fps), `depois/personagens-animados.gif` e `depois/personagens-detalhe.gif`. A captura é desktop em viewport 540×960; não mede FPS, toque ou memória em Android. Para reproduzir a sequência, execute Godot com `--path . --fixed-fps 12 --audio-driver Dummy --script res://scripts/capture_characters.gd` usando dados de usuário isolados.
+
+Esta etapa não redesenha blocos nem interface. A aparência destes elementos ainda limita a unidade visual. Próxima etapa, após aprovação: materiais dos blocos (etapa 2). A versão publicada continua 0.0.5, sem novo APK ou tag.
