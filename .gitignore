@@ -11,3 +11,5 @@ docs/revisao-android/*.png.import
 !.env.example
 Thumbs.db
 .DS_Store
+
+/error.log

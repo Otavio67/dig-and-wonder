@@ -1,6 +1,6 @@
 # Marco 1 — estado e entrega
 
-20/10/2026. **Concluído no desktop; não avançar ao Marco 2 sem aprovação.**
+20/10/2026. **Concluído no desktop. Marco 2 posteriormente autorizado e implementado: ver MARCO2.md.**
 
 ## Resumo do ponto de partida
 

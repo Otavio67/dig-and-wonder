@@ -5,10 +5,10 @@ engine="${GODOT_BIN:-.tools/godot/Godot_v4.7.2-stable_linux.x86_64}"
 [[ -x "$engine" ]] || { echo "Execute bash setup-cloud.sh primeiro ou defina GODOT_BIN."; exit 1; }
 
 mkdir -p .tools/logs .tools/home/.config .tools/home/.local/share .tools/home/.cache
-export HOME="$PWD/.tools/home"
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_CACHE_HOME="$HOME/.cache"
+task_home="$PWD/.tools/home"
+export XDG_CONFIG_HOME="$task_home/.config"
+export XDG_DATA_HOME="$task_home/.local/share"
+export XDG_CACHE_HOME="$task_home/.cache"
 if [[ -x .tools/android-sdk/platform-tools/adb ]] && command -v java >/dev/null; then
   export ANDROID_HOME="$PWD/.tools/android-sdk"
   export ANDROID_SDK_ROOT="$ANDROID_HOME"

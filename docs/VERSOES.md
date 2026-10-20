@@ -123,3 +123,6 @@ A avaliação artística final depende da revisão das capturas pelo usuário. O
 - Capturas e gravação reais desktop em `builds/review/marco1-20261020/`; vinte segundos em 12 fps, execução normal. A mesma tentativa vence por lançamentos/compras acessíveis, outra perde por inatividade e reinicia sem retirar o permanente. Captura não grava no perfil do jogador.
 
 Checkpoint sem nova versão/tag/APK. Não foram medidos toque, dp, FPS, memória, anúncios ou execução Android. Próximo marco, após aprovação: clareza/balanceamento e uma unidade alternativa.
+
+## 20/10/2026 — revisão do Marco 1 e Marco 2
+Solo/poço, feedback de Torrão/ouro, comparação de melhorias, espaços bloqueados. Exceção solicitada de 2 ouro no primeiro impacto por tentativa. Pioneira de quatro golpes com mesmos 32 totais, salto e quebra; Torrão em quatro poses; somente o Escavador adicional, gratuito nesta fase de protótipo para manter save/economia. Sem novo número de versão, APK ou tag. Ver MARCO2.md e CONTINUAR-NA-NUVEM.md.

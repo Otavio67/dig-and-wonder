@@ -40,6 +40,13 @@ func _run() -> void:
 	touch.canceled = true
 	game._input(touch)
 	assert(game.active_touch == -1)
+	game.sim.support_cooldown = 0
+	touch.canceled = false
+	touch.position = game.get_global_transform_with_canvas() * game.Layout.button("support").get_center()
+	game._input(touch)
+	assert(game.sim.units.size() == 2 and game.sim.support_cooldown == 20 and game.profile.gold == 0)
+	touch.canceled = true
+	game._input(touch)
 	game._set_app_active(false)
 	var before: float = game.sim.clock
 	game._process(2)
@@ -50,7 +57,7 @@ func _run() -> void:
 		var fitted := Surface.fit_rect(a)
 		assert(a.grow(0.01).encloses(fitted))
 		assert(is_equal_approx(fitted.size.x / fitted.size.y, 540.0 / 960.0))
-	for id in ["launch", "damage", "hull", "retry", "import"]:
+	for id in ["launch", "support", "damage", "hull", "retry", "import"]:
 		assert(game.Layout.button(id).size.y >= 64)
 	assert(not game.Layout.button("launch").intersects(game.Layout.button("damage")))
 	print("ANDROID_UI_OK transformed_input=true single_touch=true canceled_touch=true focus_pause=true no_resume_burst=true safe_area_geometry=true controls_64_logical=true")

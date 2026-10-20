@@ -9,6 +9,7 @@ var layer_hp := 0.0
 var layer_max := 0.0
 var cart_hp := 0.0
 var cooldown := 3.0
+var support_cooldown := 20.0
 var clock := 0.0
 var first_impact_paid := false
 var wave_timer := 0.0
@@ -48,6 +49,7 @@ func restart() -> void:
 	cannon_timers = [0.0, 0.28]
 	cart_hp = stats().hp
 	cooldown = float(config.pioneer.cooldown) # Also charged on reopen/retry.
+	support_cooldown = float(config.excavator.cooldown)
 	status = "active"
 	_new_layer()
 
@@ -63,10 +65,19 @@ func launch() -> bool:
 	for enemy in enemies:
 		if absf(float(enemy.x) - 270.0) <= 38.0 and (victim == 0 or int(enemy.id) < victim):
 			victim = int(enemy.id)
-	var unit := {"id": id, "kind": "pioneer", "role": "impact", "age": 0.0, "duration": float(config.pioneer.flight), "layer": layer_index, "enemy": victim, "damage": stats().drill_damage}
+	var unit := {"id": id, "kind": "pioneer", "role": "impact", "age": 0.0, "duration": float(config.pioneer.flight), "layer": layer_index, "enemy": victim, "damage": stats().drill_damage, "hits": 0}
 	units.append(unit)
 	cooldown = float(config.pioneer.cooldown)
 	events.append({"type": "launch"})
+	return true
+
+func launch_support() -> bool:
+	if status != "active" or support_cooldown > 0 or units.size() >= int(config.limits.units): return false
+	for unit in units:
+		if unit.get("role", "") == "defender": return false
+	units.append({"id": _id(), "kind": "excavator", "role": "defender", "age": 0.0, "duration": float(config.excavator.flight), "hp": float(config.excavator.hp), "at_front": false, "timer": 0.0})
+	support_cooldown = float(config.excavator.cooldown)
+	events.append({"type": "support_launch"})
 	return true
 
 func _id() -> int:
@@ -79,6 +90,11 @@ func step(delta: float) -> void:
 	var dt := minf(delta, 0.05)
 	clock += dt
 	cooldown = maxf(0, cooldown - dt)
+	support_cooldown = maxf(0, support_cooldown - dt)
+	for enemy in enemies:
+		enemy.hurt = maxf(0, float(enemy.get("hurt", 0)) - dt)
+		enemy.throw_pose = maxf(0, float(enemy.get("throw_pose", 0)) - dt)
+		enemy.emerge = minf(1, float(enemy.get("emerge", 1)) + dt * 3)
 	if not final_encounter and timed_waves < int(config.phase.timed_waves):
 		wave_timer -= dt
 		if wave_timer <= 0:
@@ -100,21 +116,48 @@ func step(delta: float) -> void:
 			events.append({"type": "cannon", "side": side})
 	for i in range(units.size() - 1, -1, -1):
 		var unit := units[i]
-		if unit.get("role", "") != "impact": continue
+		# Legacy harness fixtures may contain a stationary defender without age.
+		if not unit.has("age"): continue
 		unit.age += dt
-		if unit.age >= unit.duration:
-			units.remove_at(i)
-			if not _enemy(int(unit.enemy)).is_empty():
-				_damage_enemy(int(unit.enemy), float(unit.damage))
-			else:
-				damage_layer(int(unit.layer), float(unit.damage))
-			if status != "active": return
+		if unit.get("role", "") == "defender":
+			unit.hurt = maxf(0, float(unit.get("hurt", 0)) - dt)
+			unit.at_front = float(unit.age) >= float(unit.duration)
+			if not unit.at_front: continue
+			if float(unit.age) >= float(unit.duration) + float(config.excavator.duration):
+				units.remove_at(i)
+				events.append({"type": "support_end", "x": 320.0})
+				continue
+			unit.timer -= dt
+			if unit.timer <= 0:
+				unit.timer = float(config.excavator.attack_interval)
+				var target := cannon_target()
+				if target != 0: _damage_enemy(target, float(config.excavator.damage))
+				elif not final_encounter: damage_layer(layer_index, float(config.excavator.damage))
+				events.append({"type": "support_hit", "x": 320.0})
+		else:
+			if unit.age < unit.duration: continue
+			if int(unit.layer) != layer_index and _enemy(int(unit.enemy)).is_empty() or final_encounter and _enemy(int(unit.enemy)).is_empty():
+				events.append({"type": "drill_break", "x": 270.0})
+				units.remove_at(i)
+				continue
+			var due := float(unit.duration) + int(unit.hits) * float(config.pioneer.hit_interval)
+			if float(unit.age) + 0.0001 >= due:
+				unit.hits += 1
+				var strike_damage := float(unit.damage) / int(config.pioneer.hits)
+				if not _enemy(int(unit.enemy)).is_empty(): _damage_enemy(int(unit.enemy), strike_damage)
+				else: damage_layer(int(unit.layer), strike_damage)
+				events.append({"type": "drill_strike", "x": 270.0})
+				if int(unit.hits) >= int(config.pioneer.hits):
+					units.remove_at(i)
+					events.append({"type": "drill_break", "x": 270.0})
+		if status != "active": return
 	for enemy in enemies:
 		enemy.timer -= dt
 		enemy.telegraph = float(enemy.timer) <= float(config.mole.telegraph)
 		if enemy.timer <= 0 and projectiles.size() < int(config.limits.projectiles):
 			enemy.timer = float(config.mole.attack_interval)
 			enemy.telegraph = false
+			enemy.throw_pose = 0.3
 			projectiles.append({"id": _id(), "kind": "soil", "target": defender_target(), "age": 0.0, "duration": 0.65, "damage": float(config.mole.damage), "x": float(enemy.x)})
 	for i in range(projectiles.size() - 1, -1, -1):
 		var shot := projectiles[i]
@@ -127,7 +170,10 @@ func step(delta: float) -> void:
 			var defender := _unit(int(shot.target))
 			if not defender.is_empty() and str(defender.get("role", "")) == "defender" and float(defender.get("hp", 0)) > 0:
 				defender.hp = maxf(0, float(defender.hp) - float(shot.damage))
-				if defender.hp <= 0: units.erase(defender)
+				defender.hurt = 0.3
+				if defender.hp <= 0:
+					units.erase(defender)
+					events.append({"type": "support_end", "x": 320.0})
 			else:
 				damage_cart(float(shot.damage))
 		if status != "active": return
@@ -169,7 +215,7 @@ func _drain_spawns() -> void:
 	while pending_spawns > 0 and enemies.size() < int(config.limits.enemies):
 		pending_spawns -= 1
 		var id := _id()
-		enemies.append({"id": id, "hp": float(config.mole.hp), "max_hp": float(config.mole.hp), "x": 120.0 + posmod(id * 73, 300), "timer": float(config.mole.first_attack), "telegraph": false})
+		enemies.append({"id": id, "hp": float(config.mole.hp), "max_hp": float(config.mole.hp), "x": 120.0 + posmod(id * 73, 300), "timer": float(config.mole.first_attack), "telegraph": false, "hurt": 0.0, "throw_pose": 0.0, "emerge": 0.0})
 		events.append({"type": "spawn"})
 
 func damage_layer(index: int, amount: float) -> bool:
@@ -201,8 +247,10 @@ func _damage_enemy(id: int, amount: float) -> bool:
 	var enemy := _enemy(id)
 	if status != "active" or enemy.is_empty() or amount <= 0: return false
 	enemy.hp = maxf(0, float(enemy.hp) - amount)
+	enemy.hurt = 0.22
 	events.append({"type": "hit", "x": enemy.x})
 	if enemy.hp <= 0:
+		events.append({"type": "mole_defeat", "x": enemy.x})
 		enemies.erase(enemy)
 		profile.gold += int(config.mole.gold)
 		events.append({"type": "gold", "amount": int(config.mole.gold), "source": "mole", "x": enemy.x})

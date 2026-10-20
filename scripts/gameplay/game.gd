@@ -28,6 +28,10 @@ var machine: Texture2D
 var terrain: Texture2D
 var soil: Texture2D
 var spawn_flash := 0.0
+var mole_atlas: Texture2D
+var robot_atlas: Texture2D
+var effects: Array[Dictionary] = []
+var impact_shake := 0.0
 var icons: Dictionary = {}
 var styles: Dictionary = {}
 var persistence_enabled := true # Captures set false; normal play always persists.
@@ -40,6 +44,8 @@ func _ready() -> void:
 	machine = load("res://assets/ilustracoes/maquina-baus-atlas.png")
 	terrain = load("res://assets/terreno/materiais-atlas.png")
 	soil = load("res://assets/terreno/solo-torroes-raizes.png")
+	mole_atlas = load("res://assets/characters/torrao-poses.png")
+	robot_atlas = load("res://assets/characters/escavador-poses.png")
 	var loaded := Store.load_profile()
 	profile = loaded.profile
 	legacy = loaded.legacy
@@ -55,6 +61,8 @@ func start_run() -> void:
 	if sim == null: sim = Run.new(profile)
 	else: sim.restart()
 	notices.clear()
+	effects.clear()
+	impact_shake = 0
 	screen = "fight"
 	accumulator = 0
 	_save()
@@ -138,6 +146,7 @@ func _press_at(pos: Vector2) -> void:
 		_consume_events()
 	elif screen == "fight":
 		if Layout.button("launch").has_point(pos): sim.launch()
+		elif Layout.button("support").has_point(pos): sim.launch_support()
 		elif Layout.button("damage").has_point(pos): sim.purchase("damage")
 		elif Layout.button("hull").has_point(pos): sim.purchase("hull")
 		_consume_events()
@@ -149,6 +158,10 @@ func _process(delta: float) -> void:
 	cart_flash = maxf(0, cart_flash - delta)
 	layer_flash = maxf(0, layer_flash - delta)
 	spawn_flash = maxf(0, spawn_flash - delta)
+	impact_shake = maxf(0, impact_shake - delta)
+	for i in range(effects.size() - 1, -1, -1):
+		effects[i].age += delta
+		if effects[i].age > effects[i].duration: effects.remove_at(i)
 	for i in range(2): recoil[i] = maxf(0, float(recoil[i]) - delta)
 	for i in range(notices.size() - 1, -1, -1):
 		notices[i].life -= delta
@@ -170,6 +183,10 @@ func _consume_events() -> void:
 				var source := str(event.source)
 				notices.append({"text": "+%d OURO%s" % [event.amount, " / TORRÃO" if source == "mole" else ""], "life": 1.8, "x": clampf(float(event.get("x", 270)), 125, 415), "y": 512.0})
 			"spawn": spawn_flash = 1.5
+			"drill_strike", "support_hit":
+				impact_shake = 0.16
+				_add_effect(str(event.type), float(event.x), 0.45)
+			"drill_break", "mole_defeat", "support_end": _add_effect(str(event.type), float(event.x), 0.65)
 			"purchase", "victory", "defeat": save_needed = true
 			"cannon": recoil[int(event.side)] = 0.15
 			"cart_hit": cart_flash = 0.25
@@ -177,6 +194,10 @@ func _consume_events() -> void:
 			"hit": notices.append({"text": "✦", "life": 0.18, "x": event.x, "y": 564.0})
 		if notices.size() > 32: notices.pop_front()
 	if save_needed: _save()
+
+func _add_effect(kind: String, x: float, duration: float) -> void:
+	effects.append({"kind": kind, "x": x, "age": 0.0, "duration": duration})
+	if effects.size() > 24: effects.pop_front()
 
 func _draw() -> void:
 	if machine == null: return
@@ -192,12 +213,15 @@ func _draw() -> void:
 	_text(Vector2(270, 111), "CARRINHO  /  %d de %d PV" % [ceili(life), int(stats.hp)], 13, CREAM, 480)
 	_bar(Rect2(36, 121, 468, 13), life / float(stats.hp), CORAL)
 	_cart(Vector2(270, 235))
+	draw_set_transform(Vector2(sin(art.clock * 90) * impact_shake * 10, 0))
 	_well()
-	_controls()
 	if sim != null:
 		for enemy in sim.enemies: _mole(enemy)
 		for unit in sim.units: _drill(unit)
 		for shot in sim.projectiles: _shot(shot)
+	_draw_effects()
+	draw_set_transform(Vector2.ZERO)
+	_controls()
 	for notice in notices:
 		var at := Vector2(notice.x, notice.y - (1.8 - float(notice.life)) * 18)
 		_text(at + Vector2(1, 2), str(notice.text), 17, INK, 230)
@@ -252,6 +276,12 @@ func _well() -> void:
 			var outward := -1.0 if side == 0 else 1.0
 			draw_line(Vector2(x, y), Vector2(x + outward * 39, y - 15), Color("#9B7850", 0.45 - ledge * 0.035), 3, true)
 		draw_line(points[1], points[2], Color("#C59A62", 0.35 if side == 0 else 0.12), 3, true)
+	# Reuse granular earth along the shaft walls, avoiding bare geometric faces.
+	draw_set_transform(Vector2(24, 325), PI * 0.5)
+	draw_texture_rect(soil, Rect2(0, -64, 414, 64), false, Color(0.60, 0.63, 0.63))
+	draw_set_transform(Vector2(516, 325), PI * 0.5)
+	draw_texture_rect(soil, Rect2(0, 0, 414, 64), false, Color(0.39, 0.46, 0.49))
+	draw_set_transform(Vector2(sin(art.clock * 90) * impact_shake * 10, 0))
 	var index: int = 0 if sim == null else int(sim.layer_index)
 	var complete: bool = sim != null and sim.final_encounter
 	_text(Vector2(270, 358), "POÇO / %d DE 6 CAMADAS" % index, 14, CREAM, 360)
@@ -278,30 +308,68 @@ func _well() -> void:
 		_text(Vector2(270, 673), "ÚLTIMA DEFESA", 24, TEAL, 410)
 
 func _mole(enemy: Dictionary) -> void:
-	var p := Vector2(float(enemy.x), 601 + sin(art.clock * 3 + float(enemy.id)) * 2)
+	var p := Vector2(float(enemy.x), 615 + sin(art.clock * 3 + float(enemy.id)) * 1.5)
 	_oval(p + Vector2(0, 14), Vector2(83, 20), Color("#07151F", 0.75))
-	if spawn_flash > 0: _text(p - Vector2(0, 63), "TORRÃO", 12, BRASS, 100)
+	var pose := 3 if float(enemy.get("hurt", 0)) > 0 else (2 if float(enemy.get("throw_pose", 0)) > 0 else (1 if enemy.telegraph else 0))
+	var emergence := clampf(float(enemy.get("emerge", 1)), 0.05, 1)
+	var breath := sin(art.clock * 3.5 + float(enemy.id)) * 1.3
+	_mole_sprite(p + Vector2(0, (1 - emergence) * 16), pose, Color.WHITE, Vector2(112 + breath, (146 - breath) * emergence))
+	if spawn_flash > 0: _text(p - Vector2(0, 105), "TORRÃO", 12, BRASS, 100)
 	if enemy.telegraph:
-		draw_circle(p - Vector2(0, 22), 30, Color("#F27C67", 0.2))
-		_text(p - Vector2(0, 47), "! ARREMESSO", 12, CORAL, 125)
-	_oval(p, Vector2(58, 41), Color("#704A38"))
-	draw_circle(p + Vector2(-17, -18), 7, Color("#9D603D"))
-	draw_circle(p + Vector2(17, -18), 7, Color("#9D603D"))
-	_oval(p + Vector2(0, -13), Vector2(40, 30), Color("#9D603D"))
-	_oval(p + Vector2(0, -7), Vector2(19, 12), CORAL)
-	for side in [-1, 1]:
-		draw_circle(p + Vector2(side * 10, -18), 3.2, CREAM)
-		draw_circle(p + Vector2(side * 10, -18), 1.6, INK)
-		for claw in range(3): draw_line(p + Vector2(side * (20 + claw * 3), 6), p + Vector2(side * (22 + claw * 3), 15), CREAM, 2, true)
-	_bar(Rect2(p.x - 29, p.y + 21, 58, 5), float(enemy.hp) / float(enemy.max_hp), CORAL)
+		_text(p - Vector2(0, 88), "! ARREMESSO", 12, CORAL, 125)
+	_bar(Rect2(p.x - 31, p.y + 6, 62, 5), float(enemy.hp) / float(enemy.max_hp), CORAL)
+
+func _mole_sprite(feet: Vector2, pose: int, tint: Color, dimensions: Vector2) -> void:
+	var tile := mole_atlas.get_size() / Vector2(4, 1)
+	draw_texture_rect_region(mole_atlas, Rect2(feet - Vector2(dimensions.x * 0.5, dimensions.y * 0.86), dimensions), Rect2(Vector2(pose * tile.x, 0), tile), tint)
 
 func _drill(unit: Dictionary) -> void:
 	var t := clampf(float(unit.age) / float(unit.duration), 0, 1)
-	var p := Vector2(270, lerpf(300, 592, t * t))
-	draw_texture_rect_region(machine, Rect2(p - Vector2(18, 31), Vector2(36, 34)), Rect2(15, 15, 685, 625))
-	draw_set_transform(p, sin(art.clock * 45) * 0.12)
-	draw_texture_rect_region(machine, Rect2(-14, -4, 28, 38), Rect2(730, 35, 490, 615))
-	draw_set_transform(Vector2.ZERO)
+	if unit.get("role", "") == "defender":
+		_robot(Vector2(320, lerpf(300, 592, t * t)), unit)
+		return
+	var working := float(unit.age) >= float(unit.duration)
+	var cycle := fmod(maxf(0, float(unit.age) - float(unit.duration)), float(sim.config.pioneer.hit_interval)) / float(sim.config.pioneer.hit_interval)
+	var hop := sin(cycle * PI) * 31 if working else 0.0
+	var p := Vector2(270, lerpf(300, 580, t * t) - hop)
+	_oval(Vector2(270, 612), Vector2(52 - hop * 0.4, 10), Color("#07151F", 0.65))
+	var compression := 1.0 - maxf(0, 1 - cycle * 8) * 0.12 if working else 1.0
+	draw_set_transform(p, sin(art.clock * 45) * 0.045, Vector2(1.0 / compression, compression))
+	draw_texture_rect_region(machine, Rect2(-24, -37, 48, 45), Rect2(15, 15, 685, 625))
+	# Exposed spring compresses on contact, cone visibly turns between strokes.
+	for turn in range(4): draw_line(Vector2(-10, turn * 3), Vector2(10, turn * 3 + 2), BRASS, 2, true)
+	draw_texture_rect_region(machine, Rect2(-19, 7, 38, 34), Rect2(730, 35, 490, 615))
+	if int(unit.get("hits", 0)) >= 3: draw_line(Vector2(-12, -22), Vector2(13, -3), INK, 2, true)
+	draw_set_transform(Vector2(sin(art.clock * 90) * impact_shake * 10, 0))
+	if working: _text(Vector2(270, 638), "%d / %d GOLPES" % [unit.hits, sim.config.pioneer.hits], 10, TEAL, 110)
+
+func _robot(p: Vector2, unit: Dictionary) -> void:
+	var bob := sin(art.clock * 6) * 2
+	p.y += bob
+	var pose := 2 if float(unit.get("hurt", 0)) > 0 else (1 if unit.get("at_front", false) and float(unit.timer) > 0.72 else 0)
+	var tile := robot_atlas.get_size() / Vector2(3, 1)
+	_oval(p + Vector2(0, 21), Vector2(70, 11), Color("#07151F", 0.6))
+	draw_texture_rect_region(robot_atlas, Rect2(p - Vector2(49, 73), Vector2(98, 98)), Rect2(Vector2(pose * tile.x, 0), tile))
+	_bar(Rect2(p.x - 24, p.y + 28, 48, 5), float(unit.hp) / float(sim.config.excavator.hp), TEAL)
+	if unit.get("at_front", false): _text(p - Vector2(0, 80), "DEFENSOR / %.0fs" % maxf(0, float(sim.config.excavator.duration) - float(unit.age) + float(unit.duration)), 10, TEAL, 130)
+
+func _draw_effects() -> void:
+	for fx in effects:
+		var t := float(fx.age) / float(fx.duration)
+		var p := Vector2(float(fx.x), 609)
+		if fx.kind == "mole_defeat": _mole_sprite(p + Vector2(0, t * 17), 3, Color(1, 1, 1, 1 - t), Vector2(112, 146))
+		for particle in range(9):
+			var angle := PI + particle * PI / 8.0
+			var velocity := Vector2(cos(angle), sin(angle)) * (28 + particle % 3 * 17)
+			var at := p + velocity * t + Vector2(0, t * t * 34)
+			var tint := BRASS if fx.kind == "drill_break" else Color("#AF8150")
+			draw_circle(at, (3.5 if fx.kind == "drill_break" else 4.5) * (1 - t), Color(tint, 1 - t))
+		if fx.kind == "drill_break":
+			for piece in range(3):
+				var at := p + Vector2((piece - 1) * t * 65, -48 * sin(t * PI) - 10)
+				draw_set_transform(at, t * (piece - 1) * 5)
+				draw_texture_rect_region(machine, Rect2(-8, -8, 16, 16), Rect2(70 + piece * 170, 300, 160, 160), Color(1, 1, 1, 1 - t))
+				draw_set_transform(Vector2(sin(art.clock * 90) * impact_shake * 10, 0))
 
 func _shot(shot: Dictionary) -> void:
 	var t := clampf(float(shot.age) / float(shot.duration), 0, 1)
@@ -309,7 +377,7 @@ func _shot(shot: Dictionary) -> void:
 	var b := Vector2(float(shot.x), 578)
 	if shot.kind == "soil":
 		a = Vector2(float(shot.x), 573)
-		b = Vector2(270, 245)
+		b = Vector2(320, 580) if sim != null and not sim._unit(int(shot.target)).is_empty() else Vector2(270, 245)
 	var p := a.lerp(b, t)
 	if shot.kind == "soil":
 		p.x += sin(t * PI) * 25
@@ -319,12 +387,21 @@ func _shot(shot: Dictionary) -> void:
 
 func _controls() -> void:
 	_panel(Rect2(0, 747, 540, 213), INK, 17)
-	var ready: bool = sim != null and sim.cooldown <= 0 and sim.status == "active"
+	var ready: bool = sim != null and sim.cooldown <= 0 and sim.status == "active" and sim.units.size() < int(sim.config.limits.units)
 	var ended: bool = sim != null and sim.status != "active"
-	var detail := "TENTATIVA ENCERRADA" if ended else ("PRONTA" if ready else "%.1f s" % (3.0 if sim == null else sim.cooldown))
+	var detail := "TENTATIVA ENCERRADA" if ended else ("4 GOLPES / PRONTA" if ready else ("FRENTE OCUPADA" if sim != null and sim.cooldown <= 0 else "%.1f s" % (3.0 if sim == null else sim.cooldown)))
 	_button("launch", "LANÇAR PIONEIRA", detail, CORAL, ready)
 	_bar(Rect2(35, 830, 212, 5), 0 if sim == null or ended else 1.0 - float(sim.cooldown) / 3.0, TEAL)
-	for slot in range(2):
+	var support_ready: bool = sim != null and sim.support_cooldown <= 0 and sim.status == "active" and sim.units.size() < int(sim.config.limits.units)
+	var support_active := false
+	if sim != null:
+		for unit in sim.units:
+			if unit.get("role", "") == "defender":
+				support_ready = false
+				support_active = true
+	var support_detail := "PRONTO" if support_ready else ("ENCERRADO" if ended else ("EM CAMPO" if support_active else ("OCUPADO" if sim != null and sim.support_cooldown <= 0 else "%.1fs" % (20.0 if sim == null else sim.support_cooldown))))
+	_button("support", "ESCAVADOR", "GRÁTIS / " + support_detail, TEAL, support_ready)
+	for slot in [1]:
 		var r := Rect2(276 + slot * 126, 758, 118, 88)
 		_panel(r, Color("#24434D"), 10)
 		_icon("lock", Rect2(r.get_center() - Vector2(12, 27), Vector2(24, 24)))
@@ -348,7 +425,7 @@ func _controls() -> void:
 func _start_panel() -> void:
 	draw_rect(Rect2(0, 330, 540, 416), Color("#0B202D", 0.88))
 	_text(Vector2(270, 392), "DEFENDA A EXPEDIÇÃO", 26, CREAM, 485)
-	_wrap(Rect2(45, 420, 450, 80), "Lance brocas para romper seis camadas. Seus dois canhões defendem o carrinho automaticamente.", 18, CREAM)
+	_wrap(Rect2(45, 420, 450, 95), "A Pioneira salta e golpeia 4 vezes antes de quebrar. O Escavador luta, minera e protege por 10 s. Canhões automáticos defendem o carrinho.", 17, CREAM)
 	_wrap(Rect2(45, 520, 450, 80), "Lançar não custa ouro. Na derrota, ouro e melhorias ficam com você; a tentativa recomeça.", 16, TEAL)
 	_button("start", "INICIAR TENTATIVA", "PIONEIRA: 3 s DE COOLDOWN", CORAL, true)
 
@@ -382,8 +459,8 @@ func _panel(rect: Rect2, tint: Color, radius: int) -> void:
 func _button(id: String, label: String, detail: String, tint: Color, enabled: bool) -> void:
 	var r := Layout.button(id)
 	art.plate(self, r, tint, r.has_point(pointer), enabled, id in ["launch", "start", "retry", "import"])
-	_text(r.get_center() + Vector2(0, -3), label, 13 if id in ["damage", "hull"] else 17, INK if enabled else CREAM, r.size.x - 32)
-	_text(r.get_center() + Vector2(0, 20), detail, 10 if id in ["damage", "hull"] else 12, INK if enabled else CREAM, r.size.x - 26)
+	_text(r.get_center() + Vector2(0, -3), label, 12 if id == "support" else (13 if id in ["damage", "hull"] else 17), INK if enabled else CREAM, r.size.x - 16)
+	_text(r.get_center() + Vector2(0, 20), detail, 10 if id in ["damage", "hull", "support"] else 12, INK if enabled else CREAM, r.size.x - 14)
 
 func _bar(rect: Rect2, ratio: float, tint: Color) -> void:
 	_panel(rect, INK, 5)

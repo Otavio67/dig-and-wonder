@@ -24,7 +24,7 @@ Não versione `.tools/`, `.godot/`, APKs, credenciais ou chaves. Recursos origin
 Direção principal autorizada em 20/10/2026: defesa com escavação por camadas, carrinho fixo, dois canhões automáticos e unidades lançáveis. O modo manual em grade foi substituído. Especificação atual em `docs/DESENVOLVIMENTO.md`; material antigo em `docs/historico/`.
 
 1. Marco 1: uma fase curta, camada ativa, Pioneira com cooldown, Torrão, ouro, melhorias de dano/vida, derrota/reinício, perfil 6 e importação segura de legado.
-2. Marco 2 após aprovação: clareza/balanceamento e somente uma unidade adicional.
+2. Marco 2 autorizado em 20/10: Pioneira de quatro golpes, Torrão pintado, clareza e somente o Escavador adicional. Implementação atual em docs/MARCO2.md. Não avançar ao Marco 3 automaticamente.
 3. Marco 3: fases/desbloqueios e novos inimigos um por vez.
 4. Marco 4: primeiro boss. Validar APK/toque/desempenho e anúncios isolados antes de publicação; não tornar anúncio requisito de tentativa.
 

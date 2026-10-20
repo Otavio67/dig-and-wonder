@@ -2,7 +2,8 @@
   "phase": {"id": 1, "name": "Poço do Acampamento", "layers": 6, "layer_hp": 44, "hp_per_layer": 8, "layer_gold": 12, "gold_per_layer": 2, "materials": ["terra", "terra", "argila", "pedra", "pedra", "cristal"], "wave_interval": 10.0, "timed_waves": 12, "late_wave_after": 3, "late_wave_size": 2, "final_moles": 2},
   "first_impact_gold": 2,
   "cart": {"hp": 120, "cannon_damage": 6, "cannon_interval": 1.25},
-  "pioneer": {"damage": 32, "cooldown": 3.0, "flight": 0.8, "max_simultaneous": 2},
+  "pioneer": {"damage": 32, "cooldown": 3.0, "flight": 0.8, "max_simultaneous": 2, "hits": 4, "hit_interval": 0.7},
+  "excavator": {"damage": 9, "hp": 45, "duration": 10, "cooldown": 20, "flight": 0.8, "attack_interval": 1.0, "limit": 1},
   "mole": {"name": "Toupeira Torrão", "hp": 48, "damage": 8, "attack_interval": 2.8, "first_attack": 1.7, "telegraph": 0.65, "gold": 7},
   "upgrades": {"damage": {"base_cost": 18, "cost_step": 14, "max_level": 10, "bonus": 0.12}, "hull": {"base_cost": 20, "cost_step": 16, "max_level": 10, "bonus": 35}},
   "limits": {"enemies": 4, "projectiles": 24, "units": 2, "pending_spawns": 8}

@@ -1,5 +1,7 @@
 # Identidade visual — Dig & Wonder
 
+Atualização de 20/10/2026: estado atual e animações em [MARCO2.md](MARCO2.md); terreno/poço em [REVISAO-MARCO1.md](REVISAO-MARCO1.md). Essas revisões substituem as menções anteriores a dois espaços vazios ou impacto único da Pioneira.
+
 ## Direção atual: defesa com escavação
 
 O carrinho-companheiro permanece fixo no topo e protege a expedição com dois canhões. Pequenas brocas descem pelo poço para quebrar uma camada contínua. O terreno avança visualmente sem aumentar a distância de combate. Não há grade de blocos independentes na apresentação principal.

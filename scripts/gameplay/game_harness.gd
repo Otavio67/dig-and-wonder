@@ -52,7 +52,7 @@ func _run() -> void:
 	root.add_child(reopened)
 	reopened.set_process(false)
 	assert(reopened.profile.gold == 12 and reopened.profile.hull_level == 1 and reopened.profile.damage_level == 1)
-	assert(reopened.sim.layer_index == 0 and reopened.sim.cart_hp == 155 and reopened.sim.cooldown == 3 and reopened.screen == "start")
+	assert(reopened.sim.support_cooldown == 20 and reopened.sim.layer_index == 0 and reopened.sim.cart_hp == 155 and reopened.sim.cooldown == 3 and reopened.screen == "start")
 	reopened.screen = "fight"
 	reopened.profile.gold = 100
 	reopened.sim.damage_cart(10000)

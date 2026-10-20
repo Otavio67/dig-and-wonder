@@ -6,7 +6,11 @@ Em 20/10/2026, o usuário autorizou substituir a escavação manual em grade por
 
 Ciclo: **lançar unidades → escavar/combater → ganhar ouro → melhorar permanentemente → superar a fase**. Carrinho fixo, poço abaixo, frente de escavação em distância visual limitada. O jogador não seleciona células.
 
-## Marco 1 implementado
+## Estado atual: Marco 2
+
+O usuário aprovou a revisão visual e o Marco 2 em 20/10/2026. A especificação complementar atual é `MARCO2.md`: Pioneira divide os mesmos 32 de dano em quatro golpes a cada 0,7 s após voo de 0,8 s; quebra ao terminar. Um único apoio adicional, Robô Escavador, gratuito nesta fase de protótipo, sem compra ou campo permanente novo. Save 6 inalterado. A revisão adicionou somente o bônus inicial explicitamente pedido (`first_impact_gold: 2` por tentativa). Demais preços/recompensas/cadências preservados.
+
+## Base do Marco 1 (valores preservados salvo as diferenças acima)
 
 - Uma fase: Poço do Acampamento, seis camadas, sem boss. Materiais: terra, terra, argila, pedra, pedra e cristal. Uma única camada ativa, uma barra de resistência. Vida inicial 44 + 8 por camada; ouro 12 + 2 por camada. Vida compartilhada, sem blocos funcionais independentes.
 - Carrinho: 120 PV; dois canhões, cada um com 6 de dano e intervalo de 1,25 s, com pequeno desfasamento. Atacam automaticamente; priorizam preparação de ataque ao carrinho e depois menor ID. Projétil não retargeteia e se dissipa se seu alvo morreu.

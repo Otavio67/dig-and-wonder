@@ -1,5 +1,7 @@
 # Direção de arte — defesa com escavação
 
+Atualização de 20/10/2026: estado atual e animações em [MARCO2.md](MARCO2.md); terreno/poço em [REVISAO-MARCO1.md](REVISAO-MARCO1.md). Essas revisões substituem as menções anteriores a dois espaços vazios ou impacto único da Pioneira.
+
 Direção de jogo atual autorizada em 20/10/2026. A aprovação artística anterior continua orientando paleta, pintura, materiais e acabamento; a antiga restrição a alterações exclusivamente visuais foi substituída pelo briefing de defesa. Regras atuais em `DESENVOLVIMENTO.md`.
 
 ## Protagonista e leitura

@@ -33,3 +33,6 @@ Carroceria do carrinho e Pioneira reutilizam o atlas de máquina existente; canh
 
 ## Revisão de solo — 20/10/2026
 solo-torroes-raizes.png: imagem gerada pela ferramenta integrada imagegen para este projeto. Prompt e integração em docs/REVISAO-MARCO1.md. Sem recurso externo copiado; não se atribui autoria humana à geração.
+
+## Atlas do Marco 2 — 20/10/2026
+`characters/torrao-poses.png` e `characters/escavador-poses.png`: imagens 2D geradas pela ferramenta integrada imagegen para este projeto. Prompts em docs/PROMPTS-MARCO2.md. Não foram usados modelos 3D ou personagens copiados. Não se atribui autoria humana à geração.
