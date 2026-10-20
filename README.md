@@ -80,3 +80,7 @@ Atualização de 20/10/2026: o ambiente de nuvem tem Android SDK e templates God
 ## Estado local
 
 O projeto está jogável em Godot 4.7.2, com APK debug, prova AdMob isolada, SDK Android, testes da lógica/save e capturas visuais reproduzíveis. O checkpoint atual é `0.0.5`. Permanecem pendentes execução em Android real, métricas de desempenho, acessibilidade completa, integração do momento de anúncio à economia do jogo e preparação da loja. Os detalhes estão em [REVISAO-ANDROID.md](docs/REVISAO-ANDROID.md).
+
+## Revisão de sensação após 0.0.5
+
+Lascas da escavação agora usam a cor do material, giram durante a queda e a broca recua levemente ao atingir ou quebrar uma célula. Capturas reais do Godot 4.7.2 em Windows ficam em `builds/review/` (saída local ignorada pelo Git). Importação, boot e harnesses de lógica, gameplay e save passaram; o harness Android ainda falha porque toca em `y=229`, acima da grade em `y=300` na revisão local de layout. O harness precisa ser alinhado antes de servir como validação; FPS e toque em Android real continuam sem medição.

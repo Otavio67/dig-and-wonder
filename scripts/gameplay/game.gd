@@ -53,6 +53,7 @@ var save_pending := false
 var save_elapsed := 0.0
 var save_failed := false
 var panel_styles: Dictionary = {}
+var drill_impact_time := 0.0
 
 func _ready() -> void:
 	get_tree().auto_accept_quit = false
@@ -164,6 +165,9 @@ func _process(delta: float) -> void:
 		if save_elapsed >= AUTOSAVE_INTERVAL:
 			_commit_save()
 	var changed := false
+	if drill_impact_time > 0.0:
+		drill_impact_time = maxf(0.0, drill_impact_time - delta)
+		changed = true
 	if held and not camera_dragging and not show_start_screen and not show_album and not show_workshop:
 		var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 		var dig_interval := clampf(0.17 - float(boosts.speed), 0.07, 0.42)
@@ -183,6 +187,7 @@ func _process(delta: float) -> void:
 			var particle: Dictionary = fx[i]
 			particle.p += particle.velocity * delta
 			particle.velocity.y += 280.0 * delta
+			particle.angle = float(particle.angle) + float(particle.spin) * delta
 			particle.life -= delta
 			if particle.life <= 0.0:
 				fx.remove_at(i)
@@ -296,15 +301,20 @@ func _cell_at(pos: Vector2) -> Vector2i:
 func _perform_dig(cell: Vector2i) -> void:
 	var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 	var result := engine.dig(drill.pattern, cell.x, cell.y, maxi(1, drill.level + int(boosts.power)), int(boosts.reward), phase_system.end_depth(state))
+	if result.worked > 0 or result.broken > 0:
+		drill_impact_time = 0.16 if result.broken > 0 else 0.11
 	if result.broken <= 0:
 		if result.worked > 0:
+			var hit_layer: Dictionary = engine.layer_for_cell(cell.y, cell.x)
+			_spawn_particles(_cell_center(cell), 2, Color(str(hit_layer.get("color", "#c98964"))).darkened(0.12))
 			_request_save()
 		return
 	state.inventory += int(result.coins)
 	for target in result.cells:
 		var old_depth := int(state.depth)
 		state.depth = maxi(old_depth, target.y + 1)
-		_spawn_particles(_cell_center(target), result.broken)
+		var broken_layer: Dictionary = engine.layer_for_cell(target.y, target.x)
+		_spawn_particles(_cell_center(target), 4, Color(str(broken_layer.get("color", "#c98964"))))
 		_collect_phase_marker(target)
 		var active_phase: Dictionary = phase_system.phases.get(phase_system.phase_id_at(state, target.y), {})
 		var discovery: Dictionary = active_phase.get("discovery", biome.discovery)
@@ -501,10 +511,11 @@ func _equip_gear(gear_id: String) -> void:
 func _cell_center(cell: Vector2i) -> Vector2:
 	return Vector2(size.x * 0.5 + cell.x * cell_size, grid_origin_y + (cell.y - camera_depth + 0.5) * cell_size)
 
-func _spawn_particles(origin: Vector2, count: int) -> void:
+func _spawn_particles(origin: Vector2, count: int, material_color: Color = Color("#ca8052")) -> void:
 	var remaining := 26 - fx.size()
 	for i in range(mini(count * 3, remaining)):
-		fx.append({"p": origin, "velocity": Vector2(randf_range(-115.0, 115.0), randf_range(-190.0, -45.0)), "life": randf_range(0.25, 0.58), "color": [Color("#ffe08b"), Color("#fff5cf"), Color("#79ede0")][randi() % 3], "radius": randf_range(2.0, 4.5)})
+		var shade := material_color.lightened(randf_range(0.08, 0.28))
+		fx.append({"p": origin, "velocity": Vector2(randf_range(-115.0, 115.0), randf_range(-190.0, -45.0)), "life": randf_range(0.25, 0.48), "color": shade, "radius": randf_range(2.0, 4.5), "angle": randf_range(-PI, PI), "spin": randf_range(-8.0, 8.0)})
 
 func _sell() -> void:
 	var amount := int(state.inventory)
@@ -683,7 +694,15 @@ func _draw_world(s: Vector2) -> void:
 	draw_rect(Rect2(0, top, 5, bottom - top), Color("#ddae68"))
 	var surface_line := PackedVector2Array([Vector2(0, top), Vector2(s.x * 0.5 - 39, top), Vector2(s.x * 0.5 - 25, top - 5), Vector2(s.x * 0.5 + 27, top - 5), Vector2(s.x * 0.5 + 42, top), Vector2(s.x, top)])
 	draw_polyline(surface_line, Color(str(_active_phase().get("surface", "#75b85d"))).lightened(0.2), 6.0, true)
-	_draw_drill(Vector2(s.x * 0.5, top + 2))
+	var drill_center := Vector2(s.x * 0.5, top + 2)
+	if drill_impact_time > 0.0:
+		var impact := sin((1.0 - drill_impact_time / 0.16) * PI)
+		var recoil_center := drill_center + Vector2(0, -impact * 4.0)
+		draw_set_transform(recoil_center, -impact * 0.035, Vector2.ONE)
+		_draw_drill(Vector2.ZERO)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	else:
+		_draw_drill(drill_center)
 	_draw_pill(Rect2(s.x - 105, top + 11, 89, 30), PANEL, 13)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x - 97, top + 32), "%d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, 73, 14, INK)
 	if _boss_is_active():
@@ -927,4 +946,10 @@ func _centered_string(font: Font, pos: Vector2, text: String, alignment: Horizon
 
 func _draw_particles() -> void:
 	for particle in fx:
-		draw_circle(particle.p, particle.radius, particle.color)
+		var radius: float = particle.radius
+		var angle: float = particle.angle
+		var long_axis := Vector2(cos(angle), sin(angle)) * radius
+		var short_axis := Vector2(-long_axis.y, long_axis.x) * radius * 0.52
+		var points := PackedVector2Array([particle.p + long_axis, particle.p + short_axis, particle.p - long_axis, particle.p - short_axis])
+		draw_colored_polygon(points, particle.color)
+		draw_line(particle.p - long_axis * 0.35, particle.p + long_axis * 0.35, Color("#fff7e6", 0.8), 1.0, true)

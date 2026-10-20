@@ -63,3 +63,11 @@ Tag: `v0.0.4` no checkpoint desta revisão.
 - Teste de importação, boot e harnesses preservados; exportações estáticas executadas. Sem aparelho nem KVM, exibição de anúncio, interação Android e FPS não foram medidos.
 
 Tag: `v0.0.5` no checkpoint deste marco.
+
+## Revisão local de sensação — após 0.0.5
+
+- Lascas geradas ao atingir ou quebrar uma célula herdam a cor do material, giram durante a queda e continuam limitadas a 26 partículas ativas; a broca tem um recuo visual breve. Dano, intervalo de escavação, economia e save não mudaram.
+- Capturas reais do Godot 4.7.2 em Windows: início, escavação e menus em `builds/review/` (saída local ignorada pelo Git), mais uma captura durante a quebra de bloco.
+- Importação, boot e harnesses de lógica, gameplay e save passaram. O harness Android falhou na asserção de toque em `y=229`: a grade está em `y=300` após a alteração local de layout. FPS Android, toque em aparelho e acessibilidade não foram medidos.
+
+Revisão visual/feedback sem nova versão ou tag.
