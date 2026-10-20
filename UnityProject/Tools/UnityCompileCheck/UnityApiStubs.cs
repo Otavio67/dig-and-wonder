@@ -104,7 +104,7 @@ namespace UnityEngine.UI
     public class Graphic : UnityEngine.Component { public UnityEngine.Color color; public bool raycastTarget; public UnityEngine.RectTransform rectTransform; }
     public class Image : Graphic { public UnityEngine.Sprite sprite; public bool preserveAspect; }
     public class CanvasGroup : UnityEngine.Component { public float alpha; public bool interactable, blocksRaycasts; }
-    public class Button : UnityEngine.Component { public ButtonClickedEvent onClick = new ButtonClickedEvent(); public sealed class ButtonClickedEvent { public void AddListener(UnityAction action) { } } }
+    public class Button : UnityEngine.Component { public bool interactable = true; public ButtonClickedEvent onClick = new ButtonClickedEvent(); public sealed class ButtonClickedEvent { public void AddListener(UnityAction action) { } } }
 }
 
 namespace UnityEngine.Events { public delegate void UnityAction(); }

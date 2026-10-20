@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -6,7 +7,7 @@ using UnityEngine.UI;
 
 namespace DigAndWonder
 {
-    /// <summary>HUD de protótipo: contraste alto, retrato, toque e mouse, sem assets externos.</summary>
+    /// <summary>HUD de protótipo: contraste alto, retrato, toque e mouse, com arte provisória reutilizável.</summary>
     public sealed class PrototypeGameUI : MonoBehaviour
     {
         private static readonly Color Ink = new Color(0.035f, 0.11f, 0.14f);
@@ -21,6 +22,7 @@ namespace DigAndWonder
         private AutoBattleDriver driver;
         private TextMeshProUGUI stageLabel;
         private TextMeshProUGUI walletLabel;
+        private TextMeshProUGUI missionLabel;
         private TextMeshProUGUI statusLabel;
         private TextMeshProUGUI healthLabel;
         private TextMeshProUGUI combatLog;
@@ -31,6 +33,10 @@ namespace DigAndWonder
         private RectTransform healthUpgradeButton;
         private RectTransform restartButton;
         private RectTransform continueButton;
+        private Button attackUpgradeUiButton;
+        private Button healthUpgradeUiButton;
+        private TextMeshProUGUI attackUpgradeButtonLabel;
+        private TextMeshProUGUI healthUpgradeButtonLabel;
         private PooledCombatFeedback feedback;
         private Image healthFill;
         private TextMeshProUGUI drillIcon;
@@ -52,11 +58,15 @@ namespace DigAndWonder
         private float refreshTimer;
         private int displayedGold = -1;
         private readonly Dictionary<string, Image> tabButtonImages = new Dictionary<string, Image>();
+        private ProgressionDefinition progression;
+        private AbilityDefinition[] abilityCatalog;
 
         public void Initialize(Transform canvasRoot, AutoBattleDriver battleDriver)
         {
             root = canvasRoot;
             driver = battleDriver;
+            progression = Resources.Load<ProgressionDefinition>("Data/Progression");
+            abilityCatalog = Resources.LoadAll<AbilityDefinition>("Data/Abilities");
             driver.CombatEventRaised += OnCombatEvent;
             BuildInterface();
             feedback = gameObject.AddComponent<PooledCombatFeedback>();
@@ -79,6 +89,9 @@ namespace DigAndWonder
             MakeLabel("Title", background, "DIG & WONDER", 40, Sand, new Vector2(0.04f, 0.91f), new Vector2(0.7f, 0.975f), TextAlignmentOptions.Left);
             stageLabel = MakeLabel("Stage", background, "CAVERNA", 25, White, new Vector2(0.04f, 0.865f), new Vector2(0.68f, 0.91f), TextAlignmentOptions.Left);
             walletLabel = MakeLabel("Wallet", background, "◉ 0", 30, Sand, new Vector2(0.68f, 0.905f), new Vector2(0.96f, 0.97f), TextAlignmentOptions.Right);
+            var missionPanel = MakePanel("Mission banner", background, new Color(0.12f, 0.2f, 0.25f), new Vector2(0.04f, 0.785f), new Vector2(0.96f, 0.845f), Vector2.zero, Vector2.zero);
+            missionLabel = MakeLabel("Mission", missionPanel, "MISSÃO 01  •  DERROTE O GUARDIÃO", 17, White,
+                new Vector2(0.03f, 0.08f), new Vector2(0.97f, 0.92f), TextAlignmentOptions.Center);
 
             worldPanel = MakePanel("Cave view", background, Deep, new Vector2(0.04f, 0.325f), new Vector2(0.96f, 0.85f), Vector2.zero, Vector2.zero);
             MakePanel("Cave glow", worldPanel, new Color(0.13f, 0.33f, 0.34f), new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.92f), Vector2.zero, Vector2.zero);
@@ -140,13 +153,17 @@ namespace DigAndWonder
                 tabButtonImages.Add(tab, tabButton.GetComponent<Image>());
             }
 
-            menuPanel = MakePanel("Tab panel", background, Panel, new Vector2(0.06f, 0.135f), new Vector2(0.94f, 0.285f), Vector2.zero, Vector2.zero);
-            menuTitle = MakeLabel("Tab title", menuPanel, "MELHORIAS", 24, Sand, new Vector2(0.03f, 0.72f), new Vector2(0.97f, 0.98f), TextAlignmentOptions.Center);
-            menuBody = MakeLabel("Tab info", menuPanel, "", 18, White, new Vector2(0.05f, 0.3f), new Vector2(0.95f, 0.72f), TextAlignmentOptions.Center);
-            attackUpgradeButton = MakeButton("Upgrade attack", menuPanel, "DANO +", 17, 0.04f, 0.03f, 0.47f, 0.28f,
+            menuPanel = MakePanel("Tab panel", background, Panel, new Vector2(0.06f, 0.135f), new Vector2(0.94f, 0.315f), Vector2.zero, Vector2.zero);
+            menuTitle = MakeLabel("Tab title", menuPanel, "MELHORIAS", 22, Sand, new Vector2(0.03f, 0.74f), new Vector2(0.97f, 0.98f), TextAlignmentOptions.Center);
+            menuBody = MakeLabel("Tab info", menuPanel, "", 15, White, new Vector2(0.05f, 0.3f), new Vector2(0.95f, 0.74f), TextAlignmentOptions.Center);
+            attackUpgradeButton = MakeButton("Upgrade attack", menuPanel, "MELHORAR", 17, 0.04f, 0.03f, 0.47f, 0.28f,
                 () => { if (!driver.TryPurchaseUpgrade(UpgradeKind.Attack)) statusLabel.text = "OURO INSUFICIENTE OU NÍVEL MÁXIMO"; Refresh(); }, Mint).GetComponent<RectTransform>();
-            healthUpgradeButton = MakeButton("Upgrade health", menuPanel, "VIDA +", 17, 0.53f, 0.03f, 0.96f, 0.28f,
+            attackUpgradeUiButton = attackUpgradeButton.GetComponent<Button>();
+            attackUpgradeButtonLabel = attackUpgradeButton.gameObject.GetComponentInChildren<TextMeshProUGUI>();
+            healthUpgradeButton = MakeButton("Upgrade health", menuPanel, "MELHORAR", 17, 0.53f, 0.03f, 0.96f, 0.28f,
                 () => { if (!driver.TryPurchaseUpgrade(UpgradeKind.Health)) statusLabel.text = "OURO INSUFICIENTE OU NÍVEL MÁXIMO"; Refresh(); }, Sand).GetComponent<RectTransform>();
+            healthUpgradeUiButton = healthUpgradeButton.GetComponent<Button>();
+            healthUpgradeButtonLabel = healthUpgradeButton.gameObject.GetComponentInChildren<TextMeshProUGUI>();
             restartButton = MakeButton("Restart run", menuPanel, "RECOMEÇAR", 17, 0.25f, 0.03f, 0.75f, 0.28f,
                 () => { driver.StartNewGame(); EnterGame(false); }, Coral).GetComponent<RectTransform>();
             restartButton.gameObject.SetActive(false);
@@ -173,6 +190,7 @@ namespace DigAndWonder
             worldPanel.gameObject.SetActive(false);
             stageLabel.gameObject.SetActive(false);
             walletLabel.gameObject.SetActive(false);
+            missionLabel.gameObject.SetActive(false);
         }
 
         private void ShowStart()
@@ -184,6 +202,7 @@ namespace DigAndWonder
             bottomBar.gameObject.SetActive(false);
             stageLabel.gameObject.SetActive(false);
             walletLabel.gameObject.SetActive(false);
+            missionLabel.gameObject.SetActive(false);
             statusLabel.gameObject.SetActive(false);
             combatLog.gameObject.SetActive(false);
         }
@@ -198,6 +217,7 @@ namespace DigAndWonder
             bottomBar.gameObject.SetActive(true);
             stageLabel.gameObject.SetActive(true);
             walletLabel.gameObject.SetActive(true);
+            missionLabel.gameObject.SetActive(true);
             statusLabel.gameObject.SetActive(true);
             combatLog.gameObject.SetActive(true);
             if (resumed) statusLabel.text = "PROGRESSO RECUPERADO — CONTINUANDO DA ÚLTIMA POSIÇÃO";
@@ -224,6 +244,8 @@ namespace DigAndWonder
             IdleCombatSimulation sim = driver.Simulation;
             if (sim == null) return;
             stageLabel.text = sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant();
+            int stageNumber = GetStageNumber(sim.Profile.UnlockedStageId);
+            missionLabel.text = "MISSÃO " + stageNumber.ToString("00") + "  •  DERROTE O GUARDIÃO  •  " + (sim.Run.IsStageCleared ? "CONCLUÍDA" : "EM ANDAMENTO");
             if (displayedGold != sim.Gold)
             {
                 displayedGold = sim.Gold;
@@ -287,19 +309,24 @@ namespace DigAndWonder
             switch (currentTab)
             {
                 case "MINA":
-                    menuBody.text = sim.Run.IsPlayerDefeated ? "A escavação terminou. Toque para recomeçar." : "A broca avança e luta automaticamente.\nO guardião é a única condição de avanço.";
+                    menuTitle.text = "CENTRAL DA EXPEDIÇÃO";
+                    menuBody.text = sim.Run.IsPlayerDefeated ? "A escavação terminou. Toque para recomeçar." : "A broca avança e luta automaticamente.\nO guardião é a única condição de avanço.\n\nFASE " + GetStageNumber(sim.CurrentStageId) + "  •  " + sim.CurrentStageDisplayName;
                     break;
                 case "MELHORIAS":
-                    menuBody.text = "DANO  Nv." + sim.Profile.AttackLevel + "   •   " + (attackCost < 0 ? "MÁX." : attackCost + " ouro") + "\nVIDA  Nv." + sim.Profile.HealthLevel + "   •   " + (healthCost < 0 ? "MÁX." : healthCost + " ouro");
+                    menuTitle.text = "OFICINA DA BROCA";
+                    menuBody.text = BuildUpgradeSummary(sim, attackCost, healthCost);
                     break;
                 case "BROCAS":
-                    menuBody.text = "BROCA PIONEIRA  •  COMUM\nEspecial: investida em quatro impactos.\nBrocas alternativas entram em marcos futuros.";
+                    menuTitle.text = "GARAGEM DE BROCAS";
+                    menuBody.text = BuildAbilitySummary(GetStageNumber(sim.Profile.UnlockedStageId));
                     break;
                 case "BAÚS":
-                    menuBody.text = "Baús guardados: " + sim.Profile.Chests + "   •   Chaves: " + sim.Profile.Keys + "\nO guardião entrega baús e chaves da fase.";
+                    menuTitle.text = "BAÚS E EQUIPAMENTOS";
+                    menuBody.text = BuildChestSummary(sim, GetStageNumber(sim.Profile.UnlockedStageId));
                     break;
                 default:
-                    menuBody.text = "PERFIL DA EXPEDIÇÃO\nFase: " + sim.Profile.UnlockedStageId.Replace('_', ' ') + "\nO progresso é salvo automaticamente neste aparelho.";
+                    menuTitle.text = "PERFIL DA EXPEDIÇÃO";
+                    menuBody.text = "FASE DESBLOQUEADA  " + sim.Profile.UnlockedStageId.Replace('_', ' ') + "\nATQ  Nv." + sim.Profile.AttackLevel + "   •   VIDA  Nv." + sim.Profile.HealthLevel + "\n\nPROGRESSO SALVO AUTOMATICAMENTE\nNovos módulos aparecem conforme a expedição avança.";
                     break;
             }
             bool defeated = sim.Run.IsPlayerDefeated;
@@ -307,10 +334,98 @@ namespace DigAndWonder
             bool upgradesVisible = currentTab == "MELHORIAS" && !defeated && !cleared && !driver.IsSaveBlocked;
             attackUpgradeButton.gameObject.SetActive(upgradesVisible);
             healthUpgradeButton.gameObject.SetActive(upgradesVisible);
+            if (upgradesVisible)
+            {
+                bool attackMaxed = attackCost < 0;
+                bool healthMaxed = healthCost < 0;
+                attackUpgradeButtonLabel.text = attackMaxed ? "ATQ  MÁXIMO" : "MELHORAR\n◉ " + attackCost;
+                healthUpgradeButtonLabel.text = healthMaxed ? "VIDA  MÁXIMA" : "MELHORAR\n◉ " + healthCost;
+                attackUpgradeUiButton.interactable = !attackMaxed;
+                healthUpgradeUiButton.interactable = !healthMaxed;
+                attackUpgradeButton.GetComponent<Image>().color = attackMaxed ? new Color(0.18f, 0.3f, 0.29f) : Mint;
+                healthUpgradeButton.GetComponent<Image>().color = healthMaxed ? new Color(0.3f, 0.28f, 0.18f) : Sand;
+            }
             restartButton.gameObject.SetActive(defeated && !driver.IsSaveBlocked);
             continueButton.gameObject.SetActive(cleared && !driver.IsSaveBlocked);
             foreach (KeyValuePair<string, Image> button in tabButtonImages)
                 button.Value.color = button.Key == currentTab ? Sand : new Color(0.14f, 0.34f, 0.36f);
+        }
+
+        private string BuildUpgradeSummary(IdleCombatSimulation sim, int attackCost, int healthCost)
+        {
+            int attackMaximum = driver.CurrentAttackMaximum;
+            int healthMaximum = driver.CurrentHealthMaximum;
+            UpgradeDefinition critical = progression == null ? null : progression.criticalChanceUpgrade;
+            UpgradeDefinition criticalDamage = progression == null ? null : progression.criticalDamageUpgrade;
+            UpgradeDefinition special = progression == null ? null : progression.specialUpgrade;
+            return "ATQ  Nv." + sim.Profile.AttackLevel + "/" + attackMaximum + "   •   " + (attackCost < 0 ? "MÁX." : attackCost + " ouro") +
+                "\nVIDA  Nv." + sim.Profile.HealthLevel + "/" + healthMaximum + "   •   " + (healthCost < 0 ? "MÁX." : healthCost + " ouro") +
+                "\n\n" + FormatLockedUpgrade("RECUPERAÇÃO", sim.Profile.HealthLevel, healthMaximum, "VIDA") +
+                "\n" + FormatLockedUpgrade(critical == null ? "CRÍTICO" : critical.displayName, sim.Profile.AttackLevel, attackMaximum, "ATQ") +
+                "\n" + FormatLockedUpgrade(criticalDamage == null ? "DANO CRÍTICO" : criticalDamage.displayName, sim.Profile.AttackLevel, attackMaximum, "ATQ") +
+                "\n" + FormatLockedUpgrade(special == null ? "MELHORIA DO ESPECIAL" : special.displayName, GetStageNumber(sim.Profile.UnlockedStageId), 2, "FASE");
+        }
+
+        private string FormatLockedUpgrade(string displayName, int currentLevel, int requiredLevel, string source)
+        {
+            if (currentLevel < requiredLevel) return "🔒 " + displayName.ToUpperInvariant() + "  •  requer " + source + " Nv." + requiredLevel;
+            return "🔒 " + displayName.ToUpperInvariant() + "  •  EM BALANCEAMENTO";
+        }
+
+        private string BuildAbilitySummary(int currentStage)
+        {
+            if (abilityCatalog == null || abilityCatalog.Length == 0)
+                return "BROCA PIONEIRA  •  DISPONÍVEL\nEspecial: investida em quatro impactos.";
+
+            StringBuilder available = new StringBuilder();
+            StringBuilder[] lockedByPhase = { new StringBuilder(), new StringBuilder(), new StringBuilder(), new StringBuilder(), new StringBuilder() };
+            for (int i = 0; i < abilityCatalog.Length; i++)
+            {
+                AbilityDefinition ability = abilityCatalog[i];
+                if (ability == null) continue;
+                if (ability.implemented)
+                {
+                    AppendCatalogName(available, ability.displayName);
+                    continue;
+                }
+                int phase = (int)Mathf.Clamp(ability.unlockPhase, 1, lockedByPhase.Length - 1);
+                AppendCatalogName(lockedByPhase[phase], ability.displayName);
+            }
+
+            StringBuilder summary = new StringBuilder("CATÁLOGO DE BROCAS\n");
+            if (available.Length > 0) summary.Append("DISPONÍVEIS  ").Append(available).Append('\n');
+            for (int phase = 2; phase < lockedByPhase.Length; phase++)
+            {
+                if (lockedByPhase[phase].Length == 0) continue;
+                summary.Append("🔒 FASE ").Append(phase).Append("  ").Append(lockedByPhase[phase]);
+                if (currentStage >= phase) summary.Append("  •  EM BREVE");
+                summary.Append('\n');
+            }
+            return summary.ToString().TrimEnd();
+        }
+
+        private void AppendCatalogName(StringBuilder target, string displayName)
+        {
+            if (target.Length > 0) target.Append("  •  ");
+            target.Append(displayName.ToUpperInvariant());
+        }
+
+        private string BuildChestSummary(IdleCombatSimulation sim, int currentStage)
+        {
+            string equipmentState = currentStage < 2 ? "🔒 FASE 2" : "DESBLOQUEADO  •  EM BREVE";
+            return "BAÚS GUARDADOS  " + sim.Profile.Chests + "   •   CHAVES  " + sim.Profile.Keys +
+                "\nO guardião entrega baús e chaves da fase.\n\nEQUIPAMENTOS  " + equipmentState +
+                "\nÁLBUM DE DESCOBERTAS  " + equipmentState;
+        }
+
+        private int GetStageNumber(string stageId)
+        {
+            if (progression == null) return 1;
+            if (progression.normalCycle != null)
+                for (int i = 0; i < progression.normalCycle.Length; i++)
+                    if (progression.normalCycle[i] != null && progression.normalCycle[i].id == stageId) return i + 1;
+            return progression.surpriseStage != null && progression.surpriseStage.id == stageId
+                ? (progression.normalCycle == null ? 1 : progression.normalCycle.Length + 1) : 1;
         }
 
         private void OnCombatEvent(CombatEvent e)

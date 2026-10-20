@@ -196,3 +196,17 @@ Tag: `v0.0.9`. A imagem foi revisada visualmente fora do Unity; não há valida�
 - O visual da broca agora é um filho separado do rótulo, mantendo escala, frames e movimento fora da posição funcional.
 
 Tag: `v0.0.10`. Compilação contra stubs e DLLs reais passou; importação pelo Editor, gravação e aparelho Android continuam pendentes.
+
+## 0.0.11 — hub de progressão e bloqueios (20/10/2026)
+
+- O hub ganhou uma faixa de missão com o número da fase, o objetivo do guardião e o estado da tentativa.
+- A oficina da broca exibe ATQ e VIDA com nível, custo em ouro, estado de máximo e botões desabilitados quando o limite é atingido.
+- Recuperação, Crítico, Dano Crítico e Especial aparecem como melhorias futuras, usando os limites de nível e as fases já presentes nos dados; itens sem balanceamento continuam claramente marcados como “em balanceamento”.
+- A garagem agrupa as brocas disponíveis e os desbloqueios por fase 2, 3 e 4. O menu de baús mostra quantidade de baús/chaves e sinaliza Equipamentos e Álbum de Descobertas como bloqueados até a fase 2.
+- O layout foi reorganizado para comportar as informações no retrato, mantendo a broca e sua animação visual em um filho separado da posição funcional.
+
+Esta versão melhora a apresentação e a leitura do progresso. Não adiciona abertura de baús, equipamento aplicável, álbum jogável ou uma nova fase; esses itens continuam sendo prévias bloqueadas no protótipo.
+
+Checks de domínio, compilação dos scripts contra stubs e compilação contra DLLs reais do Editor passaram sem erros/avisos. Editor Play Mode, revisão visual, APK, toque e desempenho Android continuam pendentes de execução no ambiente licenciado/aparelho.
+
+Tag planejada: `v0.0.11`.
