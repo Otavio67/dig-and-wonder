@@ -42,6 +42,8 @@ Atlas pintados da máquina/terreno, fundos em camadas, paleta petróleo/turquesa
 
 A fonte Godot desta linha de jogo corresponde ao Marco 2/0.0.6. O checkpoint mais recente do repositório é **0.0.7**, início do protótipo Unity 6: consulte [UnityProject](UnityProject/README.md) para abrir, testar e ver as pendências. Não há APK Unity neste checkpoint. Os builds Godot anteriores são do modo antigo.
 
+O Editor Unity e o módulo Android foram instalados na instância remota; a importação aguarda ativação da licença e acesso ao registro de pacotes. Preparação reproduzível em [Unity na nuvem](docs/UNITY-NUVEM.md).
+
 ## Evidências e limites
 
 Capturas reais do Marco 1 em `builds/review/marco1-20261020/`, ignoradas pelo Git. `scripts/capture_defense.gd` registra vinte segundos em 12 fps e continua a mesma tentativa por comandos normais até vitória; também verifica derrota por inatividade e reinício. A persistência é desativada somente na instância de captura para não sobrescrever arquivos do jogador. As antigas entradas de captura encaminham para o protótipo atual.

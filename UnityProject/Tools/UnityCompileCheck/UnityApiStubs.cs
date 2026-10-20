@@ -59,6 +59,7 @@ namespace UnityEngine
     public static class Resources
     {
         public static T Load<T>(string path) where T : Object => null;
+        public static T[] FindObjectsOfTypeAll<T>() where T : Object => Array.Empty<T>();
     }
     public static class Application
     {
@@ -110,10 +111,11 @@ namespace TMPro
 {
     using UnityEngine.UI;
     public enum TextAlignmentOptions { Left, Right, Center }
+    public enum TextWrappingModes { Normal }
     public enum FontStyles { Normal, Bold }
     public class TextMeshProUGUI : Graphic
     {
-        public string text; public int fontSize; public TextAlignmentOptions alignment; public bool enableWordWrapping; public FontStyles fontStyle;
+        public string text; public int fontSize; public TextAlignmentOptions alignment; public TextWrappingModes textWrappingMode; public FontStyles fontStyle;
     }
 }
 
@@ -158,12 +160,19 @@ namespace UnityEditor
     {
         public static Action delayCall;
     }
-    public static class PlayerSettings
+    public sealed class PlayerSettings : UnityEngine.Object
     {
         public static UnityEngine.UIOrientation defaultInterfaceOrientation;
-        public static int activeInputHandler;
         public static string companyName, productName;
     }
+    public sealed class SerializedObject : IDisposable
+    {
+        public SerializedObject(UnityEngine.Object target) { }
+        public SerializedProperty FindProperty(string path) => new SerializedProperty();
+        public bool ApplyModifiedPropertiesWithoutUndo() => true;
+        public void Dispose() { }
+    }
+    public sealed class SerializedProperty { public int intValue; }
     public sealed class EditorBuildSettingsScene
     {
         public EditorBuildSettingsScene(string path, bool enabled) { }

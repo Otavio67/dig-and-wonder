@@ -2,8 +2,7 @@
   "name": "DigAndWonder.Editor",
   "rootNamespace": "DigAndWonder.Editor",
   "references": [
-    "DigAndWonder.Runtime",
-    "Unity.Newtonsoft.Json"
+    "DigAndWonder.Runtime"
   ],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],

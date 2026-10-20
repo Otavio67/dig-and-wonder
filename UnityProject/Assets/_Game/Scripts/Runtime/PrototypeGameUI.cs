@@ -354,7 +354,7 @@ namespace DigAndWonder
             rect.anchorMin = min; rect.anchorMax = max; rect.offsetMin = Vector2.zero; rect.offsetMax = Vector2.zero;
             var label = rect.gameObject.GetComponent<TextMeshProUGUI>();
             label.text = text; label.fontSize = size; label.color = color; label.alignment = alignment;
-            label.enableWordWrapping = true; label.raycastTarget = false;
+            label.textWrappingMode = TextWrappingModes.Normal; label.raycastTarget = false;
             return label;
         }
 

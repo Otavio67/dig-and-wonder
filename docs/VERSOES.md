@@ -144,3 +144,12 @@ Tag: `v0.0.6` no checkpoint deste marco.
 - Checks de domínio e compilação contra stubs Unity passam. Não houve Unity Editor, importação real, gravação, APK, revisão visual ou medição Android neste checkpoint.
 
 Tag: `v0.0.7`. O projeto Unity e seus limites estão em [UnityProject/README.md](../UnityProject/README.md).
+
+## Preparação da nuvem — após 0.0.7 (20/10/2026)
+
+- Unity Editor/CLI 6000.0.23f1 + Android instalados na instância remota a partir da imagem GameCI fixada por digest, com SHA-256 validado. .NET 8, Java, ADB, aapt2 e compilação C para ARM64 verificados.
+- Instalador e comandos de ambiente/check versionados. TMP/uGUI, versão de 2D Animation, referências de assembly e configuração do Input System ajustados à API do Unity 6.
+- Dez checks de domínio passaram; compilação C# com stubs e com DLLs reais passou sem erros/avisos. A checagem com DLLs não substitui o Editor e usa os pacotes disponíveis no template.
+- A tentativa real de importação Android foi bloqueada por licença Unity não ativada. Registro de pacotes Unity bloqueado pela política de rede. Sem Play Mode, APK, vídeo ou conexão Unity MCP confirmada.
+
+Checkpoint de preparação, sem nova versão/tag de jogo. Instruções e evidências em [UNITY-NUVEM.md](UNITY-NUVEM.md).

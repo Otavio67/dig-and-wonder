@@ -20,6 +20,19 @@ Este é o primeiro protótipo de combate automático lateral. O projeto Godot pe
 
 O save fica em `Application.persistentDataPath`, não no cache temporário que o Android pode limpar. Ele grava em gatilhos de recompensa/melhoria/chefes, a cada 5 s e ao suspender/fechar; o arquivo é validado por checksum e recupera backup. Esse protótipo ainda não importa automaticamente o save Godot.
 
+## Toolchain na nuvem
+
+O Unity 6000.0.23f1 com módulo Android está instalado no ambiente remoto. Para reproduzir a instalação Linux x86_64 e habilitar os comandos:
+
+```bash
+python3 scripts/setup-unity-cloud.py
+source scripts/unity-env.sh
+unity -version
+bash scripts/check-unity.sh
+```
+
+O Editor fornece a interface de linha de comando, incluindo `-batchmode`; não é necessário um CLI Unity separado. A tentativa real de importação parou por falta de licença Unity ativada nesta máquina. O registro `packages.unity.com` também está bloqueado pela política de rede. Detalhes, fontes e resultados em [UNITY-NUVEM.md](../docs/UNITY-NUVEM.md).
+
 ## Checagens que rodam sem Unity Editor
 
 No checkout do repositório, com .NET 8:
@@ -30,6 +43,8 @@ dotnet build UnityProject/Tools/UnityCompileCheck/UnityCompileCheck.csproj
 ```
 
 `DomainChecks` executa verificações de saldo/preço, recompensas únicas, duração/alvo de projéteis, quatro golpes do especial, regra do boss, retomada e recuperação de backup. O teste de paridade lê os dados Godot atuais. `UnityCompileCheck` compila os scripts Runtime/Editor contra stubs mínimos Unity e APIs simuladas de DOTween; é verificação estática, **não** substitui importação, compilação batchmode ou teste em Play.
+
+Com o toolchain de nuvem instalado, `dotnet build UnityProject/Tools/UnityApiCompileCheck/UnityApiCompileCheck.csproj` também compila os fontes contra DLLs reais do Editor e do template 2D. Essa checagem usa os pacotes disponíveis no template, incluindo Input System 1.9.0, e não confirma a resolução das versões declaradas no projeto. O comando completo `scripts/check-unity.sh` tenta a importação real depois dessas checagens e retorna falha se o Editor não concluir.
 
 ## Paridade observada nos dados
 
@@ -47,7 +62,7 @@ Os custos de Crítico, Crítico+ e Especial não existem no combate Godot ativo;
 
 ## Limites deste checkpoint
 
-- A instância remota não tem Unity Editor/CLI. A CDN oficial de Unity respondeu 403 no ambiente e não foi possível instalar o Editor. Portanto não foi possível executar importação real, batchmode, Play Mode ou compilar APK.
+- Editor/CLI e Android instalados via GameCI com SHA-256 verificado. O processo batch real iniciou e foi interrompido pela ausência de licença Unity. Importação, compilação pelo Editor, Play Mode e APK continuam bloqueados; `UnityApiCompileCheck` e `UnityCompileCheck` passaram sem erros/avisos, e os dez checks de domínio passaram.
 - URP 2D, Cinemachine 3, Input System, TMP, 2D Animation, Unity UI e Unity Test Framework estão declarados no Package Manager. O bootstrap usa Input System, UI e TMP; o pipeline URP/Renderer 2D e a câmera Cinemachine ainda precisam ser abertos e verificados no Editor.
 - Recursos essenciais TMP são importados automaticamente pelo preparador quando o pacote local disponibiliza o `.unitypackage`; se a fonte aparecer sem glifos no primeiro Play, execute **Window → TextMeshPro → Import TMP Essential Resources**.
 - Não foi feita revisão visual, gravação nem medição de desempenho; não há afirmação de 60 FPS. APK, instalação/toque real, safe area por aparelho, memória e desempenho aguardam Editor/Android e aparelho.

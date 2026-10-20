@@ -21,11 +21,12 @@ namespace DigAndWonder.Editor
         private static void EnsureProjectSetup()
         {
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
-            PlayerSettings.activeInputHandler = 1; // 0=Input Manager antigo, 1=Input System novo
+            ConfigureInputSystem();
             PlayerSettings.companyName = "DigAndWonder";
             PlayerSettings.productName = "Dig & Wonder";
 
-            const string tmpEssentialPackage = "Packages/com.unity.textmeshpro/Package Resources/TMP Essential Resources.unitypackage";
+            // Unity 6 distribui o TMP e seus recursos essenciais dentro do uGUI.
+            const string tmpEssentialPackage = "Packages/com.unity.ugui/Package Resources/TMP Essential Resources.unitypackage";
             if (!File.Exists("Assets/TextMesh Pro/Resources/TMP Settings.asset") && File.Exists(tmpEssentialPackage))
                 AssetDatabase.ImportPackage(tmpEssentialPackage, false);
 
@@ -39,6 +40,21 @@ namespace DigAndWonder.Editor
 
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.Refresh();
+        }
+
+        private static void ConfigureInputSystem()
+        {
+            // activeInputHandler é uma opção serializada, sem setter público no Unity 6.
+            PlayerSettings[] settings = Resources.FindObjectsOfTypeAll<PlayerSettings>();
+            if (settings.Length == 0)
+                throw new System.InvalidOperationException("PlayerSettings não está disponível para configurar o Input System.");
+            using var serializedSettings = new SerializedObject(settings[0]);
+            SerializedProperty handler = serializedSettings.FindProperty("activeInputHandler");
+            if (handler == null)
+                throw new System.InvalidOperationException("Opção activeInputHandler ausente nesta versão do Unity.");
+            if (handler.intValue == 1) return;
+            handler.intValue = 1; // 0=Input Manager antigo, 1=Input System novo.
+            serializedSettings.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }

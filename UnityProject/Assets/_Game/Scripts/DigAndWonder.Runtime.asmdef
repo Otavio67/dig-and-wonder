@@ -2,10 +2,9 @@
   "name": "DigAndWonder.Runtime",
   "rootNamespace": "DigAndWonder",
   "references": [
-    "Unity.Newtonsoft.Json",
     "Unity.InputSystem",
     "Unity.TextMeshPro",
-    "Unity.ugui"
+    "UnityEngine.UI"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
