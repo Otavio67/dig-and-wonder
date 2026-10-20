@@ -209,4 +209,4 @@ Esta versão melhora a apresentação e a leitura do progresso. Não adiciona ab
 
 Checks de domínio, compilação dos scripts contra stubs e compilação contra DLLs reais do Editor passaram sem erros/avisos. Editor Play Mode, revisão visual, APK, toque e desempenho Android continuam pendentes de execução no ambiente licenciado/aparelho.
 
-Tag planejada: `v0.0.11`.
+Tag: `v0.0.11`.
