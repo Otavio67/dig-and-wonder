@@ -35,11 +35,11 @@ namespace DigAndWonder
         private Image healthFill;
         private TextMeshProUGUI drillIcon;
         private ProceduralAnimator2D drillAnimator;
+        private GroundDrillMotion2D drillMotion;
         private TextMeshProUGUI[] enemyIcons;
         private ProceduralAnimator2D[] enemyAnimators;
         private RectTransform[] caveSeams;
         private Tween[] caveMotionTweens;
-        private Tween drillBob;
         private TextMeshProUGUI[] enemyHealth;
         private RectTransform menuPanel;
         private RectTransform startPanel;
@@ -95,6 +95,7 @@ namespace DigAndWonder
             drillIcon = MakeLabel("Drill", worldPanel, "⛏", 96, Sand,
                 new Vector2(0.09f, 0.35f), new Vector2(0.36f, 0.66f), TextAlignmentOptions.Center);
             drillAnimator = drillIcon.gameObject.AddComponent<ProceduralAnimator2D>();
+            drillMotion = drillIcon.gameObject.AddComponent<GroundDrillMotion2D>();
             enemyIcons = new TextMeshProUGUI[4];
             enemyAnimators = new ProceduralAnimator2D[4];
             enemyHealth = new TextMeshProUGUI[4];
@@ -317,10 +318,26 @@ namespace DigAndWonder
                 case CombatEventType.PlayerDefeated: statusLabel.text = "DERROTA — OURO E MELHORIAS PRESERVADOS"; break;
                 case CombatEventType.StageCleared: statusLabel.text = "FASE CONCLUÍDA! PRÓXIMA: " + e.Text; break;
             }
-            if (e.Type == CombatEventType.DrillAttack) drillAnimator.PlayAttack(false);
-            else if (e.Type == CombatEventType.SpecialStarted) drillAnimator.PlayAttack(true);
-            else if (e.Type == CombatEventType.PlayerDamaged) drillAnimator.PlayImpact();
-            else if (e.Type == CombatEventType.PlayerDefeated) drillAnimator.PlayDeath();
+            if (e.Type == CombatEventType.DrillAttack)
+            {
+                drillAnimator.PlayAttack(false);
+                drillMotion.PlayAttack(false);
+            }
+            else if (e.Type == CombatEventType.SpecialStarted)
+            {
+                drillAnimator.PlayAttack(true);
+                drillMotion.PlayAttack(true);
+            }
+            else if (e.Type == CombatEventType.PlayerDamaged)
+            {
+                drillAnimator.PlayImpact();
+                drillMotion.PlayImpact();
+            }
+            else if (e.Type == CombatEventType.PlayerDefeated)
+            {
+                drillAnimator.PlayDeath();
+                drillMotion.PlayDeath();
+            }
             else if (e.Type == CombatEventType.RunStarted) drillAnimator.ResetForRun();
             if (e.Type == CombatEventType.RunStarted && inGame) StartCaveMotion();
             else if (e.Type == CombatEventType.PlayerDefeated || e.Type == CombatEventType.StageCleared) StopCaveMotion();
@@ -347,15 +364,14 @@ namespace DigAndWonder
             for (int i = 0; i < caveSeams.Length; i++)
                 caveMotionTweens[i] = caveSeams[i].DOAnchorPosX(-1220f, 7.5f + i * 0.18f)
                     .SetEase(Ease.Linear).SetLoops(-1, LoopType.Restart).SetDelay(i * 0.4f);
-            drillBob = drillIcon.rectTransform.DOAnchorPosX(-7f, 0.78f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
+            drillMotion?.BeginWalk();
         }
 
         private void StopCaveMotion()
         {
             if (caveMotionTweens != null)
                 foreach (Tween tween in caveMotionTweens) tween?.Kill(false);
-            drillBob?.Kill(false);
-            drillBob = null;
+            drillMotion?.StopWalking();
         }
 
         private TextMeshProUGUI MakeLabel(string name, Transform parent, string text, int size, Color color, Vector2 min, Vector2 max, TextAlignmentOptions alignment)

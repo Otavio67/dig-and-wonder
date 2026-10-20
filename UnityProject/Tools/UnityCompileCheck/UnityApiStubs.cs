@@ -131,6 +131,8 @@ namespace DG.Tweening
         public static Tween DOAnchorPosX(this UnityEngine.RectTransform target, float x, float duration) => new Tween();
         public static Tween DOAnchorPos(this UnityEngine.RectTransform target, UnityEngine.Vector2 pos, float duration) => new Tween();
         public static Tween DOAnchorPosY(this UnityEngine.RectTransform target, float y, float duration) => new Tween();
+        public static Tween DOLocalMoveX(this UnityEngine.Transform target, float x, float duration) => new Tween();
+        public static Tween DOLocalMoveY(this UnityEngine.Transform target, float y, float duration) => new Tween();
         public static Tween DOScale(this UnityEngine.Transform target, float scale, float duration) => new Tween();
         public static Tween DOScale(this UnityEngine.Transform target, UnityEngine.Vector3 scale, float duration) => new Tween();
         public static Tween DOPunchScale(this UnityEngine.Transform target, UnityEngine.Vector3 punch, float duration, int vibrato, float elasticity) => new Tween();

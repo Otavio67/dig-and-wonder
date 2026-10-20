@@ -171,3 +171,12 @@ Instruções e bloqueios: [UNITY-MCP.md](UNITY-MCP.md).
 - A tentativa batch Android continua bloqueada pela licença. Sem novo APK, tag de jogo, Play Mode, vídeo ou alegação de desempenho. Números e schema preservados.
 
 Relatório e passos de teste: [UNITY-REVISAO-COMBATE-SAVE.md](UNITY-REVISAO-COMBATE-SAVE.md).
+
+## 0.0.8 — movimento de chão da Broca Pioneira (20/10/2026)
+
+- Adicionado `GroundDrillMotion2D`, uma camada visual reutilizável para caminhada, antecipação, avanço, impacto e derrota.
+- O movimento usa DOTween em tempo não escalado e cancela tweens pendentes ao reiniciar, morrer, desabilitar ou remover a unidade.
+- A posição funcional, o colisor, os valores de combate, a economia e o save permanecem fora da animação.
+- A amostra de sprite enviada foi avaliada e documentada; o PNG ainda precisa ser colocado no checkout antes da importação e da animação por frames.
+
+Checks estáticos serão executados neste checkpoint. O Editor remoto não tem licença ativa; não há nova gravação, teste de aparelho ou medição Android.
