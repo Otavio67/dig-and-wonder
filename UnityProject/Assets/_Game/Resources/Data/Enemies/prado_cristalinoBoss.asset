@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c62ee8f80089a554ab67ba87becdae63, type: 3}
+  m_Name: prado_cristalinoBoss
+  m_EditorClassIdentifier: 
+  id: prado_cristalino_boss
+  displayName: Tatu de Cristal
+  maxHealth: 12
+  damage: 8
+  firstAttackDelay: 1.7
+  attackInterval: 2.8
+  telegraphDuration: 0.65
+  projectileFlight: 0.65
+  goldReward: 60
+  isBoss: 1

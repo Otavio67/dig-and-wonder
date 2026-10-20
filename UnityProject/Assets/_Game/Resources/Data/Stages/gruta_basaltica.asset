@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39f4cb9535cc5a74398d60e1825322b9, type: 3}
+  m_Name: gruta_basaltica
+  m_EditorClassIdentifier: 
+  id: gruta_basaltica
+  displayName: "Gruta Bas\xE1ltica"
+  caveColor: {r: 0.5411765, g: 0.627451, b: 0.7019608, a: 1}
+  groundColor: {r: 0.34509805, g: 0.41568628, b: 0.49411765, a: 1}
+  rockColor: {r: 0.20784314, g: 0.29411766, b: 0.3882353, a: 1}
+  lengthSegments: 6
+  chestCount: 2
+  keyCount: 2
+  timedWaveInterval: 10
+  timedWaveCount: 12
+  lateWaveAfter: 3
+  lateWaveSize: 2
+  optionalFinalEnemies: 2
+  terrainLayers:
+  - displayName: "Cascalho vulc\xE2nico"
+    color: {r: 0.33333334, g: 0.30980393, b: 0.38431373, a: 1}
+    hardness: 2
+    goldReward: 2
+    appearanceChance: 0.3
+  - displayName: Basalto
+    color: {r: 0.23529412, g: 0.3137255, b: 0.4117647, a: 1}
+    hardness: 2
+    goldReward: 4
+    appearanceChance: 0.32
+  - displayName: Ferro azul
+    color: {r: 0.28235295, g: 0.4862745, b: 0.6117647, a: 1}
+    hardness: 3
+    goldReward: 7
+    appearanceChance: 0.25
+  - displayName: "\xC2mbar vulc\xE2nico"
+    color: {r: 0.92941177, g: 0.6117647, b: 0.29411766, a: 1}
+    hardness: 3
+    goldReward: 12
+    appearanceChance: 0.13
+  regularEnemy: {fileID: 11400000, guid: 8232630b98d6cfb42bed12bc50a7429b, type: 2}
+  boss: {fileID: 11400000, guid: 6ae8edb12eb8c8b48949ea369af59741, type: 2}
+  sourceNote: "Fase e boss vieram de content/phases/catalog.json (cat\xE1logo antigo
+    de escava\xE7\xE3o). Os ataques dos bosses reaproveitam os do Torr\xE3o porque
+    o cat\xE1logo antigo n\xE3o define ataques; essa equival\xEAncia \xE9 provis\xF3ria
+    e documentada."

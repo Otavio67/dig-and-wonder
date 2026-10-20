@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39f4cb9535cc5a74398d60e1825322b9, type: 3}
+  m_Name: jardim_fossil
+  m_EditorClassIdentifier: 
+  id: jardim_fossil
+  displayName: "Jardim F\xF3ssil"
+  caveColor: {r: 0.7254902, g: 0.8392157, b: 0.6784314, a: 1}
+  groundColor: {r: 0.5254902, g: 0.6627451, b: 0.40784314, a: 1}
+  rockColor: {r: 0.45882353, g: 0.42745098, b: 0.31764707, a: 1}
+  lengthSegments: 6
+  chestCount: 2
+  keyCount: 2
+  timedWaveInterval: 10
+  timedWaveCount: 12
+  lateWaveAfter: 3
+  lateWaveSize: 2
+  optionalFinalEnemies: 2
+  terrainLayers:
+  - displayName: Barro antigo
+    color: {r: 0.5411765, g: 0.4627451, b: 0.34509805, a: 1}
+    hardness: 2
+    goldReward: 3
+    appearanceChance: 0.3
+  - displayName: Rocha musgosa
+    color: {r: 0.34509805, g: 0.46666667, b: 0.3647059, a: 1}
+    hardness: 3
+    goldReward: 5
+    appearanceChance: 0.32
+  - displayName: "\xC2mbar f\xF3ssil"
+    color: {r: 0.8509804, g: 0.6039216, b: 0.32941177, a: 1}
+    hardness: 3
+    goldReward: 9
+    appearanceChance: 0.25
+  - displayName: Osso estrelado
+    color: {r: 0.9098039, g: 0.8745098, b: 0.6901961, a: 1}
+    hardness: 4
+    goldReward: 15
+    appearanceChance: 0.13
+  regularEnemy: {fileID: 11400000, guid: 8232630b98d6cfb42bed12bc50a7429b, type: 2}
+  boss: {fileID: 11400000, guid: 9e4553efbbfd57e4eb11af4faab9daf0, type: 2}
+  sourceNote: "Fase e boss vieram de content/phases/catalog.json (cat\xE1logo antigo
+    de escava\xE7\xE3o). Os ataques dos bosses reaproveitam os do Torr\xE3o porque
+    o cat\xE1logo antigo n\xE3o define ataques; essa equival\xEAncia \xE9 provis\xF3ria
+    e documentada."

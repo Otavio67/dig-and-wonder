@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a28a3bc7ac2b92846baf7c70a8124bd9, type: 3}
+  m_Name: Progression
+  m_EditorClassIdentifier: 
+  surpriseChancePercent: 22
+  segmentsPerStage: 24
+  normalCycle:
+  - {fileID: 11400000, guid: ebed8820202b6004eadb561d2dc630d3, type: 2}
+  - {fileID: 11400000, guid: d649912fbc70624458319140650afbd0, type: 2}
+  - {fileID: 11400000, guid: 4d5295c1c5767634883abbd3245f1906, type: 2}
+  surpriseStage: {fileID: 11400000, guid: 32d31b406d4aa214eafa9919df139ce7, type: 2}
+  attackUpgrade: {fileID: 11400000, guid: df727dec51ef49949b87a8b7ee9338e9, type: 2}
+  healthUpgrade: {fileID: 11400000, guid: 70681cfdb26636148994e3baf65be521, type: 2}
+  criticalChanceUpgrade: {fileID: 11400000, guid: f11cad5e3adc9e543aeda57efec79526, type: 2}
+  criticalDamageUpgrade: {fileID: 11400000, guid: dc357147ce8dbb74abeaf3182f511b96, type: 2}
+  specialUpgrade: {fileID: 11400000, guid: f9320496a049e4041b4acbc3caeec97b, type: 2}

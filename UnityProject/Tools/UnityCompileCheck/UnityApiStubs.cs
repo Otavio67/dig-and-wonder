@@ -159,6 +159,10 @@ namespace UnityEditor
     public static class EditorApplication
     {
         public static Action delayCall;
+        public static Action update;
+        public static double timeSinceStartup => 0;
+        public static bool isCompiling, isUpdating;
+        public static void Exit(int exitCode) { }
     }
     public sealed class PlayerSettings : UnityEngine.Object
     {
@@ -175,9 +179,18 @@ namespace UnityEditor
     public sealed class SerializedProperty { public int intValue; }
     public sealed class EditorBuildSettingsScene
     {
+        public string path;
+        public bool enabled;
         public EditorBuildSettingsScene(string path, bool enabled) { }
     }
     public static class EditorBuildSettings { public static EditorBuildSettingsScene[] scenes; }
+    public enum BuildTarget { Android }
+    public enum BuildOptions { None }
+    public static class BuildPipeline
+    {
+        public static UnityEditor.Build.Reporting.BuildReport BuildPlayer(string[] scenes, string locationPathName,
+            BuildTarget target, BuildOptions options) => new UnityEditor.Build.Reporting.BuildReport();
+    }
     public static class AssetDatabase
     {
         public static T LoadAssetAtPath<T>(string path) where T : UnityEngine.Object => null;
@@ -189,6 +202,23 @@ namespace UnityEditor
         public static void ImportPackage(string packagePath, bool interactive) { }
     }
     public static class EditorUtility { public static void SetDirty(UnityEngine.Object asset) { } }
+}
+
+namespace UnityEditor.Build.Reporting
+{
+    public enum BuildResult { Succeeded, Failed }
+    public struct BuildSummary { public BuildResult result; public ulong totalSize; }
+    public sealed class BuildReport { public BuildSummary summary; }
+}
+
+namespace UnityEditor.PackageManager
+{
+    public sealed class PackageInfo
+    {
+        public string name { get; set; }
+        public string resolvedPath { get; set; }
+        public static PackageInfo[] GetAllRegisteredPackages() => Array.Empty<PackageInfo>();
+    }
 }
 
 namespace UnityEditor.SceneManagement

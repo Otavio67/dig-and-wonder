@@ -4,19 +4,13 @@
 
 Repositório: https://github.com/Otavio67/dig-and-wonder
 
-Branch: **`prototype/first-playable`**. Checkpoint de código de origem deste guia: **`2089c71`**. A versão de jogo publicada continua 0.0.7, com checkpoints posteriores de preparação/correções.
+Branch de origem: **`prototype/first-playable`**, commit **`7b3518fa7549daa40f7f9d70c38a7c508fb28a67`**. Versão de jogo 0.0.7, com checkpoints posteriores de preparação/correções.
 
-Clone ou baixe **o repositório inteiro**. A pasta `UnityProject` depende dos JSON de `content/`, na raiz do repositório, para a primeira importação. Copiar somente `UnityProject` não transfere essa fonte.
+O repositório inteiro já está nesta pasta; os arquivos da árvore remota foram conferidos antes das alterações locais. `UnityProject` depende dos JSON em `content/`, portanto mantenha a raiz completa junto do projeto Unity. A pasta anterior e o Godot portátil foram preservados em `.tools/backups/` e `.tools/godot/`.
 
-No PowerShell, em uma pasta onde ainda não exista uma cópia do projeto:
+Esta cópia foi expandida de um ZIP autenticado e o Git local ainda não tem os commits da branch. O `origin` aponta para o repositório correto, mas o Git do terminal não tem credencial funcional. Não extraia outro ZIP por cima nem crie um commit inicial como se fosse um repositório novo. Para atualizar/publicar um marco depois, primeiro recupere a relação Git com a branch remota mantendo os ajustes locais.
 
-```powershell
-git clone --branch prototype/first-playable https://github.com/Otavio67/dig-and-wonder.git
-cd dig-and-wonder
-git status
-```
-
-Se já houver uma cópia com trabalho local, preserve as alterações antes de trocar a branch ou sincronizar. Não use `reset --hard` ou extraia um ZIP por cima de arquivos modificados.
+O caminho do projeto nesta máquina é `C:\Users\pctri\OneDrive\Documentos\ChatGPT\Dig & Wonder\UnityProject`.
 
 ## Abrir uma conversa com acesso local
 
@@ -24,14 +18,14 @@ Abra a pasta **`dig-and-wonder`** no Codex local, ou no editor com a extensão C
 
 Uma conversa comum do ChatGPT pode orientar, mas não ganha acesso ao disco nem ao Unity por receber um link. O histórico desta conversa também não é transferido automaticamente; use a mensagem pronta ao final deste guia.
 
-## Preparar o Unity no Windows
+## Ambiente local já preparado
 
-1. Instale/abra o **Unity Hub**, entre na sua conta e ative a **Unity Personal** pelo fluxo do Hub. Não envie senha, token ou arquivo de licença para a conversa.
-2. Pelo Hub/arquivo de versões oficial, instale o Editor **6000.0.23f1**, igual a `UnityProject/ProjectSettings/ProjectVersion.txt`. Inclua **Android Build Support**, **Android SDK & NDK Tools** e **OpenJDK** se for gerar APK. Se essa versão não estiver disponível, registre isso antes de escolher uma atualização.
-3. Tenha Git disponível no PATH: o manifesto usa um pacote MCP via URL Git. Instale o **SDK .NET 8** se quiser executar os checks de domínio fora do Editor; ele não substitui o compilador do Unity.
-4. No Hub, adicione/abra a pasta **`dig-and-wonder/UnityProject`** e aguarde a resolução dos pacotes. TMP vem do uGUI 2.0; DOTween já acompanha o repositório. Evite importar cópias duplicadas.
-5. O importador deve criar os ScriptableObjects em `Assets/_Game/Resources/Data`; o preparador deve criar/incluir `Assets/_Game/Scenes/Prototype.unity` e ajustar retrato/Input System. Confira o resultado real e a Console. Comandos manuais, se necessários: **Dig & Wonder → Import Godot data** e **Dig & Wonder → Prepare prototype scene**.
-6. Só depois de corrigir os erros de importação/compilação, entre em Play e confira o fluxo de iniciar/retomar, combate, melhorias e encerramento de fase.
+- Unity Hub **3.22.3 x64**, Editor **6000.0.23f1** e Unity Personal estão instalados/ativados.
+- Android Build Support, OpenJDK 17.0.9, SDK API 33/34/35, NDK 23.1.7779620 e Build Tools 34.0.0 estão instalados. As licenças SDK estão aceitas.
+- O projeto importou e compilou no Editor real. A preparação criou a cena e os recursos de dados/TMP.
+- APK de depuração criado em `.tools/build/DigAndWonder-debug.apk`. O pacote ARM64 foi lido pelo `aapt`: `com.DigAndWonder.DigWonder`, mínimo API 23, alvo API 35. Não há aparelho Android conectado; instalação, toque, visual e desempenho continuam sem validação.
+- Ao abrir, use o Unity Hub para adicionar a pasta local `UnityProject`. Para rebuild, use o menu **Dig & Wonder → Build Android debug APK**. O primeiro build completo levou cerca de 12 minutos; builds seguintes aproveitam o cache.
+- Unity CLI fica em `%LOCALAPPDATA%\Unity\bin\unity.exe`; SDK .NET 8.0.426 está em `.tools/dotnet/`. O pacote do Coplay está declarado, mas ainda não foi conectado a um Editor local.
 
 Os pacotes URP 2D, Input System e Cinemachine estão declarados no manifesto. Isso não comprova que todos os assets/configurações da pipeline renderizem corretamente: essa configuração ainda precisa ser verificada no Editor.
 
@@ -45,12 +39,12 @@ Depois de importar sem erros, leia a documentação do pacote instalado para pre
 
 Confirme a integração por uma instância do projeto local e uma leitura real de Console/hierarquia. Apenas instalar o plugin Codex ou iniciar o servidor não comprova que o Editor está conectado. Referência da preparação remota: [UNITY-MCP.md](UNITY-MCP.md).
 
-## Estado já verificado na nuvem
+## Verificações anteriores na nuvem
 
 - 20 checks de domínio passaram: economia, recompensas, quatro golpes da Pioneira, vitória/derrota terminais, retomada determinística e recuperação/preservação de arquivos.
 - Compilação com stubs e compilação contra DLLs reais do Editor/template passaram com zero erros/avisos. Esta última usa as DLLs disponíveis no template, não a resolução final dos pacotes do projeto.
-- O processo real do Editor iniciou, mas parou antes da importação: `No valid Unity Editor license found`. O proxy remoto também bloqueou autenticação/licença/pacotes da Unity.
-- Não houve Play Mode Unity, revisão visual, vídeo, APK Unity ou medição Android. O login no navegador do usuário não comprovou a licença do processo remoto.
+- Na época, o processo remoto do Editor parou antes da importação por falta de licença, e o proxy bloqueou autenticação/pacotes da Unity. Essa restrição não se aplica ao Editor local já instalado.
+- Não houve Play Mode Unity, revisão visual, instalação/toque em aparelho, anúncio ou medição Android. O APK gerado confirma o build técnico, não a experiência em aparelho.
 - As correções de save/combate estão em [UNITY-REVISAO-COMBATE-SAVE.md](UNITY-REVISAO-COMBATE-SAVE.md), com roteiro de testes pendentes. A pausa/retomada após falha de escrita foi compilada e inspecionada; ainda requer exercício real do driver/UI no Editor.
 
 Na raiz do repositório, com SDK .NET 8:
@@ -62,16 +56,16 @@ dotnet build UnityProject/Tools/UnityCompileCheck/UnityCompileCheck.csproj
 
 Esses comandos são independentes do Editor. `UnityApiCompileCheck` usa caminhos da instalação Linux GameCI e não deve ser tratado como um check Windows pronto.
 
-Para a compilação real pelo Editor, depois de ativar a licença e fechar o projeto de forma normal, adapte o caminho do Editor se necessário:
+Para preparar assets/dados pelo Editor em batch mode, adapte o caminho do Editor se necessário:
 
 ```powershell
 $projectRoot = (Get-Location).Path
 New-Item -ItemType Directory -Force .tools/logs | Out-Null
-& 'C:\Program Files\Unity\Hub\Editor\6000.0.23f1\Editor\Unity.exe' -batchmode -nographics -quit -projectPath "$projectRoot\UnityProject" -buildTarget Android -logFile "$projectRoot\.tools\logs\unity-local-import.log"
+& "$env:LOCALAPPDATA\Unity\Editors\6000.0.23f1\Editor\Unity.exe" -batchmode -nographics -projectPath "$projectRoot\UnityProject" -buildTarget Android -executeMethod DigAndWonder.Editor.PrototypeProjectSetup.PrepareForBatchMode -logFile "$projectRoot\.tools\logs\unity-local-prepare.log"
 ```
 
-Leia o log e o código de saída; esse comando não gera APK. Importação/compilação bem-sucedida ainda deve ser seguida por Play Mode e pelos testes relevantes em aparelho.
+Esse método encerra sozinho após confirmar a importação; não acrescente `-quit`. Para APK, use o menu descrito acima. Leia o log e o código de saída; importação/build bem-sucedidos ainda devem ser seguidos por Play Mode e pelos testes relevantes em aparelho.
 
 ## Mensagem para colar na nova conversa
 
-> Continue o Dig & Wonder neste PC, no repositório Otavio67/dig-and-wonder, branch prototype/first-playable. Leia AGENTS.md, README.md, UnityProject/README.md, docs/CONTINUAR-UNITY-LOCAL.md e docs/UNITY-REVISAO-COMBATE-SAVE.md. A direção posterior autorizada é Unity 6, combate automático lateral com a broca protagonista; os documentos Godot antigos são origem e histórico, não uma instrução para voltar de engine. Primeiro configure e valide o ambiente local: Unity 6000.0.23f1, licença Personal pelo fluxo oficial, pacotes, importação, compilação real e Play Mode. Depois conecte a ponte Coplay MCP já declarada e confirme o projeto por Console/hierarquia. Preserve trabalho local e saves. Não invente números de balanceamento nem alegue qualidade visual/desempenho sem executar as verificações. Há 20 checks C# passando na nuvem; o Editor remoto ficou bloqueado por licença/proxy, sem APK Unity ou revisão visual. Priorize desbloquear e testar o protótipo existente antes de ampliar conteúdo. Use autonomia para ajustes reversíveis, economize créditos e faça checkpoints no GitHub por marcos. Não peça senhas/tokens pelo chat.
+> Continue o Dig & Wonder nesta pasta e leia AGENTS.md, README.md, UnityProject/README.md, docs/CONTINUAR-UNITY-LOCAL.md e docs/UNITY-REVISAO-COMBATE-SAVE.md. A direção atual é Unity 6; a origem Godot foi preservada. Unity 6000.0.23f1 e Android estão instalados; a preparação real e o APK técnico passaram. Abra a pasta `UnityProject` pelo Hub, confira Play Mode/Console e, quando houver aparelho, instale o APK para testar toque, safe area e aparência. Não alegue desempenho visual ou 60 FPS sem medir em aparelho. O Git local contém a árvore de arquivos mas ainda não o histórico da branch remota; mantenha as alterações e não faça commit inicial artificial. Use autonomia para ajustes reversíveis, economize créditos e atualize o GitHub em marcos. Não peça senhas/tokens pelo chat.

@@ -2,6 +2,8 @@
 
 Este é o primeiro protótipo de combate automático lateral. O projeto Godot permanece no repositório como origem dos valores e de parte da arte. O fluxo Unity preserva a fantasia de escavação, a broca como personagem, inimigos, ouro por derrota, melhorias e chefes como condição de avanço.
 
+No PC local (20/10/2026), Unity **6000.0.23f1** e o toolchain Android foram instalados. A preparação/importação real terminou e um APK ARM64 assinado com a chave de depuração foi gerado em `.tools/build/DigAndWonder-debug.apk`; `aapt` leu o pacote e `apksigner` confirmou a assinatura. O APK ainda não foi instalado em aparelho. Consulte o [estado local e próximos passos](../docs/UNITY-CONTEXTO-LOCAL.md).
+
 Para continuar no seu PC, consulte [transferência e configuração local](../docs/CONTINUAR-UNITY-LOCAL.md), com mensagem pronta para a nova conversa Codex.
 
 ## O que está nesta amostra
@@ -70,10 +72,10 @@ Os custos de Crítico, Crítico+ e Especial não existem no combate Godot ativo;
 
 ## Limites deste checkpoint
 
-- Editor/CLI e Android instalados via GameCI com SHA-256 verificado. O processo batch real iniciou e foi interrompido pela ausência de licença Unity. Importação, compilação pelo Editor, Play Mode e APK continuam bloqueados; `UnityApiCompileCheck` e `UnityCompileCheck` passaram sem erros/avisos, e os dez checks de domínio passaram.
+- O ambiente remoto de nuvem foi instalado via GameCI, mas o Editor remoto segue sem licença e os pacotes são bloqueados pelo proxy. Isso não impede o Editor local instalado acima. O projeto local já importou e gerou APK; Play Mode e teste em aparelho continuam pendentes.
 - URP 2D, Cinemachine 3, Input System, TMP, 2D Animation, Unity UI e Unity Test Framework estão declarados no Package Manager. O bootstrap usa Input System, UI e TMP; o pipeline URP/Renderer 2D e a câmera Cinemachine ainda precisam ser abertos e verificados no Editor.
 - Recursos essenciais TMP são importados automaticamente pelo preparador quando o pacote local disponibiliza o `.unitypackage`; se a fonte aparecer sem glifos no primeiro Play, execute **Window → TextMeshPro → Import TMP Essential Resources**.
-- Não foi feita revisão visual, gravação nem medição de desempenho; não há afirmação de 60 FPS. APK, instalação/toque real, safe area por aparelho, memória e desempenho aguardam Editor/Android e aparelho.
+- Não foi feita revisão visual, gravação nem medição de desempenho; não há afirmação de 60 FPS. Instalação/toque real, safe area por aparelho, memória e desempenho aguardam um aparelho Android.
 - Não há anúncios Unity ligados. A prova de rewarded existente é separada do gameplay Godot; anúncios não interrompem nem são requisito desta amostra.
 - Nesta fatia existe somente ouro e chaves/baús guardados; não há moeda premium, lootbox aberta, equipamento aplicável, discovery/álbum ou fase de escavação surpresa no gameplay Unity.
 

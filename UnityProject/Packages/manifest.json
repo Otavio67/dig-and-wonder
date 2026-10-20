@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#d49ae2953580f3481beb1e084a1da2682f0b5610",
-    "com.unity.2d.animation": "10.0.0",
+    "com.unity.2d.animation": "10.1.4",
     "com.unity.cinemachine": "3.1.2",
     "com.unity.inputsystem": "1.11.2",
     "com.unity.nuget.newtonsoft-json": "3.2.1",

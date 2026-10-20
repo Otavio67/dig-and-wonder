@@ -1,6 +1,7 @@
 .godot/
 .tools/
 UnityProject/Library/
+UnityProject/.utmp/
 UnityProject/Temp/
 UnityProject/Obj/
 UnityProject/Logs/

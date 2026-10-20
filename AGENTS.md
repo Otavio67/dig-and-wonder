@@ -2,9 +2,15 @@
 
 Leia README.md e docs/DESENVOLVIMENTO.md antes de implementar. O usuário autorizou autonomia nas decisões técnicas e criativas reversíveis. Trabalhe em português e registre decisões relevantes. Não peça aprovação para cada detalhe.
 
+## Continuidade local — 20/10/2026
+
+A direção posterior registrada na branch `prototype/first-playable` é Unity 6, combate automático lateral e broca protagonista. Leia também `UnityProject/README.md`, `docs/CONTINUAR-UNITY-LOCAL.md` e `docs/UNITY-CONTEXTO-LOCAL.md`. As instruções Godot abaixo descrevem a origem preservada; não significam voltar de engine. O marco atual é preparar e validar o protótipo existente neste PC, sem ampliar conteúdo.
+
 ## Economia de créditos
 
 O usuário quer economizar o máximo possível. Trabalhe por marcos pequenos, agrupe leituras/alterações e mantenha um resumo durável do estado para reduzir releituras. Use ferramentas diretas quando disponíveis, limite verificações ao que a mudança exige e evite consultas repetidas sem nova evidência. Salve commits em pontos úteis, sem necessidade de um commit por pequeno ajuste. Não inicie uma implementação grande quando o marco autorizado for apenas configuração. Registre os testes feitos para evitar repeti-los sem motivo.
+
+Preferência de modelos: priorizar GPT-6 Luna com esforço leve em configuração, documentação e alterações simples; reservar Sol para arquitetura, depuração difícil ou integrações complexas quando necessário. Manter modo rápido desligado. O seletor da interface controla o modelo; não afirmar uma troca sem verificar. Atualizar o GitHub em lotes por marcos funcionais ou pontos de recuperação.
 
 ## Prioridades
 
