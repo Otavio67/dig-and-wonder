@@ -331,3 +331,14 @@ Tag: `v0.0.20`.
 Catálogo e regra de quantidade: [CONTENT-BIBLE-ENDGAME.md](CONTENT-BIBLE-ENDGAME.md) e [`content/enemies/campaign-tiers.json`](../content/enemies/campaign-tiers.json).
 
 Tag: `v0.0.21`.
+
+## 0.0.22 — briefing visual dos inimigos
+
+- Criado um arquivo único para enviar a outra IA de arte: [BRIEF-SPRITES-INIMIGOS.md](BRIEF-SPRITES-INIMIGOS.md).
+- O documento detalha os 50 inimigos do catálogo com silhueta, proporções, materiais, paleta, rosto, personalidade, camadas separadas, idle, telegraph, ataque, recuperação, derrota e efeitos.
+- A direção comum fixa PNG transparente, vista 3/4 para a direita, canvas sugerido 512×512, pivô na base, contorno consistente e negative prompt. A coleção também tem ordem de produção para validar primeiro as cinco criaturas iniciais.
+- Nenhum sprite foi inventado como arquivo final nem importado no Unity; este marco prepara a produção visual e preserva o runtime jogável.
+
+Brief para geração: [BRIEF-SPRITES-INIMIGOS.md](BRIEF-SPRITES-INIMIGOS.md).
+
+Tag: `v0.0.22`.

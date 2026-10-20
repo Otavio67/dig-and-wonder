@@ -443,14 +443,14 @@ internal static class EconomyChecks
         var curves = new List<string> { "phase,normal_hp,boss_hp,normal_damage,normal_gold,boss_gold,normal_xp,boss_xp,first_clear_crystals" };
         for (int phase = 1; phase <= rules.MaximumStage; phase++)
             curves.Add(FormattableString.Invariant($"{phase},{rules.EnemyHealth(phase):F2},{rules.EnemyHealth(phase) * rules.BossHealthMultiplier:F2},{rules.EnemyDamage(phase):F2},{rules.NormalGold(phase)},{rules.NormalGold(phase) * rules.BossGoldMultiplier},{rules.ExperienceReward(phase, false)},{rules.ExperienceReward(phase, true)},{rules.FirstClearCrystals + (phase % rules.MilestoneInterval == 0 ? rules.MilestoneCrystals : 0)}"));
-        File.WriteAllLines(Path.Combine(output, "campaign-0.0.21.csv"), curves);
+        File.WriteAllLines(Path.Combine(output, "campaign-0.0.22.csv"), curves);
         var xp = new List<string> { "level,xp_to_next,total_xp" }; long total = 0;
         for (int level = 0; level <= 60; level++)
         {
             xp.Add($"{level},{(level < 60 ? rules.Experience.RequiredForNextLevel(level) : 0)},{total}");
             if (level < 60) total += rules.Experience.RequiredForNextLevel(level);
         }
-        File.WriteAllLines(Path.Combine(output, "character-xp-0.0.21.csv"), xp);
+        File.WriteAllLines(Path.Combine(output, "character-xp-0.0.22.csv"), xp);
         var upgrades = new List<string> { "kind,level,cost,cumulative_cost,unlock_character_level" };
         foreach (EconomyUpgradeRule upgrade in rules.Upgrades)
         {
@@ -460,11 +460,11 @@ internal static class EconomyChecks
                 upgrades.Add($"{upgrade.Kind},{level},{upgrade.Cost(level)},{cumulative},{upgrade.UnlockLevel}"); cumulative += upgrade.Cost(level);
             }
         }
-        File.WriteAllLines(Path.Combine(output, "upgrade-costs-0.0.21.csv"), upgrades);
+        File.WriteAllLines(Path.Combine(output, "upgrade-costs-0.0.22.csv"), upgrades);
         var results = new List<string> { "strategy,seed,phase,result,simulated_minutes,attempts,character_level,attack_level,health_level,gold,crystals,gold_earned,gold_spent,powers_bought,active_character,next_character" };
         foreach (string strategy in new[] { "balanced", "attack", "survival" })
             foreach (uint seed in new uint[] { 12345, 54321, 98765 }) Simulate(config, strategy, seed, results);
-        File.WriteAllLines(Path.Combine(output, "simulation-0.0.21.csv"), results);
+        File.WriteAllLines(Path.Combine(output, "simulation-0.0.22.csv"), results);
         WriteLongTermExperienceReport(config, output);
         Console.WriteLine("Relatórios gerados em docs/balance; tempos simulados, sem anúncios, sem dinheiro real e sem usar cristais.");
         foreach (string strategy in new[] { "balanced", "attack", "survival" })
@@ -519,7 +519,7 @@ internal static class EconomyChecks
             // Um único ciclo pode pular níveis iniciais; segue do nível realmente alcançado.
             level = measuredLevel - 1;
         }
-        File.WriteAllLines(Path.Combine(output, "long-term-xp-0.0.21.csv"), rows);
+        File.WriteAllLines(Path.Combine(output, "long-term-xp-0.0.22.csv"), rows);
         Console.WriteLine("XP longo prazo: " + rows.Last() + " (projeção por ciclos medidos, oficina/poderes no máximo desde o início; não é partida humana)");
     }
 
