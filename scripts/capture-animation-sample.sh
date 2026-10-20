@@ -5,7 +5,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 engine="$root/.tools/godot/Godot_v4.7.2-stable_linux.x86_64"
 output="$root/docs/evidencias/20261020/amostra-animacoes.mp4"
 
-[[ -x "$engine" ]] || { echo "Execute bash setup-cloud.sh primeiro."; exit 1; }
+[[ -x "$engine" ]] || { echo "Este capturador é legado da versão Godot. O projeto ativo usa Unity 6; consulte UnityProject/README.md."; exit 1; }
 command -v ffmpeg >/dev/null || { echo "ffmpeg não encontrado."; exit 1; }
 mkdir -p "$(dirname "$output")" "$root/.tools/logs"
 

@@ -8,7 +8,7 @@ engine=".tools/godot/Godot_v${version}-stable_linux.x86_64"
 release="https://github.com/godotengine/godot-builds/releases/download/${version}-stable"
 
 if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
-  echo "Este instalador prepara Linux x86_64. Em outros sistemas, use o Godot 4.7.2 oficial."
+  echo "Este instalador é legado e prepara a versão Godot. O projeto ativo usa Unity 6; consulte UnityProject/README.md e docs/UNITY-NUVEM.md."
   exit 1
 fi
 

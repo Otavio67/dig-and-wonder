@@ -7,7 +7,7 @@ engine="$root/.tools/godot/Godot_v4.7.2-stable_linux.x86_64"
 apk="$root/builds/dig-and-wonder-android-debug.apk"
 
 [[ -f "$env_file" ]] || { echo "Execute bash scripts/setup-android.sh primeiro."; exit 1; }
-[[ -x "$engine" ]] || { echo "Execute bash setup-cloud.sh para instalar Godot 4.7.2."; exit 1; }
+[[ -x "$engine" ]] || { echo "Este exportador é legado e gera um APK Godot. O projeto ativo usa Unity 6; consulte docs/UNITY-CONTEXTO-LOCAL.md."; exit 1; }
 source "$env_file"
 export JAVA_HOME="${JAVA_HOME:-$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")}"
 

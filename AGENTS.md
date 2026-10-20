@@ -4,7 +4,7 @@ Leia README.md e docs/DESENVOLVIMENTO.md antes de implementar. O usuário autori
 
 ## Continuidade local — 20/10/2026
 
-A direção posterior registrada na branch `prototype/first-playable` é Unity 6, combate automático lateral e broca protagonista. Leia também `UnityProject/README.md`, `docs/CONTINUAR-UNITY-LOCAL.md` e `docs/UNITY-CONTEXTO-LOCAL.md`. As instruções Godot abaixo descrevem a origem preservada; não significam voltar de engine. O marco atual é preparar e validar o protótipo existente neste PC, sem ampliar conteúdo.
+A direção ativa é Unity 6, combate automático lateral e broca protagonista, na branch `prototype/first-playable`. O usuário confirmou em 20/10/2026 que devemos focar em Unity. Leia também `UnityProject/README.md`, `docs/CONTINUAR-UNITY-LOCAL.md` e `docs/UNITY-CONTEXTO-LOCAL.md`. Godot é somente histórico/origem preservada; não orientar configuração, testes ou desenvolvimento por esse caminho. O marco atual é preparar e validar o protótipo Unity existente neste PC, sem ampliar conteúdo.
 
 ## Economia de créditos
 
@@ -21,9 +21,9 @@ Preferência de modelos: priorizar GPT-6 Luna com esforço leve em configuraçã
 
 ## Ambiente
 
-Godot 4.7.2, GDScript, renderer Compatibility, Android como destino inicial. Desenvolvimento preferencial na nuvem. Instale com `bash setup-cloud.sh`; valide com `bash check-project.sh`. O workflow `.github/workflows/validate.yml` executa essas verificações no GitHub.
+Unity 6000.0.23f1, C#, Android como destino inicial. Abra `UnityProject/` pelo Unity Hub. Para checks .NET independentes do Editor, use os comandos registrados em `UnityProject/README.md`. O workflow `.github/workflows/validate.yml` valida a origem Godot e não substitui a validação do Unity.
 
-Não versione `.tools/`, `.godot/`, APKs, credenciais ou chaves. Recursos originais do jogo não recebem automaticamente a licença do Godot. Registre licenças dos recursos externos.
+Não versione `.tools/`, `UnityProject/Library/`, APKs, credenciais ou chaves. Registre licenças dos recursos externos.
 
 ## Ordem de trabalho
 

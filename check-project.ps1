@@ -1,4 +1,6 @@
 param([string]$GodotBin = "$PSScriptRoot/.tools/godot-4.7.2-win64/Godot_v4.7.2-stable_win64_console.exe")
+
+Write-Host "Aviso: este é um verificador legado do Godot. O projeto ativo usa Unity 6; veja UnityProject/README.md."
 $ErrorActionPreference = 'Stop'
 $repoPath = $PSScriptRoot
 $testRoot = Join-Path $repoPath '.tools/check-windows'

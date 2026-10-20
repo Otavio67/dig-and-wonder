@@ -1,4 +1,4 @@
-> **Estado após a mudança de direção (20/10/2026):** o jogo principal agora é defesa com escavação, descrito em `DESENVOLVIMENTO.md`. Os resultados de APK/plataforma abaixo pertencem aos checkpoints 0.0.4/0.0.5 anteriores. Não comprovam exportação nem execução do Marco 1 atual em aparelho. SDK e prova AdMob permanecem isolados; não há anúncio no ciclo de defesa. O perfil atual é esquema 6 com importação confirmada e arquivo separado. Área segura/cancelamento/foco são reaproveitados.
+> **Direção ativa: Unity 6.** Este roteiro e os resultados abaixo pertencem à versão Godot anterior e não devem ser usados para configurar o jogo atual. Consulte [estado local Unity](UNITY-CONTEXTO-LOCAL.md), [Unity na nuvem](UNITY-NUVEM.md) e [README do projeto Unity](../UnityProject/README.md).
 
 # Teste Android
 

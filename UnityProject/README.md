@@ -68,7 +68,7 @@ Com o toolchain de nuvem instalado, `dotnet build UnityProject/Tools/UnityApiCom
 | Upgrade Dano | custo 18 + 14 × nível; +12%; máximo 10 | Mesma curva | Igual |
 | Upgrade Vida | custo 20 + 16 × nível; +35 PV; máximo 10 | Mesma curva | Igual |
 
-Os custos de Crítico, Crítico+ e Especial não existem no combate Godot ativo; não foram ativados nem tiveram números inventados. O catálogo antigo fornece PV de boss desproporcionais ao dano do combate automático, então esses valores foram preservados e ainda precisam de balanceamento antes de considerar o desafio finalizado.
+Os custos de Crítico, Crítico+ e Especial não existiam no combate Godot de origem; não foram ativados nem tiveram números inventados. O catálogo antigo fornece PV de boss desproporcionais ao dano do combate automático, então esses valores foram preservados e ainda precisam de balanceamento antes de considerar o desafio finalizado.
 
 ## Limites deste checkpoint
 
@@ -76,7 +76,7 @@ Os custos de Crítico, Crítico+ e Especial não existem no combate Godot ativo;
 - URP 2D, Cinemachine 3, Input System, TMP, 2D Animation, Unity UI e Unity Test Framework estão declarados no Package Manager. O bootstrap usa Input System, UI e TMP; o pipeline URP/Renderer 2D e a câmera Cinemachine ainda precisam ser abertos e verificados no Editor.
 - Recursos essenciais TMP são importados automaticamente pelo preparador quando o pacote local disponibiliza o `.unitypackage`; se a fonte aparecer sem glifos no primeiro Play, execute **Window → TextMeshPro → Import TMP Essential Resources**.
 - Não foi feita revisão visual, gravação nem medição de desempenho; não há afirmação de 60 FPS. Instalação/toque real, safe area por aparelho, memória e desempenho aguardam um aparelho Android.
-- Não há anúncios Unity ligados. A prova de rewarded existente é separada do gameplay Godot; anúncios não interrompem nem são requisito desta amostra.
+- Não há anúncios Unity ligados. A prova de rewarded da versão Godot é histórica e separada do gameplay atual; anúncios não interrompem nem são requisito desta amostra.
 - Nesta fatia existe somente ouro e chaves/baús guardados; não há moeda premium, lootbox aberta, equipamento aplicável, discovery/álbum ou fase de escavação surpresa no gameplay Unity.
 
 ## Licenças

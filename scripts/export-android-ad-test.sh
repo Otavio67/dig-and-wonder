@@ -7,7 +7,7 @@ env_file="$root/.tools/android-env.sh"
 test_project="$root/.tools/android-ad-test-project"
 test_apk="$root/builds/dig-and-wonder-ad-test.apk"
 
-[[ -x "$engine" ]] || { echo "Execute bash setup-cloud.sh primeiro."; exit 1; }
+[[ -x "$engine" ]] || { echo "Este exportador de anúncios é legado da versão Godot. O projeto ativo usa Unity 6; consulte UnityProject/README.md."; exit 1; }
 [[ -f "$env_file" ]] || { echo "Execute bash scripts/setup-android.sh primeiro."; exit 1; }
 source "$env_file"
 mkdir -p "$root/.tools/ad-test-config/godot"

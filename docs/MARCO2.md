@@ -1,4 +1,6 @@
-# Marco 2 — clareza, animação e uma unidade adicional
+# Marco 2 — histórico da versão Godot
+
+> **Direção ativa: Unity 6.** Este marco descreve uma etapa Godot anterior. Use os documentos `UnityProject/` e `docs/UNITY-*.md` para a configuração e validação atuais.
 
 20/10/2026. Autorizado após a revisão do Marco 1. Sem nova fase, inimigo, boss, moeda, anúncio, menu ou versão de save. Evidência desktop; Android físico pendente.
 

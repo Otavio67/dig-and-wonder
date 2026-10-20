@@ -1,6 +1,8 @@
-> **Estado após a mudança de direção (20/10/2026):** o jogo principal agora é defesa com escavação, descrito em `DESENVOLVIMENTO.md`. Os resultados de APK/plataforma abaixo pertencem aos checkpoints 0.0.4/0.0.5 anteriores. Não comprovam exportação nem execução do Marco 1 atual em aparelho. SDK e prova AdMob permanecem isolados; não há anúncio no ciclo de defesa. O perfil atual é esquema 6 com importação confirmada e arquivo separado. Área segura/cancelamento/foco são reaproveitados.
+> **Registro histórico da versão Godot:** os resultados de APK/plataforma abaixo pertencem aos checkpoints 0.0.4/0.0.5 e não validam o projeto Unity atual. Para a direção ativa, consulte `UnityProject/README.md` e `UNITY-CONTEXTO-LOCAL.md`.
 
-# Revisão Android — versão 0.0.4
+# Revisão Android — análise da versão Godot 0.0.4
+
+> O desenvolvimento ativo segue em Unity 6. Esta análise e seus resultados referem-se aos builds antigos em Godot; não use o guia Godot abaixo para validar o projeto Unity. Consulte [Unity na nuvem](UNITY-NUVEM.md) e [estado local](UNITY-CONTEXTO-LOCAL.md).
 
 Data: 20/10/2026. Escopo: orientações oficiais aplicáveis ao protótipo Godot 4.7.2, Android ARM64, jogo 2D offline. A documentação cobre muitos produtos independentes; a presença de uma API no portal não torna sua integração obrigatória. Este diagnóstico confronta requisitos de plataforma/publicação, recomendações de experiência e ferramentas opcionais com o código e o APK reais.
 

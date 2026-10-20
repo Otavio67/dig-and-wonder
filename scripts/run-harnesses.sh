@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 engine="${GODOT_BIN:-.tools/godot/Godot_v4.7.2-stable_linux.x86_64}"
-[[ -x "$engine" ]] || { echo "Execute bash setup-cloud.sh primeiro ou defina GODOT_BIN."; exit 1; }
+[[ -x "$engine" ]] || { echo "Estes harnesses pertencem à versão Godot legada. O projeto ativo usa Unity 6; consulte UnityProject/README.md."; exit 1; }
 mkdir -p .tools/home/.config .tools/home/.local/share .tools/home/.cache
 task_home="$PWD/.tools/home"
 export XDG_CONFIG_HOME="$task_home/.config"

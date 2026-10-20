@@ -4,7 +4,7 @@
 
 Correções sobre `0ffe683`, na branch `prototype/first-playable`. Baseline limpo, Unity 6000.0.23f1, dez checks existentes passando. Sem mudanças em catálogos, preços, dano, cadência, recompensas ou schema 1 do perfil Unity. A versão de jogo publicada continua 0.0.7; este é um checkpoint de correções de código, sem novo APK.
 
-**Validação do jogo pelo Editor: bloqueada.** O código e os testes de domínio foram executados fora do Editor. Não houve Play Mode, revisão visual, vídeo ou medição Android.
+**Smoke test em Play Mode: aprovado em 20/10/2026.** A cena `Prototype.unity` iniciou e executou dez segundos simulados numa instalação Unity 6000.0.23f1. Isso valida somente a inicialização e um trecho curto do combate; compras, retomada, derrota, vitória e Android continuam pendentes.
 
 ## Correções
 
@@ -16,6 +16,7 @@ Correções sobre `0ffe683`, na branch `prototype/first-playable`. Baseline limp
 - Conteúdo `null`, números não finitos, contadores inválidos e entradas de snapshot ausentes são rejeitados. O backup pode ser usado sem uma exceção de desserialização interromper a inicialização.
 - O temporário participa da detecção de progresso e da recuperação. Ordem: principal válido, backup válido, temporário válido. Um temporário inválido sozinho bloqueia a criação silenciosa de um perfil novo.
 - A escrita usa `Flush(true)` e valida o temporário antes de substituir o principal. Isso não comprova resistência a toda perda de energia no filesystem Android; esse teste exige aparelho.
+- `SafeAreaFitter` impede que as alterações de `RectTransform` reentrem em `Apply` por `OnRectTransformDimensionsChange`, evitando recursão infinita durante a criação do HUD.
 
 ## Evidências executadas
 
@@ -26,7 +27,10 @@ Correções sobre `0ffe683`, na branch `prototype/first-playable`. Baseline limp
 | `dotnet build UnityProject/Tools/UnityCompileCheck/UnityCompileCheck.csproj --no-restore` | 0 erros, 0 avisos | Stubs Unity/DOTween |
 | `dotnet build UnityProject/Tools/UnityApiCompileCheck/UnityApiCompileCheck.csproj -p:UnityRoot="$UNITY_PATH" --no-restore` | 0 erros, 0 avisos | DLLs reais do Editor/template; não valida o grafo UPM do projeto |
 | Editor com `-batchmode -nographics -quit -buildTarget Android` | Exit 1: `No valid Unity Editor license found` | Interrompe antes da importação/compilação do projeto |
+| Unity 6000.0.23f1, Play Mode na cena `Prototype.unity` | PASS: HUD e driver encontrados; botão Iniciar acionado; 10,0 s de simulação, 7 ataques automáticos, 7 de ouro, 112/120 PV, 0 erros/exceções | Perfil de teste novo; sem interação física de mouse/toque, inspeção visual ou aparelho Android |
 | `git diff --check` | Sem problemas de whitespace | Inspeção de diff |
+
+No smoke test, o perfil original foi movido para backup antes da execução e restaurado depois; o save criado pelo teste ficou separado em `.tools/backups/`. O primeiro ensaio revelou a recursão de `SafeAreaFitter`; após a proteção, o segundo ensaio completou sem exceções. A captura automática de tela não produziu um arquivo verificável, então não há evidência visual anexada.
 
 A retomada agora compara todos os timers, alvos e projéteis do snapshot, e depois compara mais cinco segundos de execução retomada com a execução contínua. Os checks de save usam diretórios temporários próprios; o perfil do jogador não foi alterado.
 

@@ -1,8 +1,10 @@
-# Dig & Wonder — defesa com escavação
+# Dig & Wonder — especificação histórica Godot
+
+> **Direção ativa: Unity 6.** O usuário confirmou em 20/10/2026 que o desenvolvimento deve continuar em Unity. Abra `UnityProject/` e siga `UnityProject/README.md`, `UNITY-CONTEXTO-LOCAL.md` e `UNITY-REVISAO-COMBATE-SAVE.md`. O restante deste documento preserva decisões e regras de uma versão anterior em Godot; não é instrução para instalar, abrir, validar ou retomar o jogo em Godot.
 
 ## Decisão e escopo
 
-Em 20/10/2026, o usuário autorizou substituir a escavação manual em grade por defesa com unidades lançáveis e progressão por fases. Esta especificação substitui o roteiro antigo arquivado em `historico/ESPECIFICACAO-GRADE.md`. Godot 4.7.2, Compatibility e GDScript permanecem.
+Esta especificação registrava a versão Godot de defesa com unidades lançáveis e progressão por fases. A implementação ativa foi transferida para Unity; estes valores e regras ficam como referência histórica e não devem direcionar mudanças no protótipo Unity sem pedido explícito.
 
 Ciclo: **lançar unidades → escavar/combater → ganhar ouro → melhorar permanentemente → superar a fase**. Carrinho fixo, poço abaixo, frente de escavação em distância visual limitada. O jogador não seleciona células.
 
