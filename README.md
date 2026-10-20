@@ -15,7 +15,7 @@ Direção aprovada: escavar, coletar, vender, transformar a broca e descobrir mu
 
 ## Executar e verificar
 
-Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A versão `0.0.2` contém escavação jogável na região Prado Cristalino.
+Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A versão `0.0.3` adiciona fases finitas e chefes à mineração.
 
 Em Linux x86_64:
 
@@ -38,6 +38,8 @@ GODOT_BIN=.tools/godot/Godot_v4.7.2-stable_linux.x86_64 bash scripts/run-harness
 ```
 
 Em `0.0.2`, o HUD abre três menus: **Baús**, **Equipamentos** e **Personagem**. Os 60 equipamentos ficam em grupos de dez nas raridades Ruim, Boa, Épica, Lendária, Única e Mística. Baús também podem liberar brocas e skins. A broca é uma companheira com rosto, modelos de escavação próprios e skins equipáveis com habilidade inata; bônus e penalidades alteram força, velocidade, moedas por bloco e sorte. Cada encaixe aceita um equipamento. Baús e chaves continuam vindo da escavação, sem compra nem anúncio. O save esquema 3 migra os esquemas 1 e 2 e preserva itens já adquiridos.
+
+Em `0.0.3`, cada fase tem 24 trechos de profundidade e terreno/minérios próprios. Há três ambientes regulares e uma Fenda Aurora surpresa com chance de 22% após vencer o chefe. Cada chefe bloqueia a escavação para baixo; toque e segure nele para atacar. Derrotá-lo abre a fase seguinte e paga moedas. Chaves e baús ficam em blocos marcados para exploração, com limite por fase (2 de cada nas fases regulares; 3 na Fenda); coletar todos é opcional. O álbum recebe uma descoberta própria por ambiente. O save esquema 5 migra versões anteriores e conserva fases futuras sorteadas.
 
 Confira o histórico e as notas em [VERSOES.md](docs/VERSOES.md). Conteúdo de brocas, equipamentos e região permanece separado dos sistemas para facilitar novas expansões.
 

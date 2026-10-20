@@ -5,6 +5,7 @@ const DrillSpec = preload("res://scripts/progression/drill.gd")
 const DigEngine = preload("res://scripts/gameplay/dig_engine.gd")
 const EquipmentSystem = preload("res://scripts/progression/equipment_system.gd")
 const SaveStore = preload("res://scripts/save/save_store.gd")
+const PhaseSystem = preload("res://scripts/progression/phase_system.gd")
 
 func _initialize() -> void:
 	assert(Economy.sell_coins(12) == 12)
@@ -41,6 +42,24 @@ func _initialize() -> void:
 	engine.setup(biome, 72, [], damaged)
 	var resumed := engine.dig(center, 0, hard_depth, 1)
 	assert(resumed.broken == 1)
+	var phase_system := PhaseSystem.new()
+	assert(phase_system.phases.size() == 4)
+	for phase_id in phase_system.phases:
+		var phase_data: Dictionary = phase_system.phases[phase_id]
+		assert(phase_data.key_cells.size() == int(phase_data.keys))
+		assert(phase_data.chest_cells.size() == int(phase_data.chests))
+		assert(int(phase_data.enemy_count) == 1 and phase_data.has("boss"))
+	var surprise_found := false
+	for phase_seed in range(200):
+		if phase_system.next_id(0, "prado_cristalino", phase_seed) == "fenda_aurora":
+			surprise_found = true
+			break
+	assert(surprise_found)
+	var phase_state: Dictionary = phase_system.initial_state()
+	phase_state.phase_sequence.append("gruta_basaltica")
+	var phase_engine := DigEngine.new()
+	phase_engine.setup(biome, 7042, [], {}, phase_system.catalog, phase_state.phase_sequence)
+	assert(phase_engine.layer_for_cell(0, 0).name != phase_engine.layer_for_cell(24, 0).name)
 	print("LOGIC_OK economy=pass insufficient_funds=pass basic_pattern=1 prism_pattern=3 broken=%d/%d value=%d/%d partial_damage_resume=true" % [basic_result.broken, prism_result.broken, basic_result.coins, prism_result.coins])
 	var equipment := EquipmentSystem.new()
 	for rarity in EquipmentSystem.TIERS:
@@ -81,5 +100,5 @@ func _initialize() -> void:
 	var trinca := DrillSpec.new()
 	assert(trinca.equip("trinca") and trinca.pattern.size() == 3)
 	assert(trinca.equip("aurora") and trinca.pattern.size() == 8)
-	print("CHEST_OK rarities=6 equipment_per_rarity=10 pity_legendary=true luck=raises_tier duplicate_gold=34 skin_passives=true drills=3/8 patterns")
+	print("CHEST_OK rarities=6 equipment_per_rarity=10 pity_legendary=true luck=raises_tier duplicate_gold=34 skin_passives=true drills=3/8 patterns surprise_phase_seeded=true phase_ores_distinct=true")
 	quit()

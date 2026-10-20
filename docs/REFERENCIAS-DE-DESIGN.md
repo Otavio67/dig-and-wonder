@@ -40,3 +40,9 @@ A broca foi escolhida como personagem para manter a leitura visual ligada à aç
 Os seis níveis de raridade são compartilhados pelos equipamentos. Cada nível contém dez itens com nomes, encaixes, habilidade descrita e combinação de poder, valor, velocidade ou sorte. Três encaixes evitam somar o catálogo inteiro ao personagem; o painel mantém itens não encontrados visíveis como silhuetas com efeito e raridade, para dar metas de coleção. As probabilidades de baú e a conversão de duplicatas continuam explícitas e sem compra ou anúncio.
 
 A pesquisa externa desta implementação também retornou 403 no proxy; portanto, esta classificação, as passivas e o tamanho de catálogo são decisões de design do projeto, não alegações sobre práticas pesquisadas em jogos concorrentes. A revisão manual em celular ainda deve confirmar se os nomes, efeitos, legibilidade e quantidade de opções cabem bem no controle por toque.
+
+## Fases e chefes (versão 0.0.3)
+
+A progressão foi alterada para dar um objetivo de conclusão sem exigir 100% da coleta: fases têm limite de profundidade, e apenas derrotar o chefe libera a próxima. O tamanho finito da escavação limita o máximo de minérios; as quantidades de chaves/baús são limitadas por dados por fase e não aparecem como checklist. O controle aproveita a broca já existente: toque ou clique sustentado no chefe ataca, com poder, nível e padrão da broca influenciando o dano.
+
+Há três biomas regulares em ciclo, com materiais e chefes próprios. Uma rolagem de 22% ao vencer cada chefe pode abrir a Fenda Aurora, uma área surpresa mais rara com minério, descoberta, baús e guardiã próprios. A escolha é salva para que reiniciar não faça o evento rerrolar. Esses números são hipóteses do protótipo; ainda precisam de ajuste depois de testar a duração das fases e o ritmo dos chefes em aparelho e com jogadores.

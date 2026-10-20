@@ -1,0 +1,83 @@
+{
+  "cells_per_phase": 24,
+  "normal_cycle": ["prado_cristalino", "gruta_basaltica", "jardim_fossil"],
+  "surprise_chance_percent": 22,
+  "phases": {
+    "prado_cristalino": {
+      "name": "Prado Cristalino",
+      "sky": "#92e4de",
+      "surface": "#f4ca73",
+      "rock": "#bd805d",
+      "keys": 2,
+      "chests": 2,
+      "enemy_count": 1,
+      "key_cells": [[0, 4], [2, 14]],
+      "chest_cells": [[-2, 8], [1, 18]],
+      "layers": [
+        {"name": "Terra macia", "color": "#ca8052", "hardness": 1, "reward": 1, "chance": 0.34},
+        {"name": "Argila rosada", "color": "#a95e59", "hardness": 1, "reward": 2, "chance": 0.32},
+        {"name": "Pedra azul", "color": "#547b91", "hardness": 2, "reward": 4, "chance": 0.24},
+        {"name": "Veio de cristal", "color": "#54d9cb", "hardness": 2, "reward": 8, "chance": 0.10}
+      ],
+      "discovery": {"id": "semente-lunar", "name": "Semente lunar", "description": "Uma semente que brilha sem sol.", "depth": 16},
+      "boss": {"name": "Tatu de Cristal", "title": "Guardião da primeira camada", "color": "#55d9cb", "health": 12, "coins": 60, "shape": "armored"}
+    },
+    "gruta_basaltica": {
+      "name": "Gruta Basáltica",
+      "sky": "#8aa0b3",
+      "surface": "#586a7e",
+      "rock": "#354b63",
+      "keys": 2,
+      "chests": 2,
+      "enemy_count": 1,
+      "key_cells": [[-1, 4], [2, 14]],
+      "chest_cells": [[2, 8], [-2, 18]],
+      "layers": [
+        {"name": "Cascalho vulcânico", "color": "#554f62", "hardness": 2, "reward": 2, "chance": 0.30},
+        {"name": "Basalto", "color": "#3c5069", "hardness": 2, "reward": 4, "chance": 0.32},
+        {"name": "Ferro azul", "color": "#487c9c", "hardness": 3, "reward": 7, "chance": 0.25},
+        {"name": "Âmbar vulcânico", "color": "#ed9c4b", "hardness": 3, "reward": 12, "chance": 0.13}
+      ],
+      "discovery": {"id": "coracao-basaltico", "name": "Coração basáltico", "description": "Uma pedra quente que pulsa no escuro.", "depth": 12},
+      "boss": {"name": "Caranguejo de Basalto", "title": "Sentinela da gruta", "color": "#e89b53", "health": 18, "coins": 100, "shape": "claw"}
+    },
+    "jardim_fossil": {
+      "name": "Jardim Fóssil",
+      "sky": "#b9d6ad",
+      "surface": "#86a968",
+      "rock": "#756d51",
+      "keys": 2,
+      "chests": 2,
+      "enemy_count": 1,
+      "key_cells": [[1, 4], [-2, 14]],
+      "chest_cells": [[-1, 8], [2, 18]],
+      "layers": [
+        {"name": "Barro antigo", "color": "#8a7658", "hardness": 2, "reward": 3, "chance": 0.30},
+        {"name": "Rocha musgosa", "color": "#58775d", "hardness": 3, "reward": 5, "chance": 0.32},
+        {"name": "Âmbar fóssil", "color": "#d99a54", "hardness": 3, "reward": 9, "chance": 0.25},
+        {"name": "Osso estrelado", "color": "#e8dfb0", "hardness": 4, "reward": 15, "chance": 0.13}
+      ],
+      "discovery": {"id": "concha-primeira", "name": "Concha primeira", "description": "Um fóssil de antes das montanhas.", "depth": 12},
+      "boss": {"name": "Besouro Ancestral", "title": "Guardião do jardim", "color": "#b3cf72", "health": 24, "coins": 150, "shape": "horned"}
+    },
+    "fenda_aurora": {
+      "name": "Fenda Aurora · SURPRESA!",
+      "sky": "#6e72ab",
+      "surface": "#4c397e",
+      "rock": "#34365f",
+      "keys": 3,
+      "chests": 3,
+      "enemy_count": 1,
+      "key_cells": [[-2, 4], [2, 12], [0, 20]],
+      "chest_cells": [[2, 7], [-2, 15], [0, 22]],
+      "layers": [
+        {"name": "Poeira estelar", "color": "#564577", "hardness": 2, "reward": 5, "chance": 0.25},
+        {"name": "Rocha violeta", "color": "#654b93", "hardness": 3, "reward": 8, "chance": 0.30},
+        {"name": "Safira celeste", "color": "#638eee", "hardness": 4, "reward": 14, "chance": 0.28},
+        {"name": "Prisma de aurora", "color": "#73f0dc", "hardness": 4, "reward": 24, "chance": 0.17}
+      ],
+      "discovery": {"id": "fragmento-aurora", "name": "Fragmento de aurora", "description": "Um cristal que guarda luz de outro lugar.", "depth": 16},
+      "boss": {"name": "Manta Nebulosa", "title": "Anomalia subterrânea", "color": "#d795fa", "health": 22, "coins": 220, "shape": "cosmic"}
+    }
+  }
+}

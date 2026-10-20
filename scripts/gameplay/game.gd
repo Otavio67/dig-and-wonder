@@ -5,7 +5,9 @@ const DrillSpec = preload("res://scripts/progression/drill.gd")
 const DigEngine = preload("res://scripts/gameplay/dig_engine.gd")
 const SaveStore = preload("res://scripts/save/save_store.gd")
 const EquipmentSystem = preload("res://scripts/progression/equipment_system.gd")
+const PhaseSystem = preload("res://scripts/progression/phase_system.gd")
 const BIOME_PATH := "res://content/biomes/prado_cristalino.json"
+const PHASE_PATH := "res://content/phases/catalog.json"
 
 const BG := Color("#82dfd4")
 const INK := Color("#294456")
@@ -16,10 +18,16 @@ var state: Dictionary
 var engine := DigEngine.new()
 var drill := DrillSpec.new()
 var equipment := EquipmentSystem.new()
+var phase_system := PhaseSystem.new()
+var phase_catalog: Dictionary = {}
 var cell_size := 54.0
 var camera_depth := 0
 var charge := 0.0
 var held := false
+var attacking_boss := false
+var camera_dragging := false
+var pointer_start := Vector2.ZERO
+var camera_start_depth := 0
 var mining := false
 var mine_target := Vector2i.ZERO
 var fx: Array[Dictionary] = []
@@ -41,10 +49,14 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(300, 560)
 	var biome_file := FileAccess.open(BIOME_PATH, FileAccess.READ)
 	biome = JSON.parse_string(biome_file.get_as_text())
+	var phase_file := FileAccess.open(PHASE_PATH, FileAccess.READ)
+	phase_catalog = JSON.parse_string(phase_file.get_as_text())
 	state = SaveStore.load_data()
 	has_existing_save = not state.is_empty()
 	if state.is_empty():
 		state = SaveStore.fresh()
+	if not phase_system.valid_sequence(state.get("phase_sequence", [])):
+		state.merge(phase_system.initial_state(), true)
 	if not drill.equip(str(state.get("drill", "basic"))):
 		state.drill = "basic"
 		drill.equip("basic")
@@ -52,7 +64,7 @@ func _ready() -> void:
 		state.equipped_skin = "pioneira"
 	_apply_drill_skin()
 	var dug_cells: Array = state.dug
-	engine.setup(biome, 7042, dug_cells, state.get("damaged", {}))
+	engine.setup(biome, 7042, dug_cells, state.get("damaged", {}), phase_catalog, state.phase_sequence)
 	drill.level = maxi(1, int(state.get("drill_level", 1)))
 	camera_depth = maxi(0, int(state.depth) - 8)
 	set_process(true)
@@ -74,13 +86,16 @@ func _commit_save() -> void:
 
 func _process(delta: float) -> void:
 	var changed := false
-	if held and not show_album and not show_workshop:
+	if held and not camera_dragging and not show_album and not show_workshop:
 		var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 		var dig_interval := clampf(0.17 - float(boosts.speed), 0.07, 0.42)
 		charge += delta
 		if charge >= dig_interval:
 			charge -= dig_interval
-			_perform_dig(mine_target)
+			if attacking_boss and _boss_is_active():
+				_damage_boss()
+			else:
+				_perform_dig(mine_target)
 			changed = true
 	if toast_time > 0.0:
 		toast_time -= delta
@@ -119,20 +134,34 @@ func _input(event: InputEvent) -> void:
 			_on_press(event.position)
 		else:
 			held = false
+			attacking_boss = false
+			camera_dragging = false
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_on_press(event.position)
 		else:
 			held = false
+			attacking_boss = false
+			camera_dragging = false
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion and held:
-		if _in_world(event.position):
-			mine_target = _cell_at(event.position)
+		_track_pointer(event.position)
+	elif event is InputEventScreenDrag and held:
+		_track_pointer(event.position)
 
 func _on_press(pos: Vector2) -> void:
 	var size := get_rect().size
-	if pos.y >= 122.0 and pos.y <= 152.0 and pos.x >= 14.0 and pos.x <= size.x - 14.0:
+	attacking_boss = false
+	camera_dragging = false
+	pointer_start = pos
+	camera_start_depth = camera_depth
+	if _boss_is_active() and _boss_hit_rect().has_point(pos):
+		held = true
+		attacking_boss = true
+		charge = 0.2
+		_damage_boss()
+	elif pos.y >= 122.0 and pos.y <= 152.0 and pos.x >= 14.0 and pos.x <= size.x - 14.0:
 		show_workshop = true
 		menu_tab = ["chests", "equipment", "character"][clampi(floori((pos.x - 18.0) / ((size.x - 36.0) / 3.0)), 0, 2)]
 	elif pos.y >= size.y - 168.0 and pos.y <= size.y - 108.0:
@@ -148,6 +177,22 @@ func _on_press(pos: Vector2) -> void:
 		_perform_dig(mine_target)
 	queue_redraw()
 
+func _track_pointer(pos: Vector2) -> void:
+	var movement := pos - pointer_start
+	if not camera_dragging and absf(movement.y) >= 30.0 and absf(movement.y) > absf(movement.x) * 1.25:
+		camera_dragging = true
+		attacking_boss = false
+		charge = 0.0
+	if camera_dragging:
+		var visible_rows := maxi(1, floori((world_bottom - grid_origin_y) / cell_size))
+		var minimum := phase_system.start_depth(state)
+		var maximum := maxi(minimum, int(state.depth) - visible_rows + 2)
+		var drag_rows := roundi(-movement.y / cell_size)
+		camera_depth = clampi(camera_start_depth + drag_rows, minimum, maximum)
+		queue_redraw()
+	elif _in_world(pos):
+		mine_target = _cell_at(pos)
+
 func _in_world(pos: Vector2) -> bool:
 	return pos.y >= grid_origin_y and pos.y < world_bottom
 
@@ -158,7 +203,7 @@ func _cell_at(pos: Vector2) -> Vector2i:
 
 func _perform_dig(cell: Vector2i) -> void:
 	var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
-	var result := engine.dig(drill.pattern, cell.x, cell.y, maxi(1, drill.level + int(boosts.power)), int(boosts.reward))
+	var result := engine.dig(drill.pattern, cell.x, cell.y, maxi(1, drill.level + int(boosts.power)), int(boosts.reward), phase_system.end_depth(state))
 	if result.broken <= 0:
 		if result.worked > 0:
 			_commit_save()
@@ -167,12 +212,13 @@ func _perform_dig(cell: Vector2i) -> void:
 	for target in result.cells:
 		var old_depth := int(state.depth)
 		state.depth = maxi(old_depth, target.y + 1)
-		if int(state.depth) > old_depth:
-			_check_depth_rewards(int(state.depth))
 		_spawn_particles(_cell_center(target), result.broken)
-		if not state.discoveries.has(biome.discovery.id) and target.y >= int(biome.discovery.depth):
-			state.discoveries.append(biome.discovery.id)
-			_toast("Descoberta: Semente lunar!")
+		_collect_phase_marker(target)
+		var active_phase: Dictionary = phase_system.phases.get(phase_system.phase_id_at(state, target.y), {})
+		var discovery: Dictionary = active_phase.get("discovery", biome.discovery)
+		if not state.discoveries.has(str(discovery.id)) and posmod(target.y, phase_system.cells_per_phase) >= int(discovery.get("depth", biome.discovery.depth)):
+			state.discoveries.append(str(discovery.id))
+			_toast("Descoberta: %s!" % discovery.get("name", "Novo achado"))
 	var visible_rows := maxi(1, floori((world_bottom - grid_origin_y) / cell_size))
 	camera_depth = maxi(camera_depth, state.depth - visible_rows + 2)
 	_commit_save()
@@ -182,15 +228,73 @@ func _start_game() -> void:
 	show_start_screen = false
 	queue_redraw()
 
-func _check_depth_rewards(depth: int) -> void:
-	while depth >= 4 + int(state.get("key_milestones", 0)) * 12:
-		state.keys = int(state.get("keys", 0)) + 1
-		state.key_milestones = int(state.get("key_milestones", 0)) + 1
-		_toast("Você achou uma chave antiga! 🔑")
-	while depth >= 8 + int(state.get("chest_milestones", 0)) * 12:
-		state.chests = int(state.get("chests", 0)) + 1
-		state.chest_milestones = int(state.get("chest_milestones", 0)) + 1
-		_toast("Baú selado encontrado! Abra no botão Baús.")
+func _marker_save_id(phase_index: int, kind: String, cell: Vector2i) -> String:
+	return "%d:%s:%d:%d" % [phase_index, kind, cell.x, cell.y]
+
+func _has_phase_marker(phase: Dictionary, kind: String, phase_index: int, cell: Vector2i) -> bool:
+	var marker_key := "key_cells" if kind == "key" else "chest_cells"
+	for raw_cell in phase.get(marker_key, []):
+		if raw_cell is Array and raw_cell.size() == 2 and int(raw_cell[0]) == cell.x and int(raw_cell[1]) == posmod(cell.y, phase_system.cells_per_phase):
+			return not state.found_markers.has(_marker_save_id(phase_index, kind, cell))
+	return false
+
+func _collect_phase_marker(cell: Vector2i) -> void:
+	var phase_index := floori(float(cell.y) / float(phase_system.cells_per_phase))
+	var phase_id := phase_system.phase_id_at(state, cell.y)
+	var phase: Dictionary = phase_system.phases.get(phase_id, {})
+	for kind in ["key", "chest"]:
+		if not _has_phase_marker(phase, kind, phase_index, cell):
+			continue
+		state.found_markers.append(_marker_save_id(phase_index, kind, cell))
+		if kind == "key":
+			state.keys = int(state.get("keys", 0)) + 1
+			_toast("Chave antiga encontrada! Abra um baú.")
+		else:
+			state.chests = int(state.get("chests", 0)) + 1
+			_toast("Baú escondido encontrado! Procure uma chave.")
+
+func _active_phase() -> Dictionary:
+	return phase_system.current(state)
+
+func _boss_is_active() -> bool:
+	return int(state.get("boss_health", 0)) > 0 and int(state.depth) >= phase_system.end_depth(state)
+
+func _boss_center() -> Vector2:
+	var y := grid_origin_y + (float(phase_system.end_depth(state) - camera_depth) + 0.5) * cell_size
+	return Vector2(size.x * 0.5, y)
+
+func _boss_hit_rect() -> Rect2:
+	var center := _boss_center()
+	return Rect2(center.x - 62.0, center.y - 50.0, 124.0, 100.0)
+
+func _damage_boss() -> void:
+	if not _boss_is_active():
+		return
+	var phase := _active_phase()
+	var boss: Dictionary = phase.get("boss", {})
+	var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
+	var damage := maxi(1, drill.level + int(boosts.power) + floori(float(drill.pattern.size() - 1) / 2.0))
+	state.boss_health = maxi(0, int(state.boss_health) - damage)
+	_spawn_particles(_boss_center(), 3)
+	if int(state.boss_health) == 0:
+		state.coins = int(state.coins) + int(boss.get("coins", 50))
+		state.bosses_defeated = int(state.get("bosses_defeated", 0)) + 1
+		var previous_id := phase_system.current_id(state)
+		var next_id := phase_system.next_id(int(state.phase_index), previous_id, 7042 + int(state.depth))
+		state.phase_index = int(state.phase_index) + 1
+		state.phase_sequence.append(next_id)
+		engine.phase_sequence = state.phase_sequence
+		state.boss_health = int(phase_system.phases.get(next_id, {}).get("boss", {}).get("health", 12))
+		state.key_milestones = 0
+		state.chest_milestones = 0
+		camera_depth = maxi(camera_depth, int(state.depth) - 8)
+		held = false
+		attacking_boss = false
+		_toast("Chefe derrotado! +%d moedas · %s" % [boss.get("coins", 50), phase_system.phases.get(next_id, {}).get("name", "Nova fase")])
+	else:
+		_toast("%s · %d/%d" % [boss.get("name", "Chefe"), state.boss_health, boss.get("health", 1)])
+	_commit_save()
+	queue_redraw()
 
 func _apply_drill_skin() -> void:
 	var skin_id := str(state.get("equipped_skin", "pioneira"))
@@ -361,13 +465,14 @@ func _draw() -> void:
 		draw_string(ThemeDB.fallback_font, Vector2(18, 160), toast, HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 15, PANEL)
 
 func _draw_background(s: Vector2) -> void:
-	draw_rect(Rect2(Vector2.ZERO, s), BG)
+	var phase := _active_phase()
+	draw_rect(Rect2(Vector2.ZERO, s), Color(str(phase.get("sky", "#82dfd4"))))
 	# Sol, nuvens e colinas: shapes nativas, custo baixo e contornos redondos.
 	draw_circle(Vector2(s.x - 47.0, 61.0), 35.0, Color("#fff1ae"))
 	draw_circle(Vector2(65.0, 115.0), 56.0, Color("#b8efdb"))
 	draw_circle(Vector2(9.0, 137.0), 47.0, Color("#b8efdb"))
 	draw_circle(Vector2(s.x - 15.0, 130.0), 45.0, Color("#b8efdb"))
-	draw_rect(Rect2(0, 131, s.x, s.y - 131), Color("#f5d488"))
+	draw_rect(Rect2(0, 131, s.x, s.y - 131), Color(str(phase.get("surface", "#f5d488"))).lightened(0.33))
 	# Faixa de superfície com costura sinuosa.
 	draw_rect(Rect2(0, 138, s.x, 16), Color("#a8dc79"))
 	for i in range(0, ceili(s.x / 24.0)):
@@ -375,13 +480,14 @@ func _draw_background(s: Vector2) -> void:
 		draw_circle(Vector2(x + 7.0, 138.0 + float(i % 2) * 3.0), 3.5, Color("#78ba61"))
 
 func _draw_hud(s: Vector2) -> void:
+	var phase := _active_phase()
 	_draw_pill(Rect2(17, 16, 150, 43), PANEL, 18)
 	draw_string(ThemeDB.fallback_font, Vector2(31, 44), "◉  %d" % state.coins, HORIZONTAL_ALIGNMENT_LEFT, 110, 21, Color("#c18431"))
 	_draw_pill(Rect2(s.x - 134, 16, 117, 43), PANEL, 18)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x - 122, 43), "ÁLBUM  ✦ %d/1" % state.discoveries.size(), HORIZONTAL_ALIGNMENT_CENTER, 92, 14, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "PRADO CRISTALINO  ·  %dm" % (state.depth * 2), HORIZONTAL_ALIGNMENT_CENTER, s.x - 50, 14, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x - 122, 43), "ÁLBUM  ✦ %d/%d" % [state.discoveries.size(), phase_system.phases.size()], HORIZONTAL_ALIGNMENT_CENTER, 92, 14, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "FASE %d  ·  %s  ·  %dm" % [int(state.phase_index) + 1, phase.get("name", "Mina"), state.depth * 2], HORIZONTAL_ALIGNMENT_CENTER, s.x - 28, 13, INK)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 92), _goal_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 44, 12, Color("#416878"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "TOQUE E SEGURE PARA ESCAVAR", HORIZONTAL_ALIGNMENT_CENTER, s.x - 30, 12, Color("#416878"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "SEGURE PARA CAVAR · DESLIZE PARA EXPLORAR", HORIZONTAL_ALIGNMENT_CENTER, s.x - 30, 12, Color("#416878"))
 	var menu_width := (s.x - 36.0) / 3.0
 	var labels := ["BAÚS %d · 🔑%d" % [state.get("chests", 0), state.get("keys", 0)], "EQUIPAMENTOS", "PERSONAGEM"]
 	for i in range(3):
@@ -389,6 +495,10 @@ func _draw_hud(s: Vector2) -> void:
 		_draw_button(rect, Color("#e6f4db"), str(labels[i]), INK)
 
 func _goal_text() -> String:
+	if _boss_is_active():
+		var boss: Dictionary = _active_phase().get("boss", {})
+		return "CHEFE: %s · TOQUE E SEGURE PARA ATACAR" % boss.get("name", "Guardião")
+	var remaining_to_boss := maxi(0, phase_system.end_depth(state) - int(state.depth)) * 2
 	if drill.id == "basic":
 		var progress_coins := int(state.coins) + int(state.inventory)
 		if progress_coins >= 30:
@@ -400,13 +510,15 @@ func _goal_text() -> String:
 		if int(state.coins) > 0:
 			return "OBJETIVO: JUNTE %d ◉ PARA A BROCA PRISMA" % (30 - int(state.coins))
 		return "OBJETIVO: JUNTE 30 ◉ PARA A BROCA PRISMA"
-	if not state.discoveries.has(biome.discovery.id):
-		var remaining_depth := maxi(0, 32 - int(state.depth) * 2)
-		return "OBJETIVO: DESCUBRA O VEIO BRILHANTE · %d m" % remaining_depth
+	var phase_discovery: Dictionary = _active_phase().get("discovery", biome.discovery)
+	var discovery_id := str(phase_discovery.get("id", biome.discovery.id))
+	if not state.discoveries.has(discovery_id):
+		var remaining_depth := maxi(0, int(phase_discovery.get("depth", 16)) - (int(state.depth) - phase_system.start_depth(state))) * 2
+		return "DESCUBRA %s · %d m" % [str(phase_discovery.get("name", "UM ACHADO")).to_upper(), remaining_depth]
 	var next_cost := 18 + (drill.level - 1) * 16
 	if int(state.coins) >= next_cost:
-		return "OBJETIVO: REFORCE A BROCA · %d ◉" % next_cost
-	return "OBJETIVO: JUNTE %d ◉ PARA REFORÇAR" % next_cost
+		return "REFORÇO DISPONÍVEL · %d m ATÉ O CHEFE" % remaining_to_boss
+	return "JUNTE %d ◉ · %d m ATÉ O CHEFE" % [next_cost, remaining_to_boss]
 
 func _draw_start_screen(s: Vector2) -> void:
 	draw_circle(Vector2(s.x * 0.5, 286), 88, Color("#b8efdb"))
@@ -426,10 +538,12 @@ func _draw_world(s: Vector2) -> void:
 	var bottom := s.y - 174.0
 	grid_origin_y = top
 	world_bottom = bottom
-	draw_rect(Rect2(0, top, s.x, bottom - top), Color("#f0cf91"))
+	draw_rect(Rect2(0, top, s.x, bottom - top), Color(str(_active_phase().get("rock", "#f0cf91"))))
 	var visible_rows := ceili((bottom - top) / cell_size) + 1
 	for screen_row in range(visible_rows):
 		var depth := camera_depth + screen_row
+		if depth >= phase_system.end_depth(state):
+			continue
 		for col in range(-4, 5):
 			var x := s.x * 0.5 - cell_size * 0.5 + float(col) * cell_size
 			var y := top + float(screen_row) * cell_size
@@ -443,15 +557,75 @@ func _draw_world(s: Vector2) -> void:
 				draw_rect(rect, fill)
 				draw_rect(Rect2(x + 3, y + 3, cell_size - 6, cell_size - 7), fill.lightened(0.10))
 				draw_circle(Vector2(x + 12 + float(posmod(col * 13 + depth * 7, 27)), y + 16 + float(posmod(depth * 11 + col * 5, 22))), 2.4, fill.darkened(0.14))
-				if depth >= int(biome.discovery.depth) and col == 0 and posmod(depth, 13) == 0:
+				if int(layer.reward) >= 8:
+					var ore_center := Vector2(x + cell_size * 0.5, y + cell_size * 0.5)
+					draw_colored_polygon(PackedVector2Array([ore_center + Vector2(0, -13), ore_center + Vector2(11, 0), ore_center + Vector2(0, 13), ore_center + Vector2(-11, 0)]), fill.lightened(0.42))
+					draw_line(ore_center + Vector2(0, -9), ore_center + Vector2(0, 7), Color.WHITE, 2.0, true)
+				var phase_index := floori(float(depth) / float(phase_system.cells_per_phase))
+				var phase_id := phase_system.phase_id_at(state, depth)
+				var marker_phase: Dictionary = phase_system.phases.get(phase_id, {})
+				var discovery: Dictionary = marker_phase.get("discovery", biome.discovery)
+				if posmod(depth, phase_system.cells_per_phase) >= int(discovery.get("depth", biome.discovery.depth)) and col == 0 and posmod(depth, 7) == 0:
 					draw_colored_polygon(PackedVector2Array([Vector2(x + 19, y + 36), Vector2(x + 26, y + 11), Vector2(x + 35, y + 34)]), Color("#9affed"))
+				var cell := Vector2i(col, depth)
+				if _has_phase_marker(marker_phase, "key", phase_index, cell):
+					_draw_marker_icon(Vector2(x + cell_size * 0.5, y + cell_size * 0.5), "key")
+				elif _has_phase_marker(marker_phase, "chest", phase_index, cell):
+					_draw_marker_icon(Vector2(x + cell_size * 0.5, y + cell_size * 0.5), "chest")
 	# Mina lateral, fita e broca central.
 	draw_rect(Rect2(0, top, 5, bottom - top), Color("#ddae68"))
 	var surface_line := PackedVector2Array([Vector2(0, 154), Vector2(s.x * 0.5 - 39, 154), Vector2(s.x * 0.5 - 25, 149), Vector2(s.x * 0.5 + 27, 149), Vector2(s.x * 0.5 + 42, 154), Vector2(s.x, 154)])
-	draw_polyline(surface_line, Color("#75b85d"), 6.0, true)
+	draw_polyline(surface_line, Color(str(_active_phase().get("surface", "#75b85d"))).lightened(0.2), 6.0, true)
 	_draw_drill(Vector2(s.x * 0.5, top + 2))
 	_draw_pill(Rect2(s.x - 105, top + 11, 89, 30), PANEL, 13)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x - 97, top + 32), "%d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, 73, 14, INK)
+	if _boss_is_active():
+		var boss_center := _boss_center()
+		if boss_center.y >= top + 50.0 and boss_center.y <= bottom - 50.0:
+			_draw_boss(boss_center)
+
+func _draw_marker_icon(center: Vector2, kind: String) -> void:
+	if kind == "key":
+		draw_circle(center + Vector2(-5, -2), 7, Color("#fff0a1"))
+		draw_circle(center + Vector2(-5, -2), 3, Color("#705528"))
+		draw_line(center + Vector2(1, 3), center + Vector2(12, 14), Color("#fff0a1"), 4.0, true)
+		draw_line(center + Vector2(8, 11), center + Vector2(5, 14), Color("#fff0a1"), 3.0, true)
+	else:
+		draw_rect(Rect2(center.x - 13, center.y - 9, 26, 20), Color("#f2b74c"), true)
+		draw_rect(Rect2(center.x - 14, center.y - 3, 28, 5), Color("#fff0a1"), true)
+		draw_rect(Rect2(center.x - 3, center.y - 1, 6, 11), Color("#8a5b2e"), true)
+
+func _draw_boss(center: Vector2) -> void:
+	var boss: Dictionary = _active_phase().get("boss", {})
+	var color := Color(str(boss.get("color", "#e89b53")))
+	var shape := str(boss.get("shape", "armored"))
+	# Silhueta em primitivas leves: olhos grandes e formas diferentes por guardião.
+	if shape == "cosmic":
+		for angle in range(8):
+			var direction := Vector2.RIGHT.rotated(float(angle) * TAU / 8.0)
+			draw_colored_polygon(PackedVector2Array([center + direction * 28.0, center + direction * 55.0, center + direction.rotated(0.35) * 31.0]), color.lightened(0.12))
+	else:
+		draw_colored_polygon(PackedVector2Array([center + Vector2(-36, -16), center + Vector2(-52, -48), center + Vector2(-12, -32)]), color.darkened(0.10))
+		draw_colored_polygon(PackedVector2Array([center + Vector2(36, -16), center + Vector2(52, -48), center + Vector2(12, -32)]), color.darkened(0.10))
+	draw_circle(center + Vector2(0, 7), 39, Color("#294456"))
+	draw_circle(center, 37, color)
+	if shape == "claw":
+		for side in [-1.0, 1.0]:
+			draw_line(center + Vector2(side * 27, 12), center + Vector2(side * 57, 30), color.lightened(0.15), 8.0, true)
+			draw_line(center + Vector2(side * 57, 30), center + Vector2(side * 44, 45), color.lightened(0.15), 6.0, true)
+	elif shape == "horned":
+		draw_colored_polygon(PackedVector2Array([center + Vector2(-20, -25), center + Vector2(-28, -58), center + Vector2(-4, -34)]), Color("#fff0b2"))
+		draw_colored_polygon(PackedVector2Array([center + Vector2(20, -25), center + Vector2(28, -58), center + Vector2(4, -34)]), Color("#fff0b2"))
+	draw_circle(center + Vector2(-12, -4), 6, Color.WHITE)
+	draw_circle(center + Vector2(12, -4), 6, Color.WHITE)
+	draw_circle(center + Vector2(-11, -3), 2.5, INK)
+	draw_circle(center + Vector2(13, -3), 2.5, INK)
+	draw_arc(center + Vector2(0, 0), 12, 0.35, 2.8, 10, INK, 2.4, true)
+	var bar := Rect2(center.x - 62, center.y + 43, 124, 8)
+	draw_rect(bar, Color("#fff9e8"), true, 4)
+	var ratio := clampf(float(state.boss_health) / maxf(1.0, float(boss.get("health", 1))), 0.0, 1.0)
+	draw_rect(Rect2(bar.position, Vector2(bar.size.x * ratio, bar.size.y)), Color("#ef6a65"), true, 4)
+	draw_string(ThemeDB.fallback_font, Vector2(center.x, center.y - 49), str(boss.get("name", "CHEFE")), HORIZONTAL_ALIGNMENT_CENTER, 200, 13, INK)
 
 func _draw_drill(center: Vector2) -> void:
 	var color := drill.accent
@@ -495,12 +669,13 @@ func _draw_controls(s: Vector2) -> void:
 
 func _draw_album(s: Vector2) -> void:
 	draw_rect(Rect2(16, 174, s.x - 32, s.y - 202), Color("#fff9e8"), true, 24)
+	var discovery: Dictionary = _active_phase().get("discovery", biome.discovery)
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 218), "ÁLBUM DE DESCOBERTAS", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 20, INK)
 	draw_circle(Vector2(s.x * 0.5, 310), 50, Color("#d5f2dd"))
-	var found: bool = state.discoveries.has(biome.discovery.id)
+	var found: bool = state.discoveries.has(str(discovery.get("id", biome.discovery.id)))
 	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 327), "✦" if found else "?", HORIZONTAL_ALIGNMENT_CENTER, 65, 42, Color("#55bba5"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 408), biome.discovery.name if found else "Descoberta oculta", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 18, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 441), biome.discovery.description if found else "Continue escavando para encontrar algo.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 13, Color("#66808a"))
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 408), str(discovery.get("name", "Achado")) if found else "Descoberta oculta", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 18, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 441), str(discovery.get("description", "Continue escavando para encontrar algo.")) if found else "Continue escavando para encontrar algo.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 13, Color("#66808a"))
 	_draw_button(Rect2(35, s.y - 87, s.x - 70, 48), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
 
 func _draw_workshop(s: Vector2) -> void:

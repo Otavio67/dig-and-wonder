@@ -7,10 +7,16 @@ var biome: Dictionary
 var dug := {}
 var durability := {}
 var seed_value := 0
+var phase_catalog: Dictionary = {}
+var phase_sequence: Array = []
+var cells_per_phase := 24
 
-func setup(data: Dictionary, seed_value: int, dug_cells: Array, damaged_cells: Dictionary = {}) -> void:
+func setup(data: Dictionary, seed_value: int, dug_cells: Array, damaged_cells: Dictionary = {}, phase_data: Dictionary = {}, phases: Array = []) -> void:
 	biome = data
 	self.seed_value = seed_value
+	phase_catalog = phase_data
+	phase_sequence = phases
+	cells_per_phase = maxi(1, int(phase_catalog.get("cells_per_phase", 24)))
 	dug.clear()
 	durability.clear()
 	for cell in dug_cells:
@@ -24,13 +30,21 @@ func _key(x: int, y: int) -> String:
 	return "%d:%d" % [x, y]
 
 func layer_for_cell(depth: int, cell_x: int) -> Dictionary:
-	var layers: Array = biome.layers
+	var layer_biome := biome
+	var local_depth := depth
+	if not phase_catalog.is_empty() and not phase_sequence.is_empty():
+		var phase_index := maxi(0, floori(float(depth) / float(cells_per_phase)))
+		var phase_map: Dictionary = phase_catalog.get("phases", {})
+		if phase_index < phase_sequence.size() and phase_map.has(str(phase_sequence[phase_index])):
+			layer_biome = phase_map[str(phase_sequence[phase_index])]
+			local_depth = posmod(depth, cells_per_phase)
+	var layers: Array = layer_biome.layers
 	var candidates: Array[int]
-	if depth < 5:
+	if local_depth < 5:
 		candidates = [0, 1]
-	elif depth < 12:
+	elif local_depth < 12:
 		candidates = [0, 1, 2]
-	elif depth < 24:
+	elif local_depth < 24:
 		candidates = [1, 2, 3]
 	else:
 		candidates = [2, 3]
@@ -44,12 +58,12 @@ func layer_for_cell(depth: int, cell_x: int) -> Dictionary:
 			return layers[index]
 	return layers[candidates.back()]
 
-func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int, reward_bonus: int = 0) -> Dictionary:
+func dig(pattern: Array[Vector2i], center_x: int, center_y: int, power: int, reward_bonus: int = 0, max_depth: int = 2147483647) -> Dictionary:
 	var result := {"broken": 0, "coins": 0, "cells": [], "worked": 0}
 	for offset in pattern:
 		var x := center_x + offset.x
 		var y := center_y + offset.y
-		if y < 0 or abs(x) > 14:
+		if y < 0 or y >= max_depth or abs(x) > 14:
 			continue
 		var cell_key := _key(x, y)
 		if dug.has(cell_key):

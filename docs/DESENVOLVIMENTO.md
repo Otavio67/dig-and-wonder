@@ -143,3 +143,11 @@ A broca ganha rosto e passa a ser apresentada como companheira. Seis modelos man
 ## Fontes e limitações de pesquisa
 
 Esta rodada tentou consulta web, mas o proxy do ambiente devolveu 403. Não atribuí regras novas a outros jogos. A expansão segue as referências já registradas e adota como decisões próprias efeitos legíveis, catálogo separado, skins que mudam números além da aparência e proteção contra duplicatas/sorte ruim. Retomar uma pesquisa atualizada de modelos de coleção e regras de divulgação antes de qualquer monetização com itens aleatórios.
+
+## Incremento 0.0.3 — fases e chefes
+
+As regiões são dados independentes em `content/phases/catalog.json`. Cada fase ocupa 24 trechos verticais (48 m), com paleta, materiais de rocha, minérios, uma descoberta, posições marcadas de chaves/baús e um chefe próprio. O mapa tem largura finita e não permite cavar além do chefe. Segurar o toque/clique sobre o chefe causa dano baseado no nível, poder e padrão da broca. Derrotá-lo concede moedas e abre imediatamente o próximo trecho.
+
+O ciclo normal alterna Prado Cristalino, Gruta Basáltica e Jardim Fóssil. Ao derrotar o chefe, uma rolagem determinística tem 22% de chance de escolher a Fenda Aurora; o resultado entra no save e não se altera após reiniciar. A Fenda tem minério, descoberta, chefe e três pares de chaves/baús marcados no terreno; regiões regulares oferecem até dois pares. Os ícones revelam onde escavar, mas não há checklist nem coleta obrigatória. Somente o chefe abre a descida. Os blocos de cada mapa têm composição determinística, então o máximo de materiais é limitado pelo tamanho da fase.
+
+O save esquema 5 grava a sequência de fases, chefe ativo, chefes vencidos e marcadores já recolhidos. Saves 1–4 são migrados para uma fase que corresponde aproximadamente à profundidade atual, sem remover moedas, chaves ou baús antigos. Harnesses cobrem o limite de mineração, quantidade máxima de achados, dano do chefe, escolha surpresa e retomada da fase salva.

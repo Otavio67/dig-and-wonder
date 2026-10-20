@@ -3,10 +3,10 @@ class_name SaveStore
 
 const PATH := "user://dig_wonder.save.json"
 const BACKUP := "user://dig_wonder.save.bak.json"
-const VERSION := 3
+const VERSION := 5
 
 static func fresh() -> Dictionary:
-	return {"version": VERSION, "coins": 0, "depth": 0, "inventory": 0, "drill": "basic", "drill_level": 1, "dug": [], "damaged": {}, "discoveries": [], "first_sale_bonus_claimed": false, "chests": 0, "keys": 0, "drill_inventory": ["basic"], "gear_inventory": [], "equipped_gear": [], "skin_inventory": ["pioneira"], "equipped_skin": "pioneira", "chest_open_count": 0, "below_epic_streak": 0, "below_legendary_streak": 0, "key_milestones": 0, "chest_milestones": 0, "last_loot": {}}
+	return {"version": VERSION, "coins": 0, "depth": 0, "inventory": 0, "drill": "basic", "drill_level": 1, "dug": [], "damaged": {}, "discoveries": [], "first_sale_bonus_claimed": false, "chests": 0, "keys": 0, "drill_inventory": ["basic"], "gear_inventory": [], "equipped_gear": [], "skin_inventory": ["pioneira"], "equipped_skin": "pioneira", "chest_open_count": 0, "below_epic_streak": 0, "below_legendary_streak": 0, "key_milestones": 0, "chest_milestones": 0, "last_loot": {}, "phase_index": 0, "phase_sequence": ["prado_cristalino"], "boss_health": 12, "bosses_defeated": 0, "found_markers": []}
 
 static func _valid(data: Variant) -> bool:
 	if not data is Dictionary or int(data.get("version", -1)) != VERSION:
@@ -44,12 +44,28 @@ static func _valid(data: Variant) -> bool:
 		var count: Variant = data.get(key, null)
 		if (not count is int and not count is float) or int(count) < 0 or float(count) != int(count):
 			return false
+	for key in ["phase_index", "boss_health", "bosses_defeated"]:
+		var count: Variant = data.get(key, null)
+		if (not count is int and not count is float) or int(count) < 0 or float(count) != int(count):
+			return false
+	if not data.get("phase_sequence", null) is Array or data.phase_sequence.is_empty() or data.phase_sequence.size() > 1000:
+		return false
+	if int(data.phase_index) >= data.phase_sequence.size():
+		return false
+	for phase_id in data.phase_sequence:
+		if not phase_id is String or phase_id.is_empty() or phase_id.length() > 40:
+			return false
 	for key in ["drill_inventory", "gear_inventory", "equipped_gear", "skin_inventory"]:
 		if not data.get(key, null) is Array or data[key].size() > 100:
 			return false
 		for item_id in data[key]:
 			if not item_id is String or item_id.is_empty() or item_id.length() > 40:
 				return false
+	if not data.get("found_markers", null) is Array or data.found_markers.size() > 5000:
+		return false
+	for marker_id in data.found_markers:
+		if not marker_id is String or marker_id.is_empty() or marker_id.length() > 100:
+			return false
 	if not data.get("last_loot", {}) is Dictionary:
 		return false
 	return true
@@ -80,6 +96,24 @@ static func _migrate(data: Dictionary) -> Dictionary:
 		migrated.skin_inventory = ["pioneira"]
 	if not migrated.has("equipped_skin"):
 		migrated.equipped_skin = "pioneira"
+	if not migrated.has("phase_sequence") or not migrated.has("phase_index"):
+		var legacy_phase_index := maxi(0, floori(float(migrated.get("depth", 0)) / 24.0))
+		var normal_cycle: Array[String] = ["prado_cristalino", "gruta_basaltica", "jardim_fossil"]
+		var legacy_sequence: Array[String] = []
+		for index in range(legacy_phase_index + 1):
+			legacy_sequence.append(normal_cycle[posmod(index, normal_cycle.size())])
+		migrated.phase_index = legacy_phase_index
+		migrated.phase_sequence = legacy_sequence
+		# Saves antigos não tinham limites por fase; zera os marcadores sem remover chaves/baús já guardados.
+		migrated.key_milestones = 0
+		migrated.chest_milestones = 0
+	if not migrated.has("boss_health"):
+		var legacy_boss_health: Array[int] = [12, 18, 24]
+		migrated.boss_health = legacy_boss_health[posmod(int(migrated.phase_index), legacy_boss_health.size())]
+	if not migrated.has("bosses_defeated"):
+		migrated.bosses_defeated = 0
+	if not migrated.has("found_markers"):
+		migrated.found_markers = []
 	return migrated
 
 static func _read(path: String) -> Dictionary:
@@ -113,6 +147,13 @@ static func save_data(data: Dictionary) -> bool:
 	for key in ["chests", "keys", "chest_open_count", "below_epic_streak", "below_legendary_streak", "key_milestones", "chest_milestones"]:
 		if not copy.has(key):
 			copy[key] = 0
+	for key in ["phase_index", "boss_health", "bosses_defeated"]:
+		if not copy.has(key):
+			copy[key] = 12 if key == "boss_health" else 0
+	if not copy.has("phase_sequence"):
+		copy["phase_sequence"] = ["prado_cristalino"]
+	if not copy.has("found_markers"):
+		copy["found_markers"] = []
 	for key in ["drill_inventory", "gear_inventory", "equipped_gear", "skin_inventory"]:
 		if not copy.has(key):
 			copy[key] = ["basic"] if key == "drill_inventory" else (["pioneira"] if key == "skin_inventory" else [])

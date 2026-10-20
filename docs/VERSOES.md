@@ -22,4 +22,15 @@ Tag: `v0.0.1` (criada junto ao checkpoint Git deste marco).
 - Save esquema 3 guarda skins e migra os esquemas 1 e 2.
 - Harnesses de catálogo, sorte, passivas, menus e migração executados com Godot 4.7.2.
 
-Tag planejada: `v0.0.2` no checkpoint Git deste marco.
+Tag: `v0.0.2`.
+
+## 0.0.3 — fases, minérios e chefes
+
+- Fases finitas de 24 trechos com paleta, terreno e minérios exclusivos definidos em `content/phases/catalog.json`.
+- Três regiões regulares em ciclo e Fenda Aurora surpresa (22% de chance ao derrotar um chefe); fase sorteada fica persistida.
+- Um chefe diferente por fase bloqueia a descida; tocar e segurar ataca, e derrotá-lo paga moedas e abre a fase seguinte.
+- Chaves e baús aparecem em blocos marcados para exploração, com limite por fase (2 de cada em regiões normais, 3 na Fenda), sem exigir coleta para vencer.
+- Descobertas exclusivas por ambiente; save esquema 5 migra saves antigos para uma fase próxima da profundidade já alcançada.
+- Harnesses verificam limite do terreno, limites de recompensas, combate, transição, sorteio e save.
+
+Tag planejada: `v0.0.3` no checkpoint Git deste marco.

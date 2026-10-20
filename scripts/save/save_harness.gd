@@ -20,7 +20,7 @@ func _initialize() -> void:
 	main_file.store_string("{broken")
 	main_file = null
 	assert(SaveStore.load_data().coins == 42)
-	assert(not SaveStore.save_data({"version": 4}))
+	assert(not SaveStore.save_data({"version": 6}))
 	var malformed := SaveStore.fresh()
 	malformed.dug = [42]
 	assert(not SaveStore.save_data(malformed))
@@ -42,11 +42,39 @@ func _initialize() -> void:
 	prior_v2.equipped_gear = ["peneira"]
 	prior_v2.erase("skin_inventory")
 	prior_v2.erase("equipped_skin")
+	prior_v2.erase("phase_sequence")
+	prior_v2.erase("phase_index")
+	prior_v2.erase("boss_health")
+	prior_v2.erase("bosses_defeated")
 	var v2_file := FileAccess.open(SaveStore.PATH, FileAccess.WRITE)
 	v2_file.store_string(JSON.stringify(prior_v2))
 	v2_file = null
 	var migrated_v2 := SaveStore.load_data()
-	assert(migrated_v2.version == 3 and migrated_v2.gear_inventory == ["peneira"])
+	assert(migrated_v2.version == 5 and migrated_v2.gear_inventory == ["peneira"])
 	assert(migrated_v2.equipped_gear == ["peneira"] and migrated_v2.equipped_skin == "pioneira")
-	print("SAVE_OK valid=20 backup_recovery=42 invalid_schema_cells_damage_rejected=true v1_and_v2_migrate=true legacy_drills_and_gear_preserved=true")
+	assert(migrated_v2.phase_sequence == ["prado_cristalino"] and migrated_v2.boss_health == 12)
+	assert(SaveStore.save_data(migrated_v2))
+	var prior_v3 := SaveStore.fresh()
+	prior_v3.version = 3
+	prior_v3.depth = 50
+	prior_v3.erase("phase_sequence")
+	prior_v3.erase("phase_index")
+	prior_v3.erase("boss_health")
+	prior_v3.erase("bosses_defeated")
+	var v3_file := FileAccess.open(SaveStore.PATH, FileAccess.WRITE)
+	v3_file.store_string(JSON.stringify(prior_v3))
+	v3_file = null
+	var migrated_v3 := SaveStore.load_data()
+	assert(migrated_v3.version == 5 and migrated_v3.phase_index == 2)
+	assert(migrated_v3.phase_sequence == ["prado_cristalino", "gruta_basaltica", "jardim_fossil"])
+	assert(migrated_v3.depth == 50 and migrated_v3.boss_health == 24)
+	var prior_v4 := SaveStore.fresh()
+	prior_v4.version = 4
+	prior_v4.erase("found_markers")
+	var v4_file := FileAccess.open(SaveStore.PATH, FileAccess.WRITE)
+	v4_file.store_string(JSON.stringify(prior_v4))
+	v4_file = null
+	var migrated_v4 := SaveStore.load_data()
+	assert(migrated_v4.version == 5 and migrated_v4.found_markers.is_empty())
+	print("SAVE_OK valid=20 backup_recovery=42 invalid_schema_cells_damage_rejected=true v1_v2_v3_v4_migrate=true phase_progress_persisted=true")
 	quit()
