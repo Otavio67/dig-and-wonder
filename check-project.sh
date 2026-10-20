@@ -39,4 +39,4 @@ run_check() {
 
 run_check import --editor --import
 run_check boot --quit-after 5
-echo "Importação e execução inicial passaram. Visual, Android e anúncios ainda exigem validação própria."
+echo "Importação e execução inicial passaram. Visual Android, anúncio servido e desempenho ainda exigem validação em aparelho."

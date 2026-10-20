@@ -15,7 +15,7 @@ Direção aprovada: escavar, coletar, vender, transformar a broca e descobrir mu
 
 ## Executar e verificar
 
-Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A versão `0.0.4` refina interação, interface e persistência Android sobre as fases e chefes de `0.0.3`. Veja a [análise baseada na documentação oficial do Android](docs/REVISAO-ANDROID.md).
+Abra `project.godot` no Godot 4.7.2 e execute com F6/F5. A versão `0.0.5` consolida a prontidão técnica Android e prepara uma prova isolada de anúncio recompensado de teste. Veja a [análise baseada na documentação oficial do Android](docs/REVISAO-ANDROID.md).
 
 Em Linux x86_64:
 
@@ -32,7 +32,7 @@ O instalador baixa a versão fixada do distribuidor oficial e confere o SHA-512.
 
 ## Protótipo jogável
 
-O marco atual mostra uma tela inicial com **Iniciar escavação** ou **Continuar** quando encontra progresso salvo. Toque e segure (ou clique e segure) no terreno para escavar; veios mais raros e profundos valem mais moedas. A primeira venda concede um bônus único de 8 moedas. O HUD mostra a meta atual. Com 30 moedas, transforme a Broca Pioneira em Broca Prisma: o padrão muda de uma célula para três células em leque. A mina acompanha o avanço em profundidade; o álbum fica no botão superior direito e a descoberta aparece a partir de 16 células. O progresso e dano parcial de pedras resistentes são gravados automaticamente em armazenamento persistente `user://` durante a escavação (intervalo de até um segundo), ao soltar o controle, vender, melhorar e perder foco/pausar/fechar. Há backup do save anterior válido para recuperação. Veja [referências e decisões de design](docs/REFERENCIAS-DE-DESIGN.md), inclusive os momentos planejados para rewarded ads; anúncios ainda não estão integrados.
+O marco atual mostra uma tela inicial com **Iniciar escavação** ou **Continuar** quando encontra progresso salvo. Toque e segure (ou clique e segure) no terreno para escavar; veios mais raros e profundos valem mais moedas. A primeira venda concede um bônus único de 8 moedas. O HUD mostra a meta atual. Com 30 moedas, transforme a Broca Pioneira em Broca Prisma: o padrão muda de uma célula para três células em leque. A mina acompanha o avanço em profundidade; o álbum fica no botão superior direito e a descoberta aparece a partir de 16 células. O progresso e dano parcial de pedras resistentes são gravados automaticamente em armazenamento persistente `user://` durante a escavação (intervalo de até um segundo), ao soltar o controle, vender, melhorar e perder foco/pausar/fechar. Há backup do save anterior válido para recuperação. Veja [referências e decisões de design](docs/REFERENCIAS-DE-DESIGN.md), inclusive os momentos planejados para rewarded ads. O SDK de anúncios fica isolado em um APK técnico de teste, não no jogo principal.
 
 No editor, abra `project.godot` com Godot 4.7.2 e rode F6/F5. No desktop, use o mouse; o jogo está em retrato. Para testar a lógica e a persistência, rode:
 
@@ -47,7 +47,7 @@ Em `0.0.3`, cada fase tem 24 trechos de profundidade e terreno/minérios própri
 
 Confira o histórico e as notas em [VERSOES.md](docs/VERSOES.md). Conteúdo de brocas, equipamentos e região permanece separado dos sistemas para facilitar novas expansões.
 
-Atualização de 20/10/2026: o ambiente de nuvem tem Android SDK, ADB e templates Android do Godot configurados; a exportação e a assinatura do APK de depuração foram verificadas. Não foi integrado plugin de anúncios, nem exibido rewarded ad de teste. Validar instalação, toque, execução, anúncio e FPS depende de aparelho Android. Em `0.0.4`, houve revisão visual de capturas reais do Godot com Xvfb/Mesa por software; capturas desktop não substituem testes visuais em telefone.
+Atualização de 20/10/2026: o ambiente de nuvem tem Android SDK e templates Godot configurados; os APKs de jogo e de teste AdMob são exportáveis e passam em verificações estáticas. O ambiente não tem `/dev/kvm` nem aparelho conectado. A exportação do teste inclui somente IDs oficiais de demonstração e requer internet para baixar/ver o anúncio. Nenhum anúncio foi exibido em aparelho e 60 FPS não foi medido. Em `0.0.4`, houve revisão visual de capturas reais do Godot com Xvfb/Mesa por software; capturas desktop não substituem testes visuais em telefone.
 
 ## Diretrizes confirmadas pelo usuário
 
@@ -79,4 +79,4 @@ Atualização de 20/10/2026: o ambiente de nuvem tem Android SDK, ADB e template
 
 ## Estado local
 
-O projeto está jogável em Godot 4.7.2, com APK debug exportável, SDK Android preparado, testes da lógica/save e capturas visuais reproduzíveis. O checkpoint atual é `0.0.4`. Permanecem pendentes execução em Android real, métricas de desempenho, acessibilidade completa, anúncio recompensado de teste e preparação da loja. Os detalhes estão em [REVISAO-ANDROID.md](docs/REVISAO-ANDROID.md).
+O projeto está jogável em Godot 4.7.2, com APK debug, prova AdMob isolada, SDK Android, testes da lógica/save e capturas visuais reproduzíveis. O checkpoint atual é `0.0.5`. Permanecem pendentes execução em Android real, métricas de desempenho, acessibilidade completa, integração do momento de anúncio à economia do jogo e preparação da loja. Os detalhes estão em [REVISAO-ANDROID.md](docs/REVISAO-ANDROID.md).

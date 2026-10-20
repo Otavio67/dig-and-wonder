@@ -53,3 +53,13 @@ Tag: `v0.0.3`.
 - Importação/boot, harnesses e capturas reais desktop por Xvfb/Mesa revisados. Execução Android, acessibilidade completa, anúncios e FPS dependem de validação no aparelho.
 
 Tag: `v0.0.4` no checkpoint desta revisão.
+
+## 0.0.5 — preparação técnica e prova de anúncio
+
+- APK principal 0.0.5 continua offline, sem permissão de internet e sem dependência de anúncios.
+- Plug-in Android AdMob MIT v7.0 separado em `addons/`; teste isolado usa app/unit IDs oficiais de demonstração do Google.
+- Cena técnica com recompensa concedida somente pelo callback do SDK, sem alterar a economia, menus ou fluxo principal.
+- APK ad-test separado, com Gradle customizado, permissão de internet e verificações de assinatura, alinhamento, manifesto, SDK e integridade.
+- Teste de importação, boot e harnesses preservados; exportações estáticas executadas. Sem aparelho nem KVM, exibição de anúncio, interação Android e FPS não foram medidos.
+
+Tag: `v0.0.5` no checkpoint deste marco.

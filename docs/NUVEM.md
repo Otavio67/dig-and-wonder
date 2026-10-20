@@ -1,16 +1,13 @@
 # Continuidade na nuvem
 
-Em 19/10/2026, o usuário pediu desenvolvimento pela nuvem e autorizou criar um repositório na conta GitHub `Otavio67`. O repositório [Otavio67/dig-and-wonder](https://github.com/Otavio67/dig-and-wonder) foi criado pelo navegador, com proprietário e visibilidade privada confirmados. A execução na nuvem ainda não foi configurada.
+O projeto está em desenvolvimento neste ambiente Linux x86_64 remoto e no repositório privado [Otavio67/dig-and-wonder](https://github.com/Otavio67/dig-and-wonder). A branch de trabalho é `prototype/first-playable`; as versões funcionais recebem tags `v0.0.x`. O checkpoint `v0.0.5` prepara os APKs de jogo e de teste AdMob.
 
 ## Configuração
 
-1. Concluído: entrar como Otavio67 e criar o repositório privado. O navegador está autenticado; confirmar separadamente o acesso da integração do Codex ao novo repositório.
-2. Versionar o README, a especificação e os arquivos de projeto; excluir `.tools/`, `.godot/`, credenciais e builds.
-3. No Codex, escolher **Work in > Cloud**, criar/selecionar um ambiente e incluir o repositório.
-4. Instalar Godot Linux 4.7.2 e fixar templates da mesma versão. Permitir acesso aos distribuidores oficiais necessários.
-5. Verificar `godot --version`; após existir `project.godot`, executar importação headless e testes.
-6. Revisar o relatório e publicar o ambiente; iniciar o desenvolvimento no ambiente publicado.
-7. Manter commits e documentação atualizados para tornar o repositório a fonte durável do projeto.
+1. Repositório GitHub conectado e checkpoint `v0.0.5` publicado.
+2. Godot 4.7.2, JDK, SDK Android, templates, Build Tools e NDK disponíveis em `.tools/` ou no ambiente do usuário; APKs permanecem fora do Git.
+3. Para retomar, rode `bash setup-cloud.sh`, `bash scripts/setup-android.sh`, `bash check-project.sh` e `bash scripts/run-harnesses.sh`.
+4. Antes de alterar identidade visual/layout, aguarda-se validação de APKs em aparelho. KVM e dispositivo USB não estão expostos a este container.
 
 Fonte: [documentação oficial de ambientes do Codex Cloud](https://learn.chatgpt.com/docs/environments/cloud-environments).
 
@@ -18,7 +15,7 @@ Fonte: [documentação oficial de ambientes do Codex Cloud](https://learn.chatgp
 
 Código e verificações podem rodar em Linux na nuvem. Gerar APK exige configurar JDK, Android SDK, templates e exportação, conforme a [documentação do Godot](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html). Não versionar chaves/senhas nem criar chave definitiva de publicação sem armazenamento e recuperação definidos.
 
-Headless não comprova qualidade visual. O ambiente de nuvem consultado documenta limitações para controle de computador/navegador; definir um método viável de captura antes de prometer revisão visual automática. Validar toque, desempenho e anúncios em Android real.
+Capturas foram revisadas por Xvfb/Mesa; elas não comprovam toque, desempenho ou anúncios em Android. A prova de anúncio recompensado usa `scripts/export-android-ad-test.sh` e apenas IDs de demonstração. A exibição real ainda requer aparelho com Play Services e internet. A API GitHub Actions/Release devolveu `Forbidden` ao tentar consultar resultados e anexar APK; `git push` confirmou branch e tags no remoto.
 
 ## Prompt de continuidade
 

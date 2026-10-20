@@ -32,7 +32,8 @@ def verify(apk, sdk):
     native = []
     with zipfile.ZipFile(apk) as archive:
         assert archive.testzip() is None, "CRC inválido no APK"
-        assert not any("harness" in name or "capture_visual" in name or "revisao-android" in name or "builds/review" in name for name in archive.namelist()), "APK contém ferramentas ou capturas de desenvolvimento"
+        dev_paths = ("harness", "capture_visual", "revisao-android", "builds/review", "AdmobPlugin", "GMPShared", "android_ads")
+        assert not any(any(fragment in name for fragment in dev_paths) for name in archive.namelist()), "APK contém ferramentas, anúncios de teste ou capturas de desenvolvimento"
         for name in archive.namelist():
             if not name.endswith(".so"):
                 continue

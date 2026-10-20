@@ -1,0 +1,6 @@
+Godot AdMob plugin v7.0
+Repository: https://github.com/godot-sdk-integrations/godot-admob
+Tag: v7.0
+Commit: 4b4ddceab0be81f0dcb12a6313038dba6cf9eacf
+License: MIT (see LICENSE)
+Android SDK dependency: com.google.android.gms:play-services-ads:24.9.0
