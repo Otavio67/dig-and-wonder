@@ -1,6 +1,7 @@
 .godot/
 .tools/
 builds/
+docs/revisao-android/*.png.import
 *.apk
 *.aab
 *.keystore

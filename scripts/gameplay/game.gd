@@ -6,6 +6,8 @@ const DigEngine = preload("res://scripts/gameplay/dig_engine.gd")
 const SaveStore = preload("res://scripts/save/save_store.gd")
 const EquipmentSystem = preload("res://scripts/progression/equipment_system.gd")
 const PhaseSystem = preload("res://scripts/progression/phase_system.gd")
+const Layout = preload("res://scripts/gameplay/ui_layout.gd")
+const AUTOSAVE_INTERVAL := 1.0
 const BIOME_PATH := "res://content/biomes/prado_cristalino.json"
 const PHASE_PATH := "res://content/phases/catalog.json"
 
@@ -37,15 +39,24 @@ var show_album := false
 var show_workshop := false
 var menu_tab := "chests"
 var gear_rarity := "Ruim"
+var gear_page := 0
 var character_view := "models"
 var skin_page := 0
 var show_start_screen := true
 var has_existing_save := false
 var press_scale := 0.0
-var grid_origin_y := 154.0
+var grid_origin_y := Layout.WORLD_TOP
 var world_bottom := 0.0
+var active_touch := -1
+var app_suspended := false
+var save_pending := false
+var save_elapsed := 0.0
+var save_failed := false
+var panel_styles: Dictionary = {}
 
 func _ready() -> void:
+	get_tree().auto_accept_quit = false
+	get_tree().quit_on_go_back = false
 	custom_minimum_size = Vector2(300, 560)
 	var biome_file := FileAccess.open(BIOME_PATH, FileAccess.READ)
 	biome = JSON.parse_string(biome_file.get_as_text())
@@ -67,14 +78,64 @@ func _ready() -> void:
 	engine.setup(biome, 7042, dug_cells, state.get("damaged", {}), phase_catalog, state.phase_sequence)
 	drill.level = maxi(1, int(state.get("drill_level", 1)))
 	camera_depth = maxi(0, int(state.depth) - 8)
+	world_bottom = size.y - Layout.FOOTER_HEIGHT
 	set_process(true)
 	queue_redraw()
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST:
+	if state.is_empty():
+		return
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_set_app_active(false)
+	elif what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		_set_app_active(true)
+	elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		if not _navigate_back():
+			get_tree().quit()
+	elif what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_commit_save()
+		get_tree().quit()
+
+func _set_app_active(active: bool) -> void:
+	app_suspended = not active
+	_cancel_pointer()
+	if not active:
 		_commit_save()
 
-func _commit_save() -> void:
+func _cancel_pointer() -> void:
+	held = false
+	attacking_boss = false
+	camera_dragging = false
+	charge = 0.0
+	active_touch = -1
+
+func _release_pointer() -> void:
+	_cancel_pointer()
+	if save_pending:
+		_commit_save()
+
+func _navigate_back() -> bool:
+	_release_pointer()
+	_commit_save()
+	if show_workshop:
+		show_workshop = false
+	elif show_album:
+		show_album = false
+	elif not show_start_screen:
+		show_start_screen = true
+	else:
+		return false
+	queue_redraw()
+	return true
+
+func _request_save() -> void:
+	if not save_pending:
+		save_elapsed = 0.0
+	save_pending = true
+
+func _commit_save() -> bool:
+	if state.is_empty():
+		return false
 	state.depth = maxi(int(state.depth), camera_depth)
 	state.drill = drill.id
 	state.drill_level = drill.level
@@ -83,10 +144,27 @@ func _commit_save() -> void:
 	state.damaged = engine.durability.duplicate(true)
 	if SaveStore.save_data(state):
 		has_existing_save = true
+		save_pending = false
+		save_failed = false
+		save_elapsed = 0.0
+		return true
+	save_pending = true
+	save_elapsed = 0.0
+	if not save_failed:
+		_toast("Não foi possível salvar. Verifique o espaço do aparelho.")
+		queue_redraw()
+	save_failed = true
+	return false
 
 func _process(delta: float) -> void:
+	if app_suspended:
+		return
+	if save_pending:
+		save_elapsed += delta
+		if save_elapsed >= AUTOSAVE_INTERVAL:
+			_commit_save()
 	var changed := false
-	if held and not camera_dragging and not show_album and not show_workshop:
+	if held and not camera_dragging and not show_start_screen and not show_album and not show_workshop:
 		var boosts := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
 		var dig_interval := clampf(0.17 - float(boosts.speed), 0.07, 0.42)
 		charge += delta
@@ -113,67 +191,78 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _input(event: InputEvent) -> void:
+	if app_suspended:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		if not _navigate_back():
+			get_tree().quit()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventScreenTouch:
+		if event.canceled:
+			if event.index == active_touch:
+				_release_pointer()
+		elif event.pressed and active_touch == -1:
+			active_touch = event.index
+			_press_at(_local_pointer(event.position))
+		elif not event.pressed and event.index == active_touch:
+			_release_pointer()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventScreenDrag and event.index == active_touch and held:
+		_track_pointer(_local_pointer(event.position))
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and active_touch == -1:
+		if event.pressed:
+			_press_at(_local_pointer(event.position))
+		else:
+			_release_pointer()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion and held and active_touch == -1:
+		_track_pointer(_local_pointer(event.position))
+
+func _local_pointer(viewport_position: Vector2) -> Vector2:
+	return get_global_transform_with_canvas().affine_inverse() * viewport_position
+
+func _press_at(pos: Vector2) -> void:
+	if not Rect2(Vector2.ZERO, size).has_point(pos):
+		return
 	if show_start_screen:
-		if event is InputEventScreenTouch and event.pressed or event is InputEventMouseButton and event.pressed:
-			var start_top := size.y - 168.0
-			if event.position.y >= start_top and event.position.y <= size.y - 104.0 and event.position.x >= 30.0 and event.position.x <= size.x - 30.0:
-				_start_game()
-			get_viewport().set_input_as_handled()
-		return
-	if show_album or show_workshop:
-		if event is InputEventScreenTouch and event.pressed or event is InputEventMouseButton and event.pressed:
-			if show_workshop:
-				_menu_press(event.position)
-			else:
-				show_album = false
-				queue_redraw()
-		get_viewport().set_input_as_handled()
-		return
-	if event is InputEventScreenTouch:
-		if event.pressed:
-			_on_press(event.position)
-		else:
-			held = false
-			attacking_boss = false
-			camera_dragging = false
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			_on_press(event.position)
-		else:
-			held = false
-			attacking_boss = false
-			camera_dragging = false
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseMotion and held:
-		_track_pointer(event.position)
-	elif event is InputEventScreenDrag and held:
-		_track_pointer(event.position)
+		if Layout.button("start", size).has_point(pos):
+			_start_game()
+	elif show_workshop:
+		_menu_press(pos)
+	elif show_album:
+		if Layout.button("back", size).has_point(pos):
+			show_album = false
+			queue_redraw()
+	else:
+		_on_press(pos)
 
 func _on_press(pos: Vector2) -> void:
-	var size := get_rect().size
+	held = false
 	attacking_boss = false
 	camera_dragging = false
 	pointer_start = pos
 	camera_start_depth = camera_depth
-	if _boss_is_active() and _boss_hit_rect().has_point(pos):
+	for i in range(3):
+		if Layout.tab(i, size).has_point(pos):
+			show_workshop = true
+			menu_tab = ["chests", "equipment", "character"][i]
+			queue_redraw()
+			return
+	if Layout.button("sell", size).has_point(pos):
+		_sell()
+	elif Layout.button("upgrade", size).has_point(pos):
+		_upgrade()
+	elif Layout.button("album", size).has_point(pos):
+		show_album = true
+	elif _in_world(pos) and _boss_is_active() and _boss_hit_rect().has_point(pos):
 		held = true
 		attacking_boss = true
-		charge = 0.2
+		charge = 0.0
 		_damage_boss()
-	elif pos.y >= 122.0 and pos.y <= 152.0 and pos.x >= 14.0 and pos.x <= size.x - 14.0:
-		show_workshop = true
-		menu_tab = ["chests", "equipment", "character"][clampi(floori((pos.x - 18.0) / ((size.x - 36.0) / 3.0)), 0, 2)]
-	elif pos.y >= size.y - 168.0 and pos.y <= size.y - 108.0:
-		_sell()
-	elif pos.y >= size.y - 103.0 and pos.y <= size.y - 53.0:
-		_upgrade()
-	elif pos.y < 96.0 and pos.x > size.x - 132.0:
-		show_album = true
 	elif _in_world(pos):
 		mine_target = _cell_at(pos)
 		held = true
-		charge = 0.16
+		charge = 0.0
 		_perform_dig(mine_target)
 	queue_redraw()
 
@@ -192,9 +281,12 @@ func _track_pointer(pos: Vector2) -> void:
 		queue_redraw()
 	elif _in_world(pos):
 		mine_target = _cell_at(pos)
+	else:
+		held = false
+		charge = 0.0
 
 func _in_world(pos: Vector2) -> bool:
-	return pos.y >= grid_origin_y and pos.y < world_bottom
+	return pos.x >= 0 and pos.x < size.x and pos.y >= grid_origin_y and pos.y < world_bottom
 
 func _cell_at(pos: Vector2) -> Vector2i:
 	var col := floori((pos.x - (size.x * 0.5 - cell_size * 0.5)) / cell_size)
@@ -206,7 +298,7 @@ func _perform_dig(cell: Vector2i) -> void:
 	var result := engine.dig(drill.pattern, cell.x, cell.y, maxi(1, drill.level + int(boosts.power)), int(boosts.reward), phase_system.end_depth(state))
 	if result.broken <= 0:
 		if result.worked > 0:
-			_commit_save()
+			_request_save()
 		return
 	state.inventory += int(result.coins)
 	for target in result.cells:
@@ -221,7 +313,7 @@ func _perform_dig(cell: Vector2i) -> void:
 			_toast("Descoberta: %s!" % discovery.get("name", "Novo achado"))
 	var visible_rows := maxi(1, floori((world_bottom - grid_origin_y) / cell_size))
 	camera_depth = maxi(camera_depth, state.depth - visible_rows + 2)
-	_commit_save()
+	_request_save()
 	queue_redraw()
 
 func _start_game() -> void:
@@ -302,48 +394,62 @@ func _apply_drill_skin() -> void:
 		drill.accent = Color(str(equipment.skins[skin_id].color))
 
 func _menu_press(pos: Vector2) -> void:
-	var s := size
-	if pos.y >= 168.0 and pos.y <= 211.0:
-		menu_tab = ["chests", "equipment", "character"][clampi(floori((pos.x - 20.0) / ((s.x - 40.0) / 3.0)), 0, 2)]
-	elif pos.y >= s.y - 96.0:
+	for i in range(3):
+		if Layout.tab(i, size, true).has_point(pos):
+			menu_tab = ["chests", "equipment", "character"][i]
+			queue_redraw()
+			return
+	if Layout.button("back", size).has_point(pos):
 		show_workshop = false
-	elif menu_tab == "chests":
-		if pos.y >= s.y - 170.0 and pos.y <= s.y - 108.0:
-			_open_chest()
+	elif menu_tab == "chests" and Layout.button("chest", size).has_point(pos):
+		_open_chest()
 	elif menu_tab == "equipment":
-		if pos.y >= 252.0 and pos.y < 320.0:
-			var rarity_index := floori((pos.y - 252.0) / 34.0) * 3 + floori(pos.x / (s.x / 3.0))
-			var rarities: Array[String] = ["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"]
-			if rarity_index >= 0 and rarity_index < rarities.size():
-				gear_rarity = rarities[rarity_index]
-		elif pos.y >= 358.0 and pos.y < 358.0 + 10.0 * 39.0:
-			var gear_ids := equipment.gear_ids_for_rarity(gear_rarity)
-			var row := floori((pos.y - 358.0) / 39.0)
-			if row >= 0 and row < gear_ids.size():
-				var gear_id := gear_ids[row]
-				if state.gear_inventory.has(gear_id):
-					_equip_gear(gear_id)
-				else:
-					_toast("Esse achado ainda está escondido em um baú.")
+		var rarities := ["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"]
+		for i in range(rarities.size()):
+			if Layout.rarity(i, size).has_point(pos):
+				gear_rarity = rarities[i]
+				gear_page = 0
+		var ids := equipment.gear_ids_for_rarity(gear_rarity)
+		var last_page := maxi(0, ceili(float(ids.size()) / Layout.GEAR_PER_PAGE) - 1)
+		if Layout.page(false, size).has_point(pos):
+			gear_page = maxi(0, gear_page - 1)
+		elif Layout.page(true, size).has_point(pos):
+			gear_page = mini(last_page, gear_page + 1)
+		else:
+			for row in range(Layout.GEAR_PER_PAGE):
+				var index := gear_page * Layout.GEAR_PER_PAGE + row
+				if index < ids.size() and Layout.item(row, size, true).has_point(pos):
+					if state.gear_inventory.has(ids[index]):
+						_equip_gear(ids[index])
+					else:
+						_toast("Esse achado ainda está escondido em um baú.")
 	elif menu_tab == "character":
-		if pos.y >= 402.0 and pos.y <= 442.0:
-			character_view = "models" if pos.x < s.x * 0.5 else "skins"
+		if Layout.button("models", size).has_point(pos) or Layout.button("skins", size).has_point(pos):
+			character_view = "models" if Layout.button("models", size).has_point(pos) else "skins"
 			skin_page = 0
-		elif character_view == "models" and pos.y >= 452.0 and pos.y < 452.0 + equipment.drills.size() * 42.0:
-			var drill_ids: Array = equipment.drills.keys()
-			drill_ids.sort()
-			var drill_row := floori((pos.y - 452.0) / 42.0)
-			if drill_row >= 0 and drill_row < drill_ids.size():
-				_equip_drill(str(drill_ids[drill_row]))
-		elif character_view == "skins":
-			if pos.y >= 452.0 and pos.y < 452.0 + 6.0 * 42.0:
-				var skin_ids := equipment.skin_ids()
-				var skin_index := skin_page * 6 + floori((pos.y - 452.0) / 42.0)
-				if skin_index >= 0 and skin_index < skin_ids.size():
-					_equip_skin(skin_ids[skin_index])
-			elif pos.y >= 708.0 and pos.y <= 752.0:
-				skin_page = clampi(skin_page + (1 if pos.x >= s.x * 0.5 else -1), 0, 2)
+		else:
+			var ids: Array = _character_ids()
+			var last_page := maxi(0, ceili(float(ids.size()) / Layout.CHARACTER_PER_PAGE) - 1)
+			if Layout.page(false, size).has_point(pos):
+				skin_page = maxi(0, skin_page - 1)
+			elif Layout.page(true, size).has_point(pos):
+				skin_page = mini(last_page, skin_page + 1)
+			else:
+				for row in range(Layout.CHARACTER_PER_PAGE):
+					var index := skin_page * Layout.CHARACTER_PER_PAGE + row
+					if index < ids.size() and Layout.item(row, size).has_point(pos):
+						if character_view == "models":
+							_equip_drill(str(ids[index]))
+						else:
+							_equip_skin(str(ids[index]))
 	queue_redraw()
+
+func _character_ids() -> Array:
+	if character_view == "skins":
+		return equipment.skin_ids()
+	var ids: Array = equipment.drills.keys()
+	ids.sort()
+	return ids
 
 func _open_chest() -> void:
 	if int(state.get("chests", 0)) < 1:
@@ -462,7 +568,8 @@ func _draw() -> void:
 		_draw_controls(s)
 	_draw_particles()
 	if toast_time > 0.0:
-		draw_string(ThemeDB.fallback_font, Vector2(18, 160), toast, HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 15, PANEL)
+		_draw_panel(Rect2(12, s.y - 310, s.x - 24, 64), INK, 16)
+		_wrapped_text(Rect2(24, s.y - 299, s.x - 48, 48), toast, 16, PANEL)
 
 func _draw_background(s: Vector2) -> void:
 	var phase := _active_phase()
@@ -483,15 +590,13 @@ func _draw_hud(s: Vector2) -> void:
 	var phase := _active_phase()
 	_draw_pill(Rect2(17, 16, 150, 43), PANEL, 18)
 	draw_string(ThemeDB.fallback_font, Vector2(31, 44), "◉  %d" % state.coins, HORIZONTAL_ALIGNMENT_LEFT, 110, 21, Color("#c18431"))
-	_draw_pill(Rect2(s.x - 134, 16, 117, 43), PANEL, 18)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x - 122, 43), "ÁLBUM  ✦ %d/%d" % [state.discoveries.size(), phase_system.phases.size()], HORIZONTAL_ALIGNMENT_CENTER, 92, 14, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "FASE %d  ·  %s  ·  %dm" % [int(state.phase_index) + 1, phase.get("name", "Mina"), state.depth * 2], HORIZONTAL_ALIGNMENT_CENTER, s.x - 28, 13, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 92), _goal_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 44, 12, Color("#416878"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "SEGURE PARA CAVAR · DESLIZE PARA EXPLORAR", HORIZONTAL_ALIGNMENT_CENTER, s.x - 30, 12, Color("#416878"))
-	var menu_width := (s.x - 36.0) / 3.0
+	_draw_pill(Layout.button("album", s), PANEL, 18)
+	draw_string(ThemeDB.fallback_font, Vector2(s.x - 156, 50), "ÁLBUM  ✦ %d/%d" % [state.discoveries.size(), phase_system.phases.size()], HORIZONTAL_ALIGNMENT_CENTER, 128, 14, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 116), "FASE %d  ·  %s  ·  %dm" % [int(state.phase_index) + 1, phase.get("name", "Mina"), state.depth * 2], HORIZONTAL_ALIGNMENT_CENTER, s.x - 28, 13, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 92), _goal_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 44, 12, Color("#416878"))
 	var labels := ["BAÚS %d · 🔑%d" % [state.get("chests", 0), state.get("keys", 0)], "EQUIPAMENTOS", "PERSONAGEM"]
 	for i in range(3):
-		var rect := Rect2(18.0 + float(i) * menu_width, 123, menu_width - 6, 28)
+		var rect := Layout.tab(i, s)
 		_draw_button(rect, Color("#e6f4db"), str(labels[i]), INK)
 
 func _goal_text() -> String:
@@ -524,18 +629,20 @@ func _draw_start_screen(s: Vector2) -> void:
 	draw_circle(Vector2(s.x * 0.5, 286), 88, Color("#b8efdb"))
 	draw_circle(Vector2(s.x * 0.5, 279), 68, Color("#d5f2dd"))
 	_draw_drill(Vector2(s.x * 0.5, 257))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 402), "DIG & WONDER", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 36, Color("#3d5c6d"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 438), "O que será que existe logo abaixo?", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 16, Color("#416878"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 402), "DIG & WONDER", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 36, Color("#3d5c6d"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 438), "O que será que existe logo abaixo?", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 16, Color("#416878"))
 	_draw_pill(Rect2(28, 478, s.x - 56, 66), PANEL, 18)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 505), "PRADO CRISTALINO", HORIZONTAL_ALIGNMENT_CENTER, s.x - 84, 16, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 528), "Escave · colete · descubra", HORIZONTAL_ALIGNMENT_CENTER, s.x - 84, 12, Color("#66808a"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 505), "PRADO CRISTALINO", HORIZONTAL_ALIGNMENT_CENTER, s.x - 84, 16, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 528), "Escave · colete · descubra", HORIZONTAL_ALIGNMENT_CENTER, s.x - 84, 12, Color("#66808a"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 592), "Segure no terreno para cavar", HORIZONTAL_ALIGNMENT_CENTER, s.x - 60, 19, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 622), "Arraste para explorar a profundidade", HORIZONTAL_ALIGNMENT_CENTER, s.x - 60, 16, Color("#416878"))
 	var button_label := "CONTINUAR" if has_existing_save else "INICIAR ESCAVAÇÃO"
-	_draw_button(Rect2(28, s.y - 168, s.x - 56, 58), Color("#37cbb9"), button_label, Color("#173d4b"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 77), "PROGRESSO SALVO AUTOMATICAMENTE", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 11, Color("#55707a"))
+	_draw_button(Layout.button("start", s), Color("#37cbb9"), button_label, Color("#173d4b"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 77), "PROGRESSO SALVO AUTOMATICAMENTE", HORIZONTAL_ALIGNMENT_CENTER, s.x - 36, 11, Color("#55707a"))
 
 func _draw_world(s: Vector2) -> void:
-	var top := 154.0
-	var bottom := s.y - 174.0
+	var top := Layout.WORLD_TOP
+	var bottom := s.y - Layout.FOOTER_HEIGHT
 	grid_origin_y = top
 	world_bottom = bottom
 	draw_rect(Rect2(0, top, s.x, bottom - top), Color(str(_active_phase().get("rock", "#f0cf91"))))
@@ -574,7 +681,7 @@ func _draw_world(s: Vector2) -> void:
 					_draw_marker_icon(Vector2(x + cell_size * 0.5, y + cell_size * 0.5), "chest")
 	# Mina lateral, fita e broca central.
 	draw_rect(Rect2(0, top, 5, bottom - top), Color("#ddae68"))
-	var surface_line := PackedVector2Array([Vector2(0, 154), Vector2(s.x * 0.5 - 39, 154), Vector2(s.x * 0.5 - 25, 149), Vector2(s.x * 0.5 + 27, 149), Vector2(s.x * 0.5 + 42, 154), Vector2(s.x, 154)])
+	var surface_line := PackedVector2Array([Vector2(0, top), Vector2(s.x * 0.5 - 39, top), Vector2(s.x * 0.5 - 25, top - 5), Vector2(s.x * 0.5 + 27, top - 5), Vector2(s.x * 0.5 + 42, top), Vector2(s.x, top)])
 	draw_polyline(surface_line, Color(str(_active_phase().get("surface", "#75b85d"))).lightened(0.2), 6.0, true)
 	_draw_drill(Vector2(s.x * 0.5, top + 2))
 	_draw_pill(Rect2(s.x - 105, top + 11, 89, 30), PANEL, 13)
@@ -622,10 +729,10 @@ func _draw_boss(center: Vector2) -> void:
 	draw_circle(center + Vector2(13, -3), 2.5, INK)
 	draw_arc(center + Vector2(0, 0), 12, 0.35, 2.8, 10, INK, 2.4, true)
 	var bar := Rect2(center.x - 62, center.y + 43, 124, 8)
-	draw_rect(bar, Color("#fff9e8"), true, 4)
+	_draw_panel(bar, PANEL, 4)
 	var ratio := clampf(float(state.boss_health) / maxf(1.0, float(boss.get("health", 1))), 0.0, 1.0)
-	draw_rect(Rect2(bar.position, Vector2(bar.size.x * ratio, bar.size.y)), Color("#ef6a65"), true, 4)
-	draw_string(ThemeDB.fallback_font, Vector2(center.x, center.y - 49), str(boss.get("name", "CHEFE")), HORIZONTAL_ALIGNMENT_CENTER, 200, 13, INK)
+	_draw_panel(Rect2(bar.position, Vector2(bar.size.x * ratio, bar.size.y)), Color("#ef6a65"), 4)
+	_centered_string(ThemeDB.fallback_font, Vector2(center.x, center.y - 49), str(boss.get("name", "CHEFE")), HORIZONTAL_ALIGNMENT_CENTER, 200, 13, INK)
 
 func _draw_drill(center: Vector2) -> void:
 	var color := drill.accent
@@ -649,11 +756,11 @@ func _draw_drill(center: Vector2) -> void:
 		draw_circle(center, 7, Color("#fff7d0"))
 
 func _draw_controls(s: Vector2) -> void:
-	draw_rect(Rect2(0, s.y - 168, s.x, 168), Color("#fff9e8"))
-	draw_line(Vector2(18, s.y - 168), Vector2(s.x - 18, s.y - 168), Color("#e3d9bd"), 2.0)
-	_draw_pill(Rect2(18, s.y - 153, s.x - 36, 40), Color("#e8f2d7"), 16)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 127), "VALOR NA MOCHILA  %d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, s.x - 55, 15, INK)
-	_draw_button(Rect2(18, s.y - 102, s.x - 36, 47), Color("#f6c15f"), "VENDER PEDRAS  ·  +%d" % state.inventory, Color("#543e23"))
+	draw_rect(Rect2(0, s.y - Layout.FOOTER_HEIGHT, s.x, Layout.FOOTER_HEIGHT), Color("#fff9e8"))
+	draw_line(Vector2(18, s.y - Layout.FOOTER_HEIGHT), Vector2(s.x - 18, s.y - Layout.FOOTER_HEIGHT), Color("#e3d9bd"), 2.0)
+	_draw_pill(Rect2(18, s.y - 218, s.x - 36, 40), Color("#e8f2d7"), 16)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 192), "VALOR NA MOCHILA  %d ◉" % state.inventory, HORIZONTAL_ALIGNMENT_CENTER, s.x - 55, 15, INK)
+	_draw_button(Layout.button("sell", s), Color("#f6c15f"), "VENDER PEDRAS  ·  +%d" % state.inventory, Color("#543e23"))
 	var upgrade_text: String
 	var cost: int
 	if drill.id == "basic":
@@ -664,23 +771,24 @@ func _draw_controls(s: Vector2) -> void:
 		cost = 18 + (drill.level - 1) * 16
 		upgrade_text = "REFORÇAR NV.%d  ·  %d ◉" % [drill.level, cost]
 	var enabled := int(state.coins) >= cost
-	_draw_button(Rect2(18, s.y - 48, s.x - 36, 40), Color("#37cbb9") if enabled else Color("#c5d7ce"), upgrade_text, Color("#173d4b"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, s.y - 6), "Broca: %s  ·  quebradas %d" % [drill.title, engine.dug.size()], HORIZONTAL_ALIGNMENT_CENTER, s.x - 24, 11, Color("#55707a"))
+	_draw_button(Layout.button("upgrade", s), Color("#37cbb9") if enabled else Color("#c5d7ce"), upgrade_text, Color("#173d4b"))
 
 func _draw_album(s: Vector2) -> void:
-	draw_rect(Rect2(16, 174, s.x - 32, s.y - 202), Color("#fff9e8"), true, 24)
+	_draw_panel(Rect2(16, 174, s.x - 32, s.y - 202), PANEL, 24)
 	var discovery: Dictionary = _active_phase().get("discovery", biome.discovery)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 218), "ÁLBUM DE DESCOBERTAS", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 20, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 218), "ÁLBUM DE DESCOBERTAS", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 20, INK)
 	draw_circle(Vector2(s.x * 0.5, 310), 50, Color("#d5f2dd"))
 	var found: bool = state.discoveries.has(str(discovery.get("id", biome.discovery.id)))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 327), "✦" if found else "?", HORIZONTAL_ALIGNMENT_CENTER, 65, 42, Color("#55bba5"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 408), str(discovery.get("name", "Achado")) if found else "Descoberta oculta", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 18, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 441), str(discovery.get("description", "Continue escavando para encontrar algo.")) if found else "Continue escavando para encontrar algo.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 13, Color("#66808a"))
-	_draw_button(Rect2(35, s.y - 87, s.x - 70, 48), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 327), "✦" if found else "?", HORIZONTAL_ALIGNMENT_CENTER, 65, 42, Color("#55bba5"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 408), str(discovery.get("name", "Achado")) if found else "Descoberta oculta", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 18, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 441), str(discovery.get("description", "Continue escavando para encontrar algo.")) if found else "Continue escavando para encontrar algo.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 64, 13, Color("#66808a"))
+	_draw_button(Layout.button("back", s), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
 
 func _draw_workshop(s: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, s), Color("#82dfd4"))
-	draw_rect(Rect2(14, 164, s.x - 28, s.y - 184), Color("#fff9e8"), true, 22)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 68), "OFICINA DE ACHADOS", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 28, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 104), "Monte sua broca e descubra novas combinações", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 16, INK)
+	_draw_panel(Rect2(14, 154, s.x - 28, s.y - 174), PANEL, 22)
 	_draw_menu_tabs(s)
 	match menu_tab:
 		"equipment":
@@ -689,7 +797,7 @@ func _draw_workshop(s: Vector2) -> void:
 			_draw_character_menu(s)
 		_:
 			_draw_chest_menu(s)
-	_draw_button(Rect2(40, s.y - 92, s.x - 80, 48), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
+	_draw_button(Layout.button("back", s), Color("#37cbb9"), "VOLTAR À ESCAVAÇÃO", Color("#173d4b"))
 
 func _draw_menu_tabs(s: Vector2) -> void:
 	var width := (s.x - 42.0) / 3.0
@@ -697,96 +805,87 @@ func _draw_menu_tabs(s: Vector2) -> void:
 	var ids := ["chests", "equipment", "character"]
 	for i in range(3):
 		var color := Color("#37cbb9") if menu_tab == ids[i] else Color("#e8f2d7")
-		_draw_button(Rect2(20 + float(i) * width, 171, width - 6, 34), color, names[i], INK)
+		_draw_button(Layout.tab(i, s, true), color, names[i], INK)
 
 func _draw_chest_menu(s: Vector2) -> void:
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 244), "BAÚS DE DESCOBERTA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 21, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 278), "%d baú(s) guardado(s)  ·  %d chave(s)" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 15, Color("#55707a"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 313), "Chaves e baús aparecem cavando. Nada expira.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 12, Color("#55707a"))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 351), _chest_rule_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 11, Color("#287d6d"))
-	draw_string(ThemeDB.fallback_font, Vector2(42, 402), "CHANCES INICIAIS", HORIZONTAL_ALIGNMENT_LEFT, s.x - 84, 13, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 270), "BAÚS DE DESCOBERTA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 21, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 310), "%d baú(s) guardado(s)  ·  %d chave(s)" % [state.get("chests", 0), state.get("keys", 0)], HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 15, Color("#55707a"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 347), "Chaves e baús aparecem cavando. Nada expira.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 12, Color("#55707a"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 383), _chest_rule_text(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 11, Color("#287d6d"))
+	draw_string(ThemeDB.fallback_font, Vector2(32, 416), "CHANCES INICIAIS", HORIZONTAL_ALIGNMENT_LEFT, s.x - 84, 13, INK)
 	var odds := ["Ruim 28%", "Boa 36%", "Épica 22%", "Lendária 9%", "Única 3,5%", "Mística 1,5%"]
 	for i in range(odds.size()):
-		var y := 432.0 + float(i / 2) * 43.0
-		var x := 40.0 + float(i % 2) * (s.x * 0.5)
+		var y := 440.0 + float(i / 2) * 43.0
+		var x := 32.0 + float(i % 2) * (s.x * 0.5 - 22.0)
 		_draw_pill(Rect2(x, y, s.x * 0.5 - 56, 34), _rarity_color(["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"][i]).lightened(0.66), 11)
 		draw_string(ThemeDB.fallback_font, Vector2(x + 8, y + 22), odds[i], HORIZONTAL_ALIGNMENT_CENTER, s.x * 0.5 - 72, 12, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(42, 583), "ÚLTIMO ACHADO", HORIZONTAL_ALIGNMENT_LEFT, s.x - 84, 13, INK)
+	draw_string(ThemeDB.fallback_font, Vector2(32, 598), "ÚLTIMO ACHADO", HORIZONTAL_ALIGNMENT_LEFT, s.x - 84, 13, INK)
 	var loot: Dictionary = state.get("last_loot", {})
 	var loot_name := str(loot.get("name", "Ainda nenhum · o próximo pode ser seu!"))
-	var loot_detail := "%s · %s" % [loot.get("rarity", "Baú"), loot.get("kind", "equipamento")]
+	var kind_name := str({"gear": "Equipamento", "drill": "Broca", "skin": "Visual"}.get(str(loot.get("kind", "")), "Equipamento"))
+	var loot_detail := "%s · %s" % [loot.get("rarity", "Baú"), kind_name]
 	if bool(loot.get("duplicate", false)):
 		loot_detail += " · repetido: +%d moedas" % int(loot.get("coins", 0))
-	_draw_item_row(Rect2(28, 601, s.x - 56, 52), loot_name, loot_detail, not loot.is_empty(), false, _rarity_color(str(loot.get("rarity", "Boa"))))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 693), "Baús podem trazer equipamentos, brocas ou skins.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 12, Color("#55707a"))
+	_draw_item_row(Rect2(28, 614, s.x - 56, 72), loot_name, loot_detail, not loot.is_empty(), false, _rarity_color(str(loot.get("rarity", "Boa"))))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 718), "Baús podem trazer equipamentos, brocas ou skins.", HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 12, Color("#55707a"))
 	var can_open := int(state.get("chests", 0)) > 0 and int(state.get("keys", 0)) > 0
-	_draw_button(Rect2(22, s.y - 164, s.x - 44, 54), Color("#efb950") if can_open else Color("#d7d9c5"), "ABRIR BAÚ  ·  1 CHAVE" if can_open else "BAÚ SELADO  ·  PRECISA DE CHAVE", Color("#4b3822"))
+	_draw_button(Layout.button("chest", s), Color("#efb950") if can_open else Color("#d7d9c5"), "ABRIR BAÚ  ·  1 CHAVE" if can_open else "BAÚ SELADO  ·  PRECISA DE CHAVE", Color("#4b3822"))
 
 func _draw_equipment_menu(s: Vector2) -> void:
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 240), "EQUIPAMENTOS  ·  %d/60" % state.get("gear_inventory", []).size(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 19, INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 263), "EQUIPAMENTOS  ·  %d/60" % state.get("gear_inventory", []).size(), HORIZONTAL_ALIGNMENT_CENTER, s.x - 48, 19, INK)
 	var rarities: Array[String] = ["Ruim", "Boa", "Épica", "Lendária", "Única", "Mística"]
 	for i in range(rarities.size()):
-		var x := 19.0 + float(i % 3) * 169.0
-		var y := 254.0 + float(i / 3) * 36.0
-		var selected := rarities[i] == gear_rarity
-		_draw_button(Rect2(x, y, 160, 31), Color("#37cbb9") if selected else _rarity_color(rarities[i]).lightened(0.55), "%s · %d" % [rarities[i], equipment.gear_ids_for_rarity(rarities[i]).size()], INK)
-	var gear_ids := equipment.gear_ids_for_rarity(gear_rarity)
-	draw_string(ThemeDB.fallback_font, Vector2(29, 347), "%s · toque em um item encontrado para equipar" % gear_rarity.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, s.x - 58, 11, INK)
-	for i in range(gear_ids.size()):
-		var id := gear_ids[i]
+		_draw_button(Layout.rarity(i, s), Color("#37cbb9") if rarities[i] == gear_rarity else _rarity_color(rarities[i]).lightened(0.55), rarities[i], INK)
+	var ids := equipment.gear_ids_for_rarity(gear_rarity)
+	draw_string(ThemeDB.fallback_font, Vector2(24, 459), "Toque no item encontrado para equipar", HORIZONTAL_ALIGNMENT_LEFT, s.x - 48, 16, INK)
+	for row in range(Layout.GEAR_PER_PAGE):
+		var index := gear_page * Layout.GEAR_PER_PAGE + row
+		if index >= ids.size():
+			break
+		var id := ids[index]
 		var spec: Dictionary = equipment.gear[id]
-		var owned: bool = state.gear_inventory.has(id)
-		var equipped: bool = state.equipped_gear.has(id)
-		var y := 358.0 + float(i) * 39.0
-		_draw_item_row(Rect2(22, y, s.x - 44, 35), str(spec.name), "%s · %s · %s" % [spec.slot, spec.skill, spec.description], owned, equipped, Color(str(spec.color)))
+		_draw_item_row(Layout.item(row, s, true), str(spec.name), "%s · %s · %s" % [spec.slot, spec.skill, spec.description], state.gear_inventory.has(id), state.equipped_gear.has(id), Color(str(spec.color)))
+	_draw_pager(gear_page, ceili(float(ids.size()) / Layout.GEAR_PER_PAGE), s)
 
 func _draw_character_menu(s: Vector2) -> void:
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 237), "MINHA BROCA É MINHA COMPANHEIRA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 46, 16, INK)
-	_draw_drill(Vector2(s.x * 0.5, 280))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 263), "MINHA BROCA É MINHA COMPANHEIRA", HORIZONTAL_ALIGNMENT_CENTER, s.x - 46, 16, INK)
+	_draw_drill(Vector2(s.x * 0.5, 284))
 	var skin: Dictionary = equipment.skins.get(str(state.get("equipped_skin", "pioneira")), equipment.skins.get("pioneira", {}))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 338), "%s · skin %s" % [drill.title, skin.get("name", "Pioneira")], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 13, INK)
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 359), "Inata: %s — %s" % [skin.get("skill", "Curiosa"), skin.get("description", "")], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 10, Color("#55707a"))
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 346), "%s · skin %s" % [drill.title, skin.get("name", "Pioneira")], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 16, INK)
+	_wrapped_text(Rect2(24, 352, s.x - 48, 40), "Inata: %s — %s" % [skin.get("skill", "Curiosa"), skin.get("description", "")], 13, INK)
 	var stats := equipment.bonuses(state.get("equipped_gear", []), str(state.get("equipped_skin", "pioneira")))
-	draw_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 380), "Força %+d · moedas/bloco %+d · velocidade %+d%% · sorte %+d" % [stats.power, stats.reward, roundi(float(stats.speed) * 100.0), stats.luck], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 10, Color("#287d6d"))
-	var models_selected := character_view == "models"
-	_draw_button(Rect2(20, 400, (s.x - 48) * 0.5, 36), Color("#37cbb9") if models_selected else Color("#e8f2d7"), "MODELOS", INK)
-	_draw_button(Rect2(s.x * 0.5 + 4, 400, (s.x - 48) * 0.5, 36), Color("#37cbb9") if not models_selected else Color("#e8f2d7"), "SKINS  %d/13" % state.get("skin_inventory", []).size(), INK)
-	if models_selected:
-		var drill_ids: Array = equipment.drills.keys()
-		drill_ids.sort()
-		for i in range(drill_ids.size()):
-			var id := str(drill_ids[i])
-			var spec: Dictionary = equipment.drills[id]
-			var owned: bool = state.drill_inventory.has(id)
-			var equipped: bool = state.drill == id
-			var y := 452.0 + float(i) * 42.0
-			_draw_item_row(Rect2(22, y, s.x - 44, 38), str(spec.name), "%s · %d blocos · %s" % [spec.rarity, spec.pattern.size(), spec.description], owned, equipped, Color(str(spec.color)))
-	else:
-		var skin_ids := equipment.skin_ids()
-		for i in range(6):
-			var skin_index := skin_page * 6 + i
-			if skin_index >= skin_ids.size():
-				break
-			var id := skin_ids[skin_index]
-			var spec: Dictionary = equipment.skins[id]
-			var owned: bool = state.skin_inventory.has(id)
-			var equipped: bool = state.equipped_skin == id
-			var y := 452.0 + float(i) * 42.0
-			_draw_item_row(Rect2(22, y, s.x - 44, 38), str(spec.name), "%s · %s · %s" % [spec.rarity, spec.skill, spec.description], owned, equipped, Color(str(spec.color)))
-		_draw_button(Rect2(35, 710, 165, 36), Color("#e8f2d7"), "◀ ANTERIORES" if skin_page > 0 else "INÍCIO", INK)
-		_draw_button(Rect2(s.x - 200, 710, 165, 36), Color("#e8f2d7"), "MAIS SKINS ▶" if skin_page < 2 else "FIM", INK)
+	_centered_string(ThemeDB.fallback_font, Vector2(s.x * 0.5, 405), "Força %+d · moedas %+d · velocidade %+d%% · sorte %+d" % [stats.power, stats.reward, roundi(float(stats.speed) * 100.0), stats.luck], HORIZONTAL_ALIGNMENT_CENTER, s.x - 42, 14, Color("#287d6d"))
+	var models := character_view == "models"
+	_draw_button(Layout.button("models", s), Color("#37cbb9") if models else Color("#e8f2d7"), "MODELOS", INK)
+	_draw_button(Layout.button("skins", s), Color("#e8f2d7") if models else Color("#37cbb9"), "SKINS %d/13" % state.get("skin_inventory", []).size(), INK)
+	var ids := _character_ids()
+	for row in range(Layout.CHARACTER_PER_PAGE):
+		var index := skin_page * Layout.CHARACTER_PER_PAGE + row
+		if index >= ids.size():
+			break
+		var id := str(ids[index])
+		var spec: Dictionary = equipment.drills[id] if models else equipment.skins[id]
+		var owned: bool = state.drill_inventory.has(id) if models else state.skin_inventory.has(id)
+		var equipped: bool = state.drill == id if models else state.equipped_skin == id
+		var detail := "%s · %s" % [spec.rarity, spec.description]
+		_draw_item_row(Layout.item(row, s), str(spec.name), detail, owned, equipped, Color(str(spec.color)))
+	_draw_pager(skin_page, ceili(float(ids.size()) / Layout.CHARACTER_PER_PAGE), s)
+
+func _draw_pager(page_index: int, count: int, s: Vector2) -> void:
+	_draw_button(Layout.page(false, s), Color("#e8f2d7"), "%d/%d · ANTERIOR" % [page_index + 1, count], INK)
+	_draw_button(Layout.page(true, s), Color("#e8f2d7"), "PRÓXIMOS" if page_index + 1 < count else "ÚLTIMA PÁGINA", INK)
 
 func _rarity_color(rarity: String) -> Color:
 	var colors := {"Ruim": "#bd896e", "Boa": "#7fdc94", "Épica": "#55d9cb", "Lendária": "#f3ad54", "Única": "#bc91ec", "Mística": "#ff8dbe"}
 	return Color(str(colors.get(rarity, "#fff1c2")))
 
 func _draw_item_row(rect: Rect2, title: String, detail: String, owned: bool, equipped: bool, tint: Color) -> void:
-	draw_rect(rect, tint.lightened(0.76) if owned else Color("#eee9d9"), true, 8)
-	draw_rect(Rect2(rect.position.x, rect.position.y, 5, rect.size.y), tint, true, 3)
+	_draw_panel(rect, tint.lightened(0.76) if owned else Color("#eee9d9"), 12)
+	_draw_panel(Rect2(rect.position.x, rect.position.y, 5, rect.size.y), tint, 3)
 	var marker := "EQUIPADO" if equipped else ("ENCONTRADO" if owned else "???")
-	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 12, rect.position.y + 13), title, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 112, 12, INK if owned else Color("#899394"))
-	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 12, rect.position.y + 27), detail, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 112, 10, Color("#607a7b"))
-	draw_string(ThemeDB.fallback_font, Vector2(rect.end.x - 92, rect.position.y + 20), marker, HORIZONTAL_ALIGNMENT_RIGHT, 82, 9, Color("#287d6d") if equipped else Color("#718082"))
+	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 12, rect.position.y + 25), title, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 112, 17, INK if owned else Color("#546a70"))
+	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 12, rect.position.y + 51), detail, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 24, 13, Color("#607a7b"))
+	draw_string(ThemeDB.fallback_font, Vector2(rect.end.x - 92, rect.position.y + 25), marker, HORIZONTAL_ALIGNMENT_RIGHT, 82, 9, Color("#287d6d") if equipped else Color("#718082"))
 
 func _chest_rule_text() -> String:
 	if int(state.get("below_legendary_streak", 0)) >= 11:
@@ -796,14 +895,35 @@ func _chest_rule_text() -> String:
 	var remaining := 5 - int(state.get("below_epic_streak", 0))
 	return "Chaves e baús vêm escavando · Épico garantido em até %d baú(s)" % remaining
 
+func _draw_panel(rect: Rect2, color: Color, radius: int, shadow := false) -> void:
+	var key := "%s:%d:%s" % [color.to_html(), radius, shadow]
+	if not panel_styles.has(key):
+		var style := StyleBoxFlat.new()
+		style.bg_color = color
+		style.set_corner_radius_all(radius)
+		if shadow:
+			style.shadow_color = Color(0.12, 0.24, 0.29, 0.22)
+			style.shadow_size = 2
+			style.shadow_offset = Vector2(0, 3)
+		panel_styles[key] = style
+	draw_style_box(panel_styles[key], rect)
+
 func _draw_pill(rect: Rect2, color: Color, radius: float) -> void:
-	draw_rect(rect, Color("#314c59"), true)
-	draw_rect(Rect2(rect.position.x + 1, rect.position.y - 2, rect.size.x - 2, rect.size.y - 2), color, true)
+	_draw_panel(rect, color, int(radius), true)
 
 func _draw_button(rect: Rect2, color: Color, label: String, text_color: Color) -> void:
-	draw_rect(Rect2(rect.position.x, rect.position.y + 3, rect.size.x, rect.size.y), Color("#354f5c"), true)
-	draw_rect(rect, color, true)
-	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, rect.position.y + rect.size.y * 0.67), label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 14, 13, text_color)
+	_draw_panel(rect, color, 16, true)
+	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 7, rect.position.y + rect.size.y * 0.5 + 6), label, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 14, 16, text_color)
+
+func _wrapped_text(rect: Rect2, text: String, font_size: int, color: Color) -> void:
+	var paragraph := TextParagraph.new()
+	paragraph.width = rect.size.x
+	paragraph.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	paragraph.add_string(text, ThemeDB.fallback_font, font_size)
+	paragraph.draw(get_canvas_item(), rect.position, color)
+
+func _centered_string(font: Font, pos: Vector2, text: String, alignment: HorizontalAlignment, width: float, font_size: int, color: Color) -> void:
+	draw_string(font, pos - Vector2(width * 0.5, 0), text, alignment, width, font_size, color)
 
 func _draw_particles() -> void:
 	for particle in fx:

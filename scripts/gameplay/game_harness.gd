@@ -13,11 +13,11 @@ func _initialize() -> void:
 	game.drill.equip("basic")
 	game.drill.level = 1
 	game.engine.setup(game.biome, 7042, [], {}, game.phase_catalog, game.state.phase_sequence)
-	game.grid_origin_y = 154.0
-	game.world_bottom = 786.0
+	game.grid_origin_y = game.Layout.WORLD_TOP
+	game.world_bottom = 960.0 - game.Layout.FOOTER_HEIGHT
 	game._start_game()
 	assert(not game.show_start_screen)
-	assert(game._cell_at(Vector2(270, 181)) == Vector2i(0, 0))
+	assert(game._cell_at(Vector2(270, 229)) == Vector2i(0, 0))
 	game._on_press(Vector2(270, 100))
 	assert(not game.held and game.engine.dug.is_empty())
 	game.state.inventory = 5
@@ -54,12 +54,13 @@ func _initialize() -> void:
 	game._on_press(Vector2(450, 140))
 	assert(game.menu_tab == "character")
 	game._menu_press(Vector2(100, 420))
-	game._menu_press(Vector2(270, 504))
+	game._menu_press(Vector2(270, 612))
 	assert(game.drill.id == "basic")
-	game._menu_press(Vector2(270, 630))
+	game._menu_press(game.Layout.page(true, game.size).get_center())
+	game._menu_press(Vector2(270, 612))
 	assert(game.drill.id == "prism")
 	game._menu_press(Vector2(400, 420))
-	game._menu_press(Vector2(270, 462))
+	game._menu_press(Vector2(270, 536))
 	assert(game.state.equipped_skin == "pioneira")
 	game._menu_press(Vector2(100, 880))
 	game._on_press(Vector2(270, 140))
@@ -105,6 +106,7 @@ func _initialize() -> void:
 			hard_depth = depth
 			break
 	game._perform_dig(Vector2i(0, hard_depth))
+	game._release_pointer()
 	saved = SaveStore.load_data()
 	assert(saved.damaged.has("0:%d" % hard_depth))
 	var edge_pattern: Array[Vector2i] = [Vector2i.ZERO, Vector2i(0, 1)]
@@ -129,6 +131,7 @@ func _initialize() -> void:
 	game.state = SaveStore.fresh()
 	game.state.depth = 24
 	game.state.boss_health = 2
+	game.camera_depth = 20
 	game.engine.setup(game.biome, 7042, [], {}, game.phase_catalog, game.state.phase_sequence)
 	game.drill.equip("basic")
 	game.drill.level = 1
@@ -136,7 +139,7 @@ func _initialize() -> void:
 	assert(game.state.phase_index == 0 and game.state.boss_health == 1)
 	assert(game.attacking_boss)
 	game.held = false
-	game._on_press(Vector2(270, 181))
+	game._on_press(Vector2(270, 229))
 	assert(not game.attacking_boss and game.state.boss_health == 1)
 	game.held = false
 	game._on_press(game._boss_center())

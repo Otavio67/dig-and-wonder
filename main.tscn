@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/game.gd" id="1_game"]
+[ext_resource type="Script" path="res://scripts/gameplay/safe_surface.gd" id="2_surface"]
 
 [node name="DigAndWonder" type="Control"]
 layout_mode = 3
@@ -9,4 +10,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("2_surface")
+
+[node name="Game" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_right = 540.0
+offset_bottom = 960.0
 script = ExtResource("1_game")

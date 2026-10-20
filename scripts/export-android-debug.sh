@@ -14,5 +14,5 @@ export JAVA_HOME="${JAVA_HOME:-$(dirname "$(dirname "$(readlink -f "$(command -v
 mkdir -p "$root/builds"
 "$engine" --headless --path "$root" --export-debug \
   'Android teste' "$apk"
-"$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+python3 "$root/scripts/verify-android-apk.py" "$apk" --sdk "$ANDROID_HOME"
 echo "APK de teste gerado: $apk"

@@ -17,13 +17,19 @@ Para gerar e validar um APK de depuração:
 bash scripts/export-android-debug.sh
 ```
 
-O resultado fica em `builds/dig-and-wonder-android-debug.apk`, é assinado pela chave debug local e está excluído do Git. O preset é ARM64, pacote de teste `com.otavio67.digandwonder`, versão 0.0.3, API mínima 24 e API alvo 36. Não usa chave de publicação e não declara permissão de internet.
+O resultado fica em `builds/dig-and-wonder-android-debug.apk`, é assinado pela chave debug local e está excluído do Git. O preset é ARM64, pacote de teste `com.otavio67.digandwonder`, versão 0.0.4, API mínima 24 e API alvo 36. Não usa chave de publicação e não declara permissão de internet.
 
 ## Estado da validação
 
-No ambiente de nuvem em 20/10/2026, Godot 4.7.2 exportou o APK sem erro, `apksigner verify` aprovou as assinaturas v2/v3 e `aapt` confirmou o identificador e as versões Android. Importação do projeto e boot headless também foram executados. A mensagem do ADB sobre não conseguir conectar ao daemon aparece porque o container não expõe um aparelho/emulador; não impediu a exportação.
+No ambiente de nuvem em 20/10/2026, Godot 4.7.2 exportou o APK sem erro, `apksigner verify` aprovou as assinaturas v2/v3 e `aapt` confirmou o identificador e as versões Android. Importação do projeto e boot headless também foram executados. Durante a inicialização do Godot houve aviso de conexão ao daemon ADB; uma chamada explícita a `adb devices -l` iniciou o daemon e listou zero dispositivos. A exportação não depende de aparelho conectado.
 
 Ainda é necessário instalar o APK em um Android real e conferir abertura, proporções, toque, pausa/retorno e salvamento. Este ambiente remoto não vê as portas USB do computador do usuário. Para testar no PC local, instale as mesmas ferramentas ou transfira o APK e execute `adb install -r dig-and-wonder-android-debug.apk` com Depuração USB ativa. Nenhum anúncio foi integrado ou chamado; a permissão de internet fica desativada até existir uma ponte Android de anúncios e um anúncio recompensado de teste. Desempenho de 60 FPS não foi medido.
+
+## Revisão 0.0.4
+
+A análise das orientações oficiais, correções de input/área segura/ciclo de vida/save, resultados e pendências estão em [REVISAO-ANDROID.md](REVISAO-ANDROID.md). A exportação agora executa `scripts/verify-android-apk.py`: checa assinatura, integridade, manifesto, permissões, exclusão das ferramentas de desenvolvimento e alinhamentos ZIP/ELF de 16 KB.
+
+`bash scripts/run-harnesses.sh` verifica a lógica e as regressões Android em desktop. Com um display X11 ou `xvfb-run`, `bash scripts/capture-visual.sh` gera imagens reais do Godot em `builds/review/`, usando dados de teste isolados. O processo visual é opcional e não mede FPS Android.
 
 ## Anúncios de teste
 

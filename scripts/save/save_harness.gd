@@ -7,6 +7,7 @@ func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(root)
 	DirAccess.remove_absolute(root.path_join("dig_wonder.save.json"))
 	DirAccess.remove_absolute(root.path_join("dig_wonder.save.bak.json"))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveStore.TEMP))
 	var data := SaveStore.fresh()
 	data.coins = 42
 	data.dug = ["0:0"]
@@ -76,5 +77,18 @@ func _initialize() -> void:
 	v4_file = null
 	var migrated_v4 := SaveStore.load_data()
 	assert(migrated_v4.version == 5 and migrated_v4.found_markers.is_empty())
-	print("SAVE_OK valid=20 backup_recovery=42 invalid_schema_cells_damage_rejected=true v1_v2_v3_v4_migrate=true phase_progress_persisted=true")
+	# Simula encerramento entre flush do temporário e rename do arquivo principal.
+	var pending := SaveStore.fresh()
+	pending.coins = 73
+	assert(SaveStore._write_checked(SaveStore.TEMP, pending))
+	assert(SaveStore.load_data().coins == migrated_v4.coins) # Principal válido tem prioridade.
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveStore.PATH))
+	assert(SaveStore.load_data().coins == 73) # Inclusive na primeira gravação interrompida.
+	assert(SaveStore.save_data(pending))
+	assert(not FileAccess.file_exists(SaveStore.TEMP))
+	var after := pending.duplicate(true)
+	after.coins = 81
+	assert(SaveStore.save_data(after))
+	assert(SaveStore.load_data().coins == 81 and SaveStore._read(SaveStore.BACKUP).coins == 73)
+	print("SAVE_OK valid=20 backup_recovery=42 invalid_schema_cells_damage_rejected=true v1_v2_v3_v4_migrate=true phase_progress_persisted=true temp_recovery=73 rename_replacement=81")
 	quit()

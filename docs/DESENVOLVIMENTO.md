@@ -157,3 +157,11 @@ O save esquema 5 grava a sequência de fases, chefe ativo, chefes vencidos e mar
 Preparado ambiente Linux x86_64 com OpenJDK 21, Android Platform Tools, SDK/API 36, Build Tools 36.0.0, NDK 28.1 e CMake 3.10.2.4988404. Os templates de exportação Godot 4.7.2 vieram do release oficial e passaram na checagem SHA-512. A configuração e o preset ficam documentados em `docs/ANDROID.md`; arquivos grandes do SDK, do Godot e APKs ficam fora do Git em `.tools/` e `builds/`.
 
 O preset de teste produz APK debug assinado para ARM64, API mínima 24/alvo 36, pacote `com.otavio67.digandwonder` e sem permissão de internet. A exportação headless foi concluída, `apksigner verify` aprovou assinatura v2/v3 e `aapt` confirmou pacote/versões. Não havia aparelho conectado; logo, instalação, controles por toque, anúncios e desempenho continuam pendentes de validação física. O APK também não inclui integração de anúncios.
+
+## Revisão 0.0.4 — orientações oficiais Android
+
+Análise, fontes e resultados em `REVISAO-ANDROID.md`. Implementadas área segura/encaixe do painel, transformação de coordenadas de input, correção dos botões Vender/Melhorar, controles maiores e paginação, cancelamento de toque/foco e Voltar. Corrigidas centralização, sobreposições e desenho de painéis identificados em capturas reais do Godot com Xvfb/Mesa.
+
+Escavação sinaliza save pendente com intervalo máximo de um segundo; soltar o toque ou perder foco descarrega o estado, e transações/combate continuam imediatos. O armazenamento verifica temporários, substitui por rename sem apagar o principal e recupera temporário válido se o principal estiver ausente/inválido. Save permanece no esquema 5. Encerramento abrupto pode perder a escavação ainda em memória nesse intervalo; não se promete resistência a falha elétrica.
+
+Harness Android cobre regiões de toque, painel transformado, múltiplos dedos, cancelamento, foco/pausa, temporização/descarga do save, paginação e Voltar. Harnesses existentes preservam cobertura de economia, transformações, fases, coleção e migrações; workflow GitHub passa a executar os harnesses. Exportação roda verificações estáticas do APK/manifesto/assinatura e alinhamento 16 KB. Teste em dispositivo, TalkBack/medidas em dp, profiling e anúncios continuam pendentes.

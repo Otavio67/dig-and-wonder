@@ -22,3 +22,4 @@ run_harness() {
 run_harness logic res://scripts/gameplay/logic_harness.gd
 run_harness gameplay res://scripts/gameplay/game_harness.gd
 run_harness save res://scripts/save/save_harness.gd
+run_harness android res://scripts/gameplay/android_harness.gd

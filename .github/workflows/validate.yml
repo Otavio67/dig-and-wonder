@@ -18,6 +18,8 @@ jobs:
         run: bash setup-cloud.sh
       - name: Import and boot project
         run: bash check-project.sh
+      - name: Verify gameplay, save and Android interaction logic
+        run: bash scripts/run-harnesses.sh
       - name: Upload diagnostic logs
         if: always()
         uses: actions/upload-artifact@v4

@@ -3,9 +3,10 @@ config_version=5
 
 [application]
 config/name="Dig & Wonder"
-config/version="0.0.3"
+config/version="0.0.4"
 config/icon="res://assets/dig_wonder_icon.svg"
 run/main_scene="res://main.tscn"
+run/max_fps=60
 config/features=PackedStringArray("4.7.2", "GL Compatibility")
 
 [display]
@@ -14,7 +15,12 @@ window/size/viewport_height=960
 window/size/window_width_override=405
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+[input_devices]
+pointing/emulate_mouse_from_touch=false
+pointing/emulate_touch_from_mouse=false
 
 [rendering]
 renderer/rendering_method="gl_compatibility"

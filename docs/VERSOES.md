@@ -33,7 +33,7 @@ Tag: `v0.0.2`.
 - Descobertas exclusivas por ambiente; save esquema 5 migra saves antigos para uma fase próxima da profundidade já alcançada.
 - Harnesses verificam limite do terreno, limites de recompensas, combate, transição, sorteio e save.
 
-Tag planejada: `v0.0.3` no checkpoint Git deste marco.
+Tag: `v0.0.3`.
 
 ## Build Android de teste — 0.0.3 (20/10/2026)
 
@@ -41,3 +41,15 @@ Tag planejada: `v0.0.3` no checkpoint Git deste marco.
 - Preset `Android teste`, ícone provisório cartoon e compressão ETC2/ASTC para Android.
 - APK ARM64 assinado para depuração, validado pelo `apksigner`; manifesto confirma API mínima 24 e alvo 36.
 - O APK não integra anúncios. ADB funciona no container, mas não há dispositivo conectado; instalação, toque e desempenho seguem pendentes de aparelho.
+
+## 0.0.4 — revisão Android e resposta ao toque
+
+- Análise da documentação oficial Google/Android com decisões e pendências em `REVISAO-ANDROID.md`.
+- Área segura e proporção preservada em resize, input convertido para o painel escalado e conteúdo recortado nas margens.
+- Corrigidos Vender/Melhorar; controles maiores, equipamentos e modelos/skins paginados, painéis arredondados e texto centralizado/quebrado em linhas.
+- Um toque ativo por vez, cancelamento por perda de foco, pausa/retomada e navegação Voltar/Escape.
+- Autosave de escavação agrupado em até um segundo; liberação de toque e ações importantes gravam imediatamente. Save temporário validado e substituição sem remover antes o principal, com backup e recuperação de temporário.
+- APK debug 0.0.4 (versionCode 4); verificador de manifesto, assinatura, integridade e alinhamento nativo/ZIP 16 KB. Harnesses e capturas fora do pacote.
+- Importação/boot, harnesses e capturas reais desktop por Xvfb/Mesa revisados. Execução Android, acessibilidade completa, anúncios e FPS dependem de validação no aparelho.
+
+Tag: `v0.0.4` no checkpoint desta revisão.

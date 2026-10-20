@@ -3,6 +3,7 @@ class_name SaveStore
 
 const PATH := "user://dig_wonder.save.json"
 const BACKUP := "user://dig_wonder.save.bak.json"
+const TEMP := PATH + ".tmp"
 const VERSION := 5
 
 static func fresh() -> Dictionary:
@@ -132,8 +133,21 @@ static func _read(path: String) -> Dictionary:
 	return migrated if _valid(migrated) else {}
 
 static func load_data() -> Dictionary:
-	var current := _read(PATH)
-	return current if not current.is_empty() else _read(BACKUP)
+	for candidate in [PATH, TEMP, BACKUP]:
+		var data := _read(candidate)
+		if not data.is_empty():
+			return data
+	return {}
+
+static func _write_checked(path: String, data: Dictionary) -> bool:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(data))
+	file.flush()
+	var error := file.get_error()
+	file = null
+	return error == OK and not _read(path).is_empty()
 
 static func save_data(data: Dictionary) -> bool:
 	var copy := data.duplicate(true)
@@ -163,24 +177,15 @@ static func save_data(data: Dictionary) -> bool:
 		copy["last_loot"] = {}
 	if not _valid(copy):
 		return false
-	var temp := PATH + ".tmp"
-	var file := FileAccess.open(temp, FileAccess.WRITE)
-	if file == null:
+	if not _write_checked(TEMP, copy):
 		return false
-	file.store_string(JSON.stringify(copy))
-	file.flush()
-	file = null
-	if FileAccess.file_exists(PATH):
-		var previous := _read(PATH)
-		if not previous.is_empty():
-			var backup_file := FileAccess.open(BACKUP, FileAccess.WRITE)
-			if backup_file != null:
-				backup_file.store_string(JSON.stringify(previous))
-				backup_file.flush()
-				backup_file = null
-		var remove_err := DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
-		if remove_err != OK:
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(temp))
+	var previous := _read(PATH)
+	if not previous.is_empty():
+		var backup_temp := BACKUP + ".tmp"
+		if not _write_checked(backup_temp, previous):
 			return false
-	var rename_err := DirAccess.rename_absolute(ProjectSettings.globalize_path(temp), ProjectSettings.globalize_path(PATH))
+		if DirAccess.rename_absolute(ProjectSettings.globalize_path(backup_temp), ProjectSettings.globalize_path(BACKUP)) != OK:
+			return false
+	# Mesmo diretório: substitui o destino por rename, sem remover o save principal antes.
+	var rename_err := DirAccess.rename_absolute(ProjectSettings.globalize_path(TEMP), ProjectSettings.globalize_path(PATH))
 	return rename_err == OK
