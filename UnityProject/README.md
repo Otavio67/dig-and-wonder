@@ -2,6 +2,8 @@
 
 Este é o primeiro protótipo de combate automático lateral. O projeto Godot permanece no repositório como origem dos valores e de parte da arte. O fluxo Unity preserva a fantasia de escavação, a broca como personagem, inimigos, ouro por derrota, melhorias e chefes como condição de avanço.
 
+Para continuar no seu PC, consulte [transferência e configuração local](../docs/CONTINUAR-UNITY-LOCAL.md), com mensagem pronta para a nova conversa Codex.
+
 ## O que está nesta amostra
 
 - Em perfil novo, aparece **Iniciar escavação**. Em perfil Unity já salvo, a luta abre direto na última posição segura.
