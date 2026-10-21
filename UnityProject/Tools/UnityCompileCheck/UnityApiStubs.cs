@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace UnityEngine
@@ -11,11 +12,20 @@ namespace UnityEngine
     }
     public class MonoBehaviour : Component
     {
-        public bool enabled = true;
         public bool isActiveAndEnabled => enabled;
+        protected Coroutine StartCoroutine(IEnumerator routine) => new Coroutine();
     }
+    public sealed class Coroutine { }
     [AttributeUsage(AttributeTargets.Class)] public sealed class DisallowMultipleComponentAttribute : Attribute { }
-    public class Component : Object { public GameObject gameObject; public Transform transform; public T GetComponent<T>() where T : class => null; public T GetComponentInParent<T>() where T : class => null; }
+    public class Component : Object
+    {
+        public GameObject gameObject;
+        public Transform transform;
+        public bool enabled = true;
+        public T GetComponent<T>() where T : class => null;
+        public T GetComponentInParent<T>() where T : class => null;
+        public T GetComponentInChildren<T>() where T : class => null;
+    }
     public class GameObject : Object
     {
         public GameObject(string name, params Type[] components) { }
@@ -26,13 +36,21 @@ namespace UnityEngine
         public T GetComponentInChildren<T>() where T : class => null;
         public void SetActive(bool active) { }
     }
-    public class Transform : Component { public Vector3 localPosition, localScale; public void SetParent(Transform parent, bool worldPositionStays) { } }
-    public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta; }
-    public class Sprite : Object { public string name; }
+    public class Transform : Component { public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } }
+    public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta, pivot; }
+    public struct Quaternion { public static Quaternion identity => new Quaternion(); }
+    public class Sprite : Object
+    {
+        public string name;
+        public static Sprite Create(Texture2D texture, Rect rect, Vector2 pivot, float pixelsPerUnit) => new Sprite();
+    }
     public class Font : Object { }
-    public class Texture2D : Object { }
+    public class Texture2D : Object { public int width = 1, height = 1; }
     public class Material : Object
     {
+        public Material() { }
+        public Material(Shader shader) { }
+        public string name;
         public void SetFloat(string name, float value) { }
         public void SetColor(string name, Color value) { }
         public void EnableKeyword(string name) { }
@@ -41,7 +59,26 @@ namespace UnityEngine
     public class CanvasRenderer : Component { }
     public enum ScreenOrientation { Portrait }
     public enum UIOrientation { Portrait }
-    public struct Rect { public float xMin, yMin, xMax, yMax; }
+    public struct Rect
+    {
+        public float xMin, yMin, xMax, yMax;
+        public Rect(float x, float y, float width, float height)
+        { xMin = x; yMin = y; xMax = x + width; yMax = y + height; }
+    }
+    public struct RectInt
+    {
+        public int x, y, width, height;
+        public RectInt(int x, int y, int width, int height)
+        {
+            this.x = x; this.y = y; this.width = width; this.height = height;
+        }
+    }
+    public sealed class RectOffset
+    {
+        public RectOffset() { }
+        public RectOffset(int left, int right, int top, int bottom) { }
+    }
+    public enum TextAnchor { UpperCenter }
     public static class Screen { public static ScreenOrientation orientation; public static int width = 1080, height = 1920; public static Rect safeArea; }
     [AttributeUsage(AttributeTargets.Method)] public sealed class RuntimeInitializeOnLoadMethodAttribute : Attribute { public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType type) { } }
     public enum RuntimeInitializeLoadType { AfterSceneLoad }
@@ -59,6 +96,11 @@ namespace UnityEngine
         public Color(float r, float g, float b, float a = 1f) { this.r = r; this.g = g; this.b = b; this.a = a; }
         public static Color magenta => new Color(1f, 0f, 1f, 1f);
         public static Color clear => new Color(0f, 0f, 0f, 0f);
+        public static Color white => new Color(1f, 1f, 1f, 1f);
+        public static bool operator ==(Color left, Color right) => left.r == right.r && left.g == right.g && left.b == right.b && left.a == right.a;
+        public static bool operator !=(Color left, Color right) => !(left == right);
+        public override bool Equals(object obj) => obj is Color other && this == other;
+        public override int GetHashCode() => HashCode.Combine(r, g, b, a);
     }
     public struct Vector2 { public float x, y; public Vector2(float x, float y) { this.x = x; this.y = y; } public static Vector2 zero => new Vector2(); public static Vector2 one => new Vector2(1, 1); }
     public struct Vector3 { public float x, y, z; public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; } public static Vector3 one => new Vector3(1, 1, 1); }
@@ -78,7 +120,16 @@ namespace UnityEngine
         public static string dataPath => "/tmp/UnityProject/Assets";
     }
     public static class Time { public static float deltaTime; public static float unscaledDeltaTime; }
-    public static class Mathf { public static int CeilToInt(float value) => (int)Math.Ceiling(value); public static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value)); public static int Abs(int value) => Math.Abs(value); }
+    public static class Mathf
+    {
+        public static int CeilToInt(float value) => (int)Math.Ceiling(value);
+        public static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));
+        public static float Clamp01(float value) => Clamp(value, 0f, 1f);
+        public static float Max(float left, float right) => Math.Max(left, right);
+        public static int Max(int left, int right) => Math.Max(left, right);
+        public static int Abs(int value) => Math.Abs(value);
+    }
+    public class Shader : Object { public static Shader Find(string name) => new Shader(); }
     public static class Debug
     {
         public static void Log(object message) { }
@@ -115,7 +166,36 @@ namespace UnityEngine.UI
     }
     public class GraphicRaycaster : UnityEngine.Component { }
     public class Graphic : UnityEngine.Component { public UnityEngine.Color color; public bool raycastTarget; public UnityEngine.RectTransform rectTransform; }
-    public class Image : Graphic { public enum Type { Simple, Sliced } public Type type; public UnityEngine.Sprite sprite; public bool preserveAspect; }
+    public class Image : Graphic { public enum Type { Simple, Sliced } public Type type; public UnityEngine.Sprite sprite; public bool preserveAspect; public UnityEngine.Material material; }
+    public class AspectRatioFitter : UnityEngine.Component
+    {
+        public enum AspectMode { None, WidthControlsHeight, HeightControlsWidth, FitInParent, EnvelopeParent }
+        public AspectMode aspectMode;
+        public float aspectRatio;
+    }
+    public class RectMask2D : UnityEngine.Component { }
+    public class Mask : UnityEngine.Component { public bool showMaskGraphic; }
+    public class LayoutElement : UnityEngine.Component { public float preferredHeight, minHeight; }
+    public class VerticalLayoutGroup : UnityEngine.Component
+    {
+        public float spacing;
+        public UnityEngine.RectOffset padding;
+        public UnityEngine.TextAnchor childAlignment;
+        public bool childControlWidth, childControlHeight, childForceExpandWidth, childForceExpandHeight;
+    }
+    public class ContentSizeFitter : UnityEngine.Component
+    {
+        public enum FitMode { Unconstrained, MinSize, PreferredSize }
+        public FitMode horizontalFit, verticalFit;
+    }
+    public class ScrollRect : UnityEngine.Component
+    {
+        public enum MovementType { Unrestricted, Elastic, Clamped }
+        public UnityEngine.RectTransform viewport, content;
+        public bool horizontal, vertical, inertia;
+        public MovementType movementType;
+        public float scrollSensitivity, verticalNormalizedPosition;
+    }
     public class CanvasGroup : UnityEngine.Component { public float alpha; public bool interactable, blocksRaycasts; }
     public class Button : UnityEngine.Component { public Graphic targetGraphic; public bool interactable = true; public ButtonClickedEvent onClick = new ButtonClickedEvent(); public sealed class ButtonClickedEvent { public void AddListener(UnityAction action) { } } }
 }
@@ -139,6 +219,7 @@ namespace TMPro
     {
         public TMP_FontAsset font;
         public string text; public int fontSize; public TextAlignmentOptions alignment; public TextWrappingModes textWrappingMode; public FontStyles fontStyle;
+        public float outlineWidth; public UnityEngine.Color outlineColor;
     }
 }
 
