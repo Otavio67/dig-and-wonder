@@ -1,5 +1,7 @@
 # Documentação do projeto
 
+- [Carregamento branco e entrada direta no combate — 0.0.24](CARREGAMENTO-INICIAL.md)
+
 - [Identidade visual vigente — Toy-Mecha Subterrâneo e checagem antes de gerar imagens](IDENTIDADE-TOY-MECHA.md)
 
 - [Campanha final até a fase 100 — Unity 0.0.19](ENDGAME-100.md)

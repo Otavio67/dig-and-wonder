@@ -354,3 +354,15 @@ Tag: `v0.0.22`.
 Arte, evidências e roteiro: [MENU-INICIAL.md](MENU-INICIAL.md).
 
 Tag: `v0.0.23`.
+
+## 0.0.24 — ação branca e preparação com loading
+
+- Fundo cartoon v2 integrado, preservando a logo aprovada e o GUID do recurso de fundo. A ação passou a **INICIAR MINERAÇÃO**, branca em Titan One 42, sem placa/fundo e com área de toque independente.
+- A abertura monta a tela primeiro e depois prepara 18 recursos via `Resources.LoadAsync`, driver/perfil, HUD e pools. Barra branca de progresso por tarefas, sem espera artificial. A ação fica oculta até a conclusão; falha impede entrar no combate e informa o jogador.
+- Depois do toque, começa ou retoma o combate. Fluxo contínuo entre mapas e save esquema 3 preservados. Nenhuma alteração de economia ou balanceamento.
+- 79 checks aprovados, incluindo existência/unicidade dos recursos de abertura. Compilações auxiliares com stubs e DLLs reais aprovadas. Estados pronto/carregando revisados em Chromium, fora do Unity.
+- Editor 6000.6.6f1 ausente na nuvem; Play Mode da coroutine, duração/fluidez reais, APK e validação Android continuam pendentes.
+
+Fluxo, prévias e roteiro: [CARREGAMENTO-INICIAL.md](CARREGAMENTO-INICIAL.md).
+
+Tag: `v0.0.24`.

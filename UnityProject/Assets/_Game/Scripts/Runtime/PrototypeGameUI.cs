@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using DG.Tweening;
@@ -72,6 +73,12 @@ namespace DigAndWonder
         private UnityEngine.UI.Button startButton;
         private TextMeshProUGUI startStatusLabel;
         private TMP_FontAsset startFont;
+        private RectTransform loadingRoot;
+        private RectTransform loadingFill;
+        private TextMeshProUGUI loadingLabel;
+        private bool startupComplete;
+        private string startupFailure;
+        private float loadingProgress;
         private Image stageBackdrop;
         private AspectRatioFitter backdropAspect;
         private string renderedStageId;
@@ -96,22 +103,96 @@ namespace DigAndWonder
         private readonly Dictionary<string, Sprite> navIconSprites = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, TextMeshProUGUI> upgradeLevelLabels = new Dictionary<string, TextMeshProUGUI>();
 
-        public void Initialize(Transform canvasRoot, AutoBattleDriver battleDriver)
+        public void Initialize(Transform canvasRoot)
         {
+            if (root != null) return;
             root = canvasRoot;
-            driver = battleDriver;
-            driver.SetMenuPaused(true);
-            progression = Resources.Load<ProgressionDefinition>("Data/Progression");
-            abilityCatalog = Resources.LoadAll<AbilityDefinition>("Data/Abilities");
-            driver.CombatEventRaised += OnCombatEvent;
-            BuildInterface();
-            feedback = gameObject.AddComponent<PooledCombatFeedback>();
-            feedback.Initialize(worldPanel);
+            startPanel = MakePanel("Start menu", root.parent, Ink, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            startPanel.gameObject.AddComponent<RectMask2D>();
+            BuildStartMenu(startPanel);
+            showingStartMenu = true;
+            StartCoroutine(PrepareGame());
+        }
+
+        private IEnumerator PrepareGame()
+        {
+            // Primeiro frame pertence à arte e ao loading, antes dos trabalhos síncronos.
+            yield return null;
+            for (int i = 0; i < StartupContent.ResourcePaths.Count; i++)
+            {
+                ResourceRequest request = null;
+                if (!TryPrepareStep(() => request = Resources.LoadAsync<UnityEngine.Object>(StartupContent.ResourcePaths[i])))
+                    yield break;
+                while (!request.isDone)
+                {
+                    SetLoadingProgress(0.75f * (i + request.progress) / StartupContent.ResourcePaths.Count);
+                    yield return null;
+                }
+                if (request.asset == null)
+                {
+                    FailStartup(new InvalidOperationException("Recurso de abertura ausente: " + StartupContent.ResourcePaths[i]));
+                    yield break;
+                }
+                SetLoadingProgress(0.75f * (i + 1f) / StartupContent.ResourcePaths.Count);
+            }
+
+            if (!TryPrepareStep(() =>
+            {
+                var driverObject = new GameObject("Combat Driver");
+                driverObject.transform.SetParent(transform.parent, false);
+                driver = driverObject.AddComponent<AutoBattleDriver>();
+                driver.SetMenuPaused(true);
+                if (!driver.IsReady) throw new InvalidOperationException("Driver ou perfil não está pronto. " + driver.LastSaveError);
+                progression = Resources.Load<ProgressionDefinition>("Data/Progression");
+                abilityCatalog = Resources.LoadAll<AbilityDefinition>("Data/Abilities");
+                driver.CombatEventRaised += OnCombatEvent;
+            })) yield break;
+            SetLoadingProgress(0.83f);
+            yield return null;
+
+            if (!TryPrepareStep(BuildInterface)) yield break;
+            SetLoadingProgress(0.94f);
+            yield return null;
+
+            if (!TryPrepareStep(() =>
+            {
+                feedback = gameObject.AddComponent<PooledCombatFeedback>();
+                feedback.Initialize(worldPanel);
+            })) yield break;
+            SetLoadingProgress(1f);
+            yield return null;
+
+            startupComplete = true;
+            loadingRoot.gameObject.SetActive(false);
+            startButton.gameObject.SetActive(true);
             ShowStartMenu();
+        }
+
+        private bool TryPrepareStep(Action operation)
+        {
+            try { operation(); return true; }
+            catch (Exception exception) { FailStartup(exception); return false; }
+        }
+
+        private void FailStartup(Exception exception)
+        {
+            startupFailure = "Não foi possível carregar. Progresso preservado. Reabra o jogo.";
+            loadingLabel.text = "CARREGAMENTO INTERROMPIDO";
+            startStatusLabel.text = startupFailure;
+            startButton.interactable = false;
+            Debug.LogError("Falha na preparação inicial: " + exception, this);
+        }
+
+        private void SetLoadingProgress(float value)
+        {
+            // Progresso monotônico das tarefas reais; sem duração artificial ou porcentagem de bytes.
+            loadingProgress = Mathf.Max(loadingProgress, Mathf.Clamp01(value));
+            loadingFill.anchorMax = new Vector2(loadingProgress, 1f);
         }
 
         private void OnDestroy()
         {
+            StopAllCoroutines();
             if (driver != null) driver.CombatEventRaised -= OnCombatEvent;
             StopCaveMotion();
             foreach (Sprite sprite in mapBackgroundSprites.Values) Destroy(sprite);
@@ -132,9 +213,6 @@ namespace DigAndWonder
         {
             BuildUiAssetAtlases();
             var background = MakePanel("Background", root, Ink, new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
-            startPanel = MakePanel("Start menu", root.parent, Ink, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            startPanel.gameObject.AddComponent<RectMask2D>();
-            BuildStartMenu(startPanel);
             progressionPanel = MakePanel("Progression screen", background, new Color(0.12f, 0.19f, 0.24f), new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
             BuildProgressionInterface(progressionPanel);
 
@@ -306,7 +384,7 @@ namespace DigAndWonder
             // A ilustração alcança as bordas; logo e controles respeitam a área segura.
             RectTransform artwork = Region("Mine illustration", panel, 0, 0, 1, 1);
             var image = artwork.gameObject.AddComponent<UnityEngine.UI.Image>();
-            image.sprite = Resources.Load<Sprite>("Art/StartMenu/mine-start-v1");
+            image.sprite = Resources.Load<Sprite>("Art/StartMenu/mine-start-v2");
             image.raycastTarget = false;
             if (image.sprite != null)
             {
@@ -319,7 +397,7 @@ namespace DigAndWonder
             MakeIconSprite(controls, Resources.Load<Sprite>("Art/StartMenu/dig-and-wonder-logo-v3"),
                 0.06f, 0.735f, 0.94f, 0.96f, Color.white);
 
-            Font source = Resources.Load<Font>("Fonts/Workshop/DWRounded-ExtraBold");
+            Font source = Resources.Load<Font>("Fonts/Workshop/TitanOne-Regular");
             if (source != null)
             {
                 startFont = TMP_FontAsset.CreateFontAsset(source, 64, 8,
@@ -333,12 +411,24 @@ namespace DigAndWonder
             startButton = buttonRoot.gameObject.AddComponent<UnityEngine.UI.Button>();
             startButton.targetGraphic = hitArea;
             startButton.onClick.AddListener(BeginMining);
-            MakeArtPanel("Button base", buttonRoot, new Color(0.03f, 0.16f, 0.14f), "button", 0, 0, 1, 0.95f);
-            RectTransform face = MakeArtPanel("Button face", buttonRoot, new Color(0.16f, 0.64f, 0.49f), "button", 0, 0.07f, 1, 1);
-            startButton.gameObject.AddComponent<WorkshopButtonFeedback>().Initialize(face, startButton);
-            TextMeshProUGUI title = MakeLabel("Start label", face, "Iniciar a mineração", 47, Cream,
+            TextMeshProUGUI title = MakeLabel("Start label", buttonRoot, "INICIAR MINERAÇÃO", 42, Color.white,
                 new Vector2(0.04f, 0.12f), new Vector2(0.96f, 0.9f), TextAlignmentOptions.Center);
             if (startFont != null) title.font = startFont;
+            startButton.gameObject.AddComponent<WorkshopButtonFeedback>().Initialize(title.rectTransform, startButton);
+            startButton.gameObject.SetActive(false);
+
+            loadingRoot = MakePanel("Loading", controls, Color.clear,
+                new Vector2(0.09f, 0.14f), new Vector2(0.91f, 0.223f), Vector2.zero, Vector2.zero);
+            loadingRoot.GetComponent<Image>().raycastTarget = false;
+            loadingLabel = MakeLabel("Loading label", loadingRoot, "CARREGANDO...", 30, Color.white,
+                new Vector2(0, 0.55f), Vector2.one, TextAlignmentOptions.Center);
+            if (startFont != null) loadingLabel.font = startFont;
+            RectTransform track = MakePanel("White loading track", loadingRoot, new Color(1, 1, 1, 0.2f),
+                new Vector2(0.1f, 0.18f), new Vector2(0.9f, 0.3f), Vector2.zero, Vector2.zero);
+            track.GetComponent<Image>().raycastTarget = false;
+            loadingFill = MakePanel("White loading fill", track, Color.white,
+                Vector2.zero, new Vector2(0, 1), Vector2.zero, Vector2.zero);
+            loadingFill.GetComponent<Image>().raycastTarget = false;
             startStatusLabel = MakeLabel("Start status", controls, "", 26, Cream,
                 new Vector2(0.09f, 0.084f), new Vector2(0.91f, 0.133f), TextAlignmentOptions.Center);
             if (startFont != null) startStatusLabel.font = startFont;
@@ -355,6 +445,7 @@ namespace DigAndWonder
 
         private void BeginMining()
         {
+            if (!startupComplete || driver == null) return;
             if (!driver.IsReady) { RefreshStartMenu(); return; }
             // Só liberar o relógio do combate depois da ação explícita do jogador.
             if (driver.Simulation != null && driver.Simulation.IsActive) EnterGame(true);
@@ -403,6 +494,8 @@ namespace DigAndWonder
 
         private void RefreshStartMenu()
         {
+            if (startupFailure != null) { startStatusLabel.text = startupFailure; return; }
+            if (!startupComplete || driver == null) return;
             startButton.interactable = driver.IsReady;
             if (driver.IsSaveBlocked) startStatusLabel.text = driver.LastSaveError;
             else if (!driver.IsReady) startStatusLabel.text = "Não foi possível carregar. Seu progresso foi preservado.";

@@ -41,6 +41,8 @@ Neutros e variações de luminosidade são permitidos para volume e contraste. S
 
 ## 4. Tipografia e hierarquia
 
+**Exceção solicitada em 21/10/2026 para o início:** a ação **INICIAR MINERAÇÃO** usa Titan One branca, grossa e de tamanho moderado, sem placa ou fundo visível. O estado anterior mostra rótulo e barra brancos de carregamento. A logo aprovada fica preservada; o cenário ativo dessa tela passa à proposta cartoon v2, com formas mais simples e menos brilho. As demais ações continuam com Nunito conforme a tabela.
+
 Apenas duas famílias: **Titan One** para impacto e **Nunito** para leitura/UI.
 
 | Aplicação | Família/peso | Tratamento |

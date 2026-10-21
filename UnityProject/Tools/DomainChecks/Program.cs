@@ -6,6 +6,7 @@ using System.Text;
 
 var checks = new (string Name, Action Test)[]
 {
+    ("abertura: recursos carregáveis existem sem caminhos ambíguos", StartupAssetsExist),
     ("economia insuficiente não compra upgrade", InsufficientGoldDoesNotPurchase),
     ("preço e aumento de dano do upgrade", AttackUpgradeUsesGodotFormula),
     ("upgrade de vida aplica valor e custo Godot", HealthUpgradeUsesGodotFormula),
@@ -67,6 +68,20 @@ foreach ((string name, Action test) in checks)
 }
 
 return failed == 0 ? 0 : 1;
+
+static void StartupAssetsExist()
+{
+    string root = Path.Combine(EconomyChecks.Root, "UnityProject/Assets/_Game/Resources");
+    string[] paths = StartupContent.ResourcePaths.ToArray();
+    Assert(paths.Distinct(StringComparer.Ordinal).Count() == paths.Length, "recurso duplicado na abertura");
+    foreach (string path in paths)
+    {
+        string[] matches = new[] { ".asset", ".png", ".jpeg", ".shader", ".ttf" }
+            .Select(extension => Path.Combine(root, path + extension)).Where(File.Exists).ToArray();
+        Assert(matches.Length == 1, "Resources ausente ou ambíguo: " + path);
+        Assert(File.Exists(matches[0] + ".meta"), "metadado de importação ausente: " + path);
+    }
+}
 
 static void InsufficientGoldDoesNotPurchase()
 {

@@ -14,6 +14,7 @@ namespace UnityEngine
     {
         public bool isActiveAndEnabled => enabled;
         protected Coroutine StartCoroutine(IEnumerator routine) => new Coroutine();
+        protected void StopAllCoroutines() { }
     }
     public sealed class Coroutine { }
     [AttributeUsage(AttributeTargets.Class)] public sealed class DisallowMultipleComponentAttribute : Attribute { }
@@ -114,12 +115,14 @@ namespace UnityEngine
     public static class Resources
     {
         public static T Load<T>(string path) where T : Object => null;
+        public static ResourceRequest LoadAsync<T>(string path) where T : Object => new ResourceRequest();
         public static T[] LoadAll<T>(string path) where T : Object => Array.Empty<T>();
         public static T[] FindObjectsOfTypeAll<T>() where T : Object => Array.Empty<T>();
     }
+    public class ResourceRequest { public bool isDone; public float progress; public Object asset; }
     public static class Application
     {
-        public static string version => "0.0.23";
+        public static string version => "0.0.24";
         public static string persistentDataPath => "/tmp";
         public static string dataPath => "/tmp/UnityProject/Assets";
     }

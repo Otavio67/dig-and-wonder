@@ -1,5 +1,7 @@
 # Menu inicial e mineração contínua — 0.0.23
 
+**Refinamento atual 0.0.24:** fundo cartoon v2, **INICIAR MINERAÇÃO** branca sem placa e loading branco ligado à preparação real. Veja [CARREGAMENTO-INICIAL.md](CARREGAMENTO-INICIAL.md) para o fluxo vigente. O restante desta página registra o marco inicial 0.0.23, cuja arte v1 foi substituída; as capturas abaixo são históricas.
+
 Pedido do usuário em 21/10/2026: substituir o Acampamento por **abrir → Iniciar a mineração → combate**. Ao vencer uma fase, continuar no jogo e passar para o próximo mapa. A logo foi aprovada explicitamente após engrossar e reduzir o “&”.
 
 ## Arte entregue

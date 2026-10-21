@@ -1,6 +1,6 @@
 # Dig & Wonder — protótipo Unity 6
 
-**Marco vigente 0.0.23:** tela inicial ilustrada com logo aprovada e **Iniciar a mineração**. O jogo fica pausado até esse toque, inclusive com save existente; vitórias seguem diretamente para a próxima fase/mapa. O Acampamento foi substituído. Detalhes, arte, validação e roteiro pendente: [MENU-INICIAL.md](../docs/MENU-INICIAL.md). Editor atual: **6000.6.6f1**, conforme `ProjectSettings/ProjectVersion.txt`; números de instalação anteriores abaixo são históricos.
+**Marco vigente 0.0.24:** abertura com arte cartoon, logo aprovada, carregamento branco e a ação **INICIAR MINERAÇÃO** branca em Titan One, sem placa. A ação só aparece após preparar recursos, perfil, HUD e pools. O jogo fica pausado até esse toque, inclusive com save existente; vitórias seguem diretamente para a próxima fase/mapa. O Acampamento foi substituído. Detalhes, arte, validação e roteiro pendente: [MENU-INICIAL.md](../docs/MENU-INICIAL.md) e [CARREGAMENTO-INICIAL.md](../docs/CARREGAMENTO-INICIAL.md). Editor atual: **6000.6.6f1**, conforme `ProjectSettings/ProjectVersion.txt`; números de instalação anteriores abaixo são históricos.
 
 Este é o primeiro protótipo de combate automático lateral. O projeto Godot permanece no repositório como origem dos valores e de parte da arte. O fluxo Unity preserva a fantasia de escavação, a broca como personagem, inimigos, ouro por derrota, melhorias e chefes como condição de avanço.
 
@@ -10,7 +10,7 @@ Para continuar no seu PC, consulte [transferência e configuração local](../do
 
 ## O que está nesta amostra
 
-- O menu inicial aparece em todo início do aplicativo. **Iniciar a mineração** começa uma tentativa ou retoma a posição segura salva. A tentativa não avança atrás da tela inicial.
+- O menu inicial aparece em todo início do aplicativo. **Iniciar mineração** começa uma tentativa ou retoma a posição segura salva. A tentativa não avança atrás da tela inicial.
 - A broca e os inimigos lutam automaticamente. A Pioneira mantém quatro impactos e dano base 32; nível, melhorias e poderes multiplicam o dano. O boss é o único requisito de avanço. A campanha numérica tem 100 fases, usando os biomas existentes; cada vitória dá um baú e uma chave. A fase 100 encerra a campanha atual e libera treino.
 - Oficina e tesouro abrem pela navegação do combate; a coleção fica em **Oficina → Brocas**. Vencer cada dez fases até 100 concede uma nova broca, começando no nível 0. Equipamentos colecionáveis, álbum e drones continuam em preparação.
 - A Oficina abre pela aba **Oficina** no combate. Abas **Oficina/Poderes/Tesouro/Brocas**, com paginação, custos, limites, requisitos e carteira. Sete melhorias globais, quatro poderes individuais e loja de cristais obtidos jogando. A garagem permite equipar personagens possuídas entre tentativas. A luta pausa nesse menu e volta ao mesmo estado ao fechar. Arte/fontes seguem [IDENTIDADE-TOY-MECHA.md](../docs/IDENTIDADE-TOY-MECHA.md); as onze brocas reutilizam provisoriamente a folha da Pioneira com cores diferentes.
@@ -27,7 +27,7 @@ A avaliação e o passo a passo para importar a folha de sprites da Broca Pionei
 1. Instale a versão de `ProjectSettings/ProjectVersion.txt` (**6000.6.6f1** neste checkpoint) com suporte Android se for compilar para celular.
 2. Abra `UnityProject` no Unity Hub e deixe o Package Manager resolver `Packages/manifest.json`.
 3. Ao abrir no Editor, o importador converte os JSON e o Theme Godot em ScriptableObjects e o preparador cria a cena vazia `Assets/_Game/Scenes/Prototype.unity`, define retrato/Input System e inclui a cena nos builds.
-4. Entre em Play e toque/clique **Iniciar a mineração**. Feche e abra novamente: o menu reaparece e o botão retoma a tentativa salva.
+4. Entre em Play e toque/clique **Iniciar mineração**. Feche e abra novamente: o menu reaparece e o botão retoma a tentativa salva.
 
 O save fica em `Application.persistentDataPath`, não no cache temporário que o Android pode limpar. Ele grava em gatilhos de recompensa/melhoria/chefes, a cada 5 s e ao suspender/fechar; o arquivo é validado por checksum e recupera backup. Esse protótipo ainda não importa automaticamente o save Godot.
 

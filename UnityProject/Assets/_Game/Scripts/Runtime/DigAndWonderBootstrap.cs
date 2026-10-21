@@ -49,10 +49,8 @@ namespace DigAndWonder
             safeArea.transform.SetParent(canvas.transform, false);
             safeArea.AddComponent<SafeAreaFitter>();
 
-            var driverObject = new GameObject("Combat Driver");
-            driverObject.transform.SetParent(root.transform, false);
-            var driver = driverObject.AddComponent<AutoBattleDriver>();
-            canvasObject.AddComponent<PrototypeGameUI>().Initialize(safeArea.transform, driver);
+            // O menu desenha o loading antes de preparar driver, HUD e pools.
+            canvasObject.AddComponent<PrototypeGameUI>().Initialize(safeArea.transform);
         }
     }
 }

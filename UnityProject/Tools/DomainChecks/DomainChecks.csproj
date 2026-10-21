@@ -20,5 +20,6 @@
     <Compile Include="../../Assets/_Game/Scripts/Runtime/CharacterProgression.cs" Link="CharacterProgression.cs" />
     <Compile Include="../../Assets/_Game/Scripts/Runtime/AtomicSaveRepository.cs" Link="AtomicSaveRepository.cs" />
     <Compile Include="../../Assets/_Game/Scripts/Runtime/IdleCombatSimulation.cs" Link="IdleCombatSimulation.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/StartupContent.cs" Link="StartupContent.cs" />
   </ItemGroup>
 </Project>
