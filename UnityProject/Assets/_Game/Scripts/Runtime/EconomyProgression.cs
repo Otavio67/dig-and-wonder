@@ -301,6 +301,14 @@ namespace DigAndWonder
             save.Crystals -= rules.KeyCrystalCost; save.Keys++; return true;
         }
 
+        /// <summary>Vitória confirmada libera só a próxima fase existente, nunca uma tentativa ativa ou a fase 101.</summary>
+        public static bool CanContinueCampaign(GameSaveData save, ActiveRunSnapshot run, EconomyRules rules)
+        {
+            return save != null && run != null && rules != null && run.IsStageCleared && !run.IsPlayerDefeated &&
+                run.CampaignStage >= 1 && run.CampaignStage < rules.MaximumStage &&
+                save.CampaignStage == run.CampaignStage + 1 && save.ActiveRun == null;
+        }
+
         public static bool TrySelectTrainingStage(GameSaveData save)
         {
             if (save.HighestClearedStage < 1 || (save.ActiveRun != null && !save.ActiveRun.IsPlayerDefeated && !save.ActiveRun.IsStageCleared)) return false;

@@ -2,6 +2,8 @@
 
 Versão 1.3 — 20/10/2026. Base: direção fornecida pelo usuário, referências visuais anexadas, análise do vídeo de gameplay e revisões do HUD. Este é o guia vigente para novas imagens e para a evolução visual do projeto Unity. Não afirma que estas regras já estejam implementadas.
 
+**Decisão de fluxo de 21/10/2026:** o usuário substituiu o hub Acampamento pelo menu ilustrado com **Iniciar a mineração**. As referências ao hub neste guia são históricas. Depois de iniciar, as vitórias seguem para a próxima fase/mapa dentro do jogo. A logo v3 foi aprovada após os ajustes de fonte e tamanho do “&”; referência em `UnityProject/Assets/_Game/Resources/Art/StartMenu/dig-and-wonder-logo-v3.png`. O fundo do menu reúne Pioneira, duas variantes decorativas, inimigos e uma mina com casas, máquinas e cristais. Logo, botão e textos permanecem separados da ilustração.
+
 ## 1. Conceito e intenção
 
 **Pequenas máquinas explorando um mundo subterrâneo cheio de descobertas.**

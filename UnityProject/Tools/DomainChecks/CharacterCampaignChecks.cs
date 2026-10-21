@@ -19,6 +19,68 @@ internal static class CharacterCampaignChecks
         yield return ("campanha: Singular encerra o catálogo com padrão próprio e nível zero", FinalDrillHasEndgamePattern);
         yield return ("campanha: dificuldade aumenta nas fases 5/10 e XP cresce por fase", DifficultyAndExperienceGrow);
         yield return ("campanha: save retoma outra broca com projéteis e XP independente", CharacterRunResumes);
+        yield return ("fluxo: só vitória completa libera continuação automática", ContinuationRequiresCompletedVictory);
+        yield return ("fluxo: próximo mapa preserva recompensas e save entre fases", ContinueToNextMapPreservesRewards);
+        yield return ("fluxo: fase 100 encerra continuação automática", FinalStageStopsContinuation);
+    }
+
+    private static void ContinuationRequiresCompletedVictory()
+    {
+        EconomyRules rules = EconomyChecks.Rules();
+        var save = new GameSaveData { CampaignStage = 2 };
+        var run = new ActiveRunSnapshot { CampaignStage = 1 };
+        Check(!EconomyProgression.CanContinueCampaign(save, run, rules), "tentativa ativa avançou");
+        run.IsStageCleared = true;
+        Check(EconomyProgression.CanContinueCampaign(save, run, rules), "vitória não liberou avanço");
+        run.IsPlayerDefeated = true;
+        Check(!EconomyProgression.CanContinueCampaign(save, run, rules), "derrota avançou");
+        run.IsPlayerDefeated = false;
+        save.ActiveRun = new ActiveRunSnapshot { CampaignStage = 2 };
+        Check(!EconomyProgression.CanContinueCampaign(save, run, rules), "vitória antiga substituiu a tentativa seguinte");
+        save.ActiveRun = null;
+        save.CampaignStage = 4;
+        Check(!EconomyProgression.CanContinueCampaign(save, run, rules), "vitória antiga saltou fases");
+        Check(!EconomyProgression.CanContinueCampaign(null, run, rules), "perfil ausente avançou");
+    }
+
+    private static void ContinueToNextMapPreservesRewards()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "dw-continuation-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var config = EconomyChecks.Configuration();
+            GameSaveData save = BossFixture(10);
+            var previous = new IdleCombatSimulation(config, save, "prado_cristalino", 1);
+            Tick(previous, 1f);
+            Check(EconomyProgression.CanContinueCampaign(save, previous.Run, config.Economy), "vitória real não liberou fase 11");
+            int gold = save.Gold, chests = save.Chests, keys = save.Keys, crystals = save.Crystals;
+            long xp = CharacterProgression.Find(save, "pioneer").TotalExperience;
+            string nextMap = save.UnlockedStageId;
+            Check(nextMap != previous.CurrentStageId, "mapa não mudou");
+            var repository = new AtomicSaveRepository(directory);
+            repository.Save(save);
+            Check(repository.TryLoad(out GameSaveData loaded, out _) && loaded.ActiveRun == null, "save entre fases perdeu vitória");
+            var next = new IdleCombatSimulation(config, loaded, loaded.UnlockedStageId, 2);
+            Check(next.IsActive && next.Run.CampaignStage == 11 && next.CurrentStageId == nextMap, "próxima fase/mapa incorretos");
+            Check(loaded.Gold == gold && loaded.Chests == chests && loaded.Keys == keys && loaded.Crystals == crystals &&
+                CharacterProgression.Find(loaded, "pioneer").TotalExperience == xp && CharacterProgression.Find(loaded, "rivet") != null,
+                "transição duplicou ou perdeu recompensa, broca ou XP");
+            Check(!EconomyProgression.CanContinueCampaign(loaded, previous.Run, config.Economy), "transição repetida foi aceita");
+            repository.Save(loaded);
+            Check(repository.TryLoad(out GameSaveData resumed, out _) && resumed.ActiveRun.CampaignStage == 11, "save não retoma fase 11");
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    private static void FinalStageStopsContinuation()
+    {
+        var config = EconomyChecks.Configuration();
+        GameSaveData save = BossFixture(config.Economy.MaximumStage);
+        var simulation = new IdleCombatSimulation(config, save, "prado_cristalino", 1);
+        Tick(simulation, 1f);
+        Check(simulation.Run.IsStageCleared && save.CampaignStage == 100, "fase final não terminou");
+        Check(!EconomyProgression.CanContinueCampaign(save, simulation.Run, config.Economy), "fase final criou continuação infinita");
+        Check(CharacterProgression.Find(save, "singularity") != null, "recompensa final perdida");
     }
 
     private static void Check(bool condition, string message)

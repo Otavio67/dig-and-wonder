@@ -1,5 +1,7 @@
 # Dig & Wonder — protótipo Unity 6
 
+**Marco vigente 0.0.23:** tela inicial ilustrada com logo aprovada e **Iniciar a mineração**. O jogo fica pausado até esse toque, inclusive com save existente; vitórias seguem diretamente para a próxima fase/mapa. O Acampamento foi substituído. Detalhes, arte, validação e roteiro pendente: [MENU-INICIAL.md](../docs/MENU-INICIAL.md). Editor atual: **6000.6.6f1**, conforme `ProjectSettings/ProjectVersion.txt`; números de instalação anteriores abaixo são históricos.
+
 Este é o primeiro protótipo de combate automático lateral. O projeto Godot permanece no repositório como origem dos valores e de parte da arte. O fluxo Unity preserva a fantasia de escavação, a broca como personagem, inimigos, ouro por derrota, melhorias e chefes como condição de avanço.
 
 No PC local (20/10/2026), Unity **6000.0.23f1** e o toolchain Android foram instalados. A preparação/importação real terminou e um APK ARM64 assinado com a chave de depuração foi gerado em `.tools/build/DigAndWonder-debug.apk`; `aapt` leu o pacote e `apksigner` confirmou a assinatura. O APK ainda não foi instalado em aparelho. Consulte o [estado local e próximos passos](../docs/UNITY-CONTEXTO-LOCAL.md).
@@ -8,24 +10,24 @@ Para continuar no seu PC, consulte [transferência e configuração local](../do
 
 ## O que está nesta amostra
 
-- Em perfil novo, aparece **Iniciar escavação**. Em perfil Unity já salvo, a luta abre direto na última posição segura.
+- O menu inicial aparece em todo início do aplicativo. **Iniciar a mineração** começa uma tentativa ou retoma a posição segura salva. A tentativa não avança atrás da tela inicial.
 - A broca e os inimigos lutam automaticamente. A Pioneira mantém quatro impactos e dano base 32; nível, melhorias e poderes multiplicam o dano. O boss é o único requisito de avanço. A campanha numérica tem 100 fases, usando os biomas existentes; cada vitória dá um baú e uma chave. A fase 100 encerra a campanha atual e libera treino.
-- Hub separado do HUD: **Oficina**, **Garagem**, **Baús** e **Treino** são acessíveis. Vencer cada dez fases até 100 concede uma nova broca, começando no nível 0. Treino repete a última fase vencida entre tentativas, preservando a maior fase. Equipamentos colecionáveis, álbum e drones continuam em preparação.
-- A Oficina abre pelo hub ou por **Personagem/Melhorias** no combate. Abas **Oficina/Poderes/Tesouro/Brocas**, com paginação, custos, limites, requisitos e carteira. Sete melhorias globais, quatro poderes individuais e loja de cristais obtidos jogando. A garagem permite equipar personagens possuídas entre tentativas. A luta pausa nesse menu e volta ao mesmo estado ao fechar. Arte/fontes mantêm a direção de [OFICINA-PERSONAGEM.md](../docs/OFICINA-PERSONAGEM.md); as sete brocas reutilizam provisoriamente a folha da Pioneira com cores diferentes.
+- Oficina e tesouro abrem pela navegação do combate; a coleção fica em **Oficina → Brocas**. Vencer cada dez fases até 100 concede uma nova broca, começando no nível 0. Equipamentos colecionáveis, álbum e drones continuam em preparação.
+- A Oficina abre pela aba **Oficina** no combate. Abas **Oficina/Poderes/Tesouro/Brocas**, com paginação, custos, limites, requisitos e carteira. Sete melhorias globais, quatro poderes individuais e loja de cristais obtidos jogando. A garagem permite equipar personagens possuídas entre tentativas. A luta pausa nesse menu e volta ao mesmo estado ao fechar. Arte/fontes seguem [IDENTIDADE-TOY-MECHA.md](../docs/IDENTIDADE-TOY-MECHA.md); as onze brocas reutilizam provisoriamente a folha da Pioneira com cores diferentes.
 - XP e poderes pertencem a cada broca por ID estável; personagens novas começam no nível 0. Curva até 60: `ceil((20 + 12 × nível) × 1,125^nível)`. Nível 60 é uma meta de longo prazo, separada da fase 60. Save esquema 3 migra os esquemas Unity 1/2, preserva XP/carteira/tentativa e protege primeira vitória/sorteio dos baús. Toda a economia ativa vem de `Economy.asset` + `Economy/midgame.json`, sem reescrever os números históricos importados do Godot. Consulte [ECONOMIA-MIDGAME.md](../docs/ECONOMIA-MIDGAME.md).
 - A dificuldade recebe degraus extras nas fases 5/10/15…100; XP por inimigo aumenta a cada fase. A Pioneira é a inicial simples; o catálogo termina em dez recompensas de fase, de Rebite a Singular, com bases e padrões distintos. Desbloqueios e regras do end game estão em [ENDGAME-100.md](../docs/ENDGAME-100.md).
 - UI retrato, input de mouse/toque por botões, layout com CanvasScaler e ajuste de área segura.
-- A interface de combate é uma composição provisória feita por código e texto TMP, com ícones provisórios; não é a arte/layout final. O cenário dá movimento de caverna por tween, separado da lógica de combate. A camada visual ainda não muda com a fase.
+- A interface de combate usa composição por código, TMP e os atlas recebidos. O cenário tem movimento cosmético separado da lógica; a ilustração acompanha o mapa atual, com três fundos e uma variação provisória para a Fenda. Revisão final de renderização e toque permanece pendente no Editor/aparelho.
 - `DrillSpriteSheetPlayer2D` procura a folha RGBA da Pioneira em `Resources/Art/Drill`, escolhe frames por eventos reais e mantém o ícone TMP se a importação ainda não estiver pronta. `ProceduralAnimator2D` anima escala somente no elemento visual e interrompe idle ao atacar/receber impacto/morrer. `GroundDrillMotion2D` cuida do deslocamento cosmético no chão e nunca move a posição funcional. Pools aquecidos de projéteis (24), dano (32), moedas (8) e impactos/partículas (32). Efeitos usam DOTween em tempo não escalado e são limpos em derrota, vitória e suspensão do app. A simulação não instancia objetos visuais por ataque.
 
 A avaliação e o passo a passo para importar a folha de sprites da Broca Pioneira estão em [SPRITE-BROCA-UNITY.md](../docs/SPRITE-BROCA-UNITY.md).
 
 ## Abrir
 
-1. Instale Unity **6000.0.23f1** com suporte Android (SDK, NDK e OpenJDK embutidos) se for compilar para celular.
+1. Instale a versão de `ProjectSettings/ProjectVersion.txt` (**6000.6.6f1** neste checkpoint) com suporte Android se for compilar para celular.
 2. Abra `UnityProject` no Unity Hub e deixe o Package Manager resolver `Packages/manifest.json`.
 3. Ao abrir no Editor, o importador converte os JSON e o Theme Godot em ScriptableObjects e o preparador cria a cena vazia `Assets/_Game/Scenes/Prototype.unity`, define retrato/Input System e inclui a cena nos builds.
-4. Entre em Play. Em perfil novo, toque/click **Iniciar escavação**. Feche e abra novamente para conferir a retomada; o perfil válido entra direto no combate.
+4. Entre em Play e toque/clique **Iniciar a mineração**. Feche e abra novamente: o menu reaparece e o botão retoma a tentativa salva.
 
 O save fica em `Application.persistentDataPath`, não no cache temporário que o Android pode limpar. Ele grava em gatilhos de recompensa/melhoria/chefes, a cada 5 s e ao suspender/fechar; o arquivo é validado por checksum e recupera backup. Esse protótipo ainda não importa automaticamente o save Godot.
 
@@ -92,7 +94,7 @@ Os custos de Crítico, Crítico+ e Especial não existiam no combate Godot de or
 - Recursos essenciais TMP são importados automaticamente pelo preparador quando o pacote local disponibiliza o `.unitypackage`; se a fonte aparecer sem glifos no primeiro Play, execute **Window → TextMeshPro → Import TMP Essential Resources**.
 - Não foi feita revisão visual, gravação nem medição de desempenho; não há afirmação de 60 FPS. Instalação/toque real, safe area por aparelho, memória e desempenho aguardam um aparelho Android.
 - Não há anúncios Unity ligados. A prova de rewarded da versão Godot é histórica e separada do gameplay atual; anúncios não interrompem nem são requisito desta amostra.
-- Nesta fatia existe somente ouro e chaves/baús guardados; não há moeda premium, lootbox aberta, equipamento aplicável, discovery/álbum ou fase de escavação surpresa no gameplay Unity.
+- Ouro, cristais obtidos jogando, baús com chave e poderes pertencem à economia ativa. Equipamentos colecionáveis, álbum, pets e modo adicional de escavação permanecem planejados. Não há compras com dinheiro real ou anúncios integrados.
 
 ## Licenças
 

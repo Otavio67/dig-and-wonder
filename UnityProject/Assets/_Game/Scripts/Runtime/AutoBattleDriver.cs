@@ -130,6 +130,21 @@ namespace DigAndWonder
             return IsReady && Simulation != null;
         }
 
+        public bool CanContinueCampaign => Simulation != null &&
+            EconomyProgression.CanContinueCampaign(Profile, Simulation.Run, Economy);
+
+        public bool TryContinueCampaign()
+        {
+            if (!IsReady || applicationPaused || menuPaused || !CanContinueCampaign) return false;
+            // Confirmar a vitória no disco antes de substituir a tentativa por outra fase.
+            SaveNow();
+            if (IsSaveBlocked) return false;
+            bool autoAttack = Simulation.AutoAttackEnabled;
+            StartNewGame();
+            if (Simulation != null) Simulation.AutoAttackEnabled = autoAttack;
+            return IsReady && Simulation != null && Simulation.IsActive;
+        }
+
         private static GameSaveData CreateProfile() => new GameSaveData { LootRandomState = (uint)DateTime.UtcNow.Ticks };
 
         public bool TryStartTraining()

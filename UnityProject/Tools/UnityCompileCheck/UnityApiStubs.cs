@@ -36,12 +36,13 @@ namespace UnityEngine
         public T GetComponentInChildren<T>() where T : class => null;
         public void SetActive(bool active) { }
     }
-    public class Transform : Component { public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } }
+    public class Transform : Component { public Transform parent; public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } }
     public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta, pivot; }
     public struct Quaternion { public static Quaternion identity => new Quaternion(); }
     public class Sprite : Object
     {
         public string name;
+        public Rect rect;
         public static Sprite Create(Texture2D texture, Rect rect, Vector2 pivot, float pixelsPerUnit) => new Sprite();
     }
     public class Font : Object { }
@@ -62,6 +63,8 @@ namespace UnityEngine
     public struct Rect
     {
         public float xMin, yMin, xMax, yMax;
+        public float width => xMax - xMin;
+        public float height => yMax - yMin;
         public Rect(float x, float y, float width, float height)
         { xMin = x; yMin = y; xMax = x + width; yMax = y + height; }
     }
@@ -116,6 +119,7 @@ namespace UnityEngine
     }
     public static class Application
     {
+        public static string version => "0.0.23";
         public static string persistentDataPath => "/tmp";
         public static string dataPath => "/tmp/UnityProject/Assets";
     }

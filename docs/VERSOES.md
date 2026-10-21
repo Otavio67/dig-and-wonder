@@ -342,3 +342,15 @@ Tag: `v0.0.21`.
 Brief para geração: [BRIEF-SPRITES-INIMIGOS.md](BRIEF-SPRITES-INIMIGOS.md).
 
 Tag: `v0.0.22`.
+
+## 0.0.23 — menu inicial e continuação entre mapas
+
+- Logo v3 aprovada pelo usuário, após ajuste de fonte e tamanho do “&”, preservada em PNG transparente. Criada a ilustração da mina com Pioneira, duas variantes, inimigos, casas, máquinas e cristais.
+- Acampamento substituído pelo menu **Iniciar a mineração**, com arte, logo e botão separados. O combate aguarda o toque; perfis existentes retomam a tentativa segura após iniciar.
+- Vitória apresenta a recompensa e segue automaticamente para o próximo mapa após 1,8 s. O driver confirma o save antes da transição; falha de gravação bloqueia o avanço. Fase 100 não cria continuação infinita.
+- Mapas usam as ilustrações de Prado Cristalino, Gruta Basáltica e Jardim Fóssil. Fenda Aurora tem cenário provisório com tonalidade violeta. Oficina e tesouro retornam ao jogo; derrota permite recomeçar sem título.
+- 78 checks de domínio e duas compilações auxiliares sem erros/avisos. Revisão de composição em Chromium, fora do Unity. Batch do Editor vigente bloqueado pela ausência de 6000.6.6f1 na nuvem; Play Mode, APK e aparelho pendentes. Sem alegação de FPS Android.
+
+Arte, evidências e roteiro: [MENU-INICIAL.md](MENU-INICIAL.md).
+
+Tag: `v0.0.23`.

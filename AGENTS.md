@@ -4,6 +4,10 @@ Leia README.md e docs/DESENVOLVIMENTO.md antes de implementar. O usuário autori
 
 ## Continuidade local — 20/10/2026
 
+### Fluxo autorizado em 21/10/2026
+
+O usuário substituiu o Acampamento por uma tela inicial ilustrada: abrir → **Iniciar a mineração** → combate. Mostrar essa tela também com save existente, pausando a tentativa até o toque. Vitória segue automaticamente para a próxima fase/mapa, sem retornar ao início; derrota permite melhorar/recomeçar dentro do jogo e a fase 100 encerra a campanha. Oficina, poderes, tesouro e coleção continuam acessíveis pela navegação. A logo `Art/StartMenu/dig-and-wonder-logo-v3.png` foi aprovada pelo usuário; preservar seu desenho. Guia e validação em `docs/MENU-INICIAL.md`. A versão vigente do Editor é a de `UnityProject/ProjectSettings/ProjectVersion.txt` (6000.6.6f1 no checkpoint 0.0.23), que prevalece sobre números históricos abaixo.
+
 A direção ativa é Unity 6, combate automático lateral e broca protagonista, na branch `prototype/first-playable`. O usuário confirmou em 20/10/2026 que devemos focar em Unity. Leia também `UnityProject/README.md`, `docs/CONTINUAR-UNITY-LOCAL.md` e `docs/UNITY-CONTEXTO-LOCAL.md`. Godot é somente histórico/origem preservada; não orientar configuração, testes ou desenvolvimento por esse caminho. O marco atual é preparar e validar o protótipo Unity existente neste PC, sem ampliar conteúdo.
 
 ## Identidade visual — leitura obrigatória antes de gerar imagens

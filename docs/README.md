@@ -10,3 +10,4 @@
 - [Como abrir e verificar o protótipo Unity](../UnityProject/README.md)
 - [Especificação e roteiro de desenvolvimento](DESENVOLVIMENTO.md)
 - [Configuração e continuidade na nuvem](NUVEM.md)
+- [Menu inicial ilustrado e mineração contínua — 0.0.23](MENU-INICIAL.md)
