@@ -22,10 +22,13 @@ namespace DigAndWonder
         private ObjectPool<GameObject> coins;
         private ObjectPool<GameObject> particles;
         private RectTransform cave;
+        private Sprite[] projectileFrames;
+        private Material projectileMaterial;
 
         public void Initialize(RectTransform caveView)
         {
             cave = caveView;
+            projectileFrames = BuildProjectileFrames();
             projectiles = CreatePool("projectile", 24);
             damageNumbers = CreatePool("damage", 32);
             coins = CreatePool("coin", 8);
@@ -51,6 +54,13 @@ namespace DigAndWonder
             rect.sizeDelta = kind == "damage" ? new Vector2(150, 64) : new Vector2(44, 44);
             var image = gameObject.GetComponent<Image>();
             image.raycastTarget = false;
+            if (kind == "projectile")
+            {
+                image.preserveAspect = true;
+                image.material = projectileMaterial;
+                var framePlayer = gameObject.AddComponent<ProjectileFramePlayer2D>();
+                framePlayer.Configure(image, projectileFrames);
+            }
             gameObject.GetComponent<CanvasGroup>().interactable = false;
             gameObject.GetComponent<CanvasGroup>().blocksRaycasts = false;
             if (kind == "damage")
@@ -75,6 +85,7 @@ namespace DigAndWonder
             item.GetComponent<CanvasGroup>().alpha = 1f;
             DOTween.Kill(item.GetComponent<RectTransform>());
             DOTween.Kill(item.GetComponent<CanvasGroup>());
+            item.GetComponent<ProjectileFramePlayer2D>()?.Play();
         }
 
         private void OnRelease(GameObject item)
@@ -86,7 +97,39 @@ namespace DigAndWonder
             }
             DOTween.Kill(item.GetComponent<RectTransform>());
             DOTween.Kill(item.GetComponent<CanvasGroup>());
+            item.GetComponent<ProjectileFramePlayer2D>()?.Stop();
             item.SetActive(false);
+        }
+
+        private Sprite[] BuildProjectileFrames()
+        {
+            Texture2D texture = Resources.Load<Texture2D>("Art/Projectiles/drill_projectile");
+            if (texture == null)
+            {
+                Sprite fallback = Resources.Load<Sprite>("Art/Workshop/drill");
+                projectileMaterial = null;
+                return fallback == null ? System.Array.Empty<Sprite>() : new[] { fallback };
+            }
+
+            const int columns = 4;
+            int cellWidth = texture.width / columns;
+            int cellHeight = texture.height / 3;
+            var frames = new Sprite[columns];
+            for (int i = 0; i < columns; i++)
+            {
+                frames[i] = Sprite.Create(texture,
+                    new Rect(i * cellWidth, texture.height - cellHeight, cellWidth, cellHeight),
+                    new Vector2(0.5f, 0.5f), 100f);
+                frames[i].name = "drill_projectile_" + i;
+            }
+
+            Shader shader = Shader.Find("DigAndWonder/EnemyWhiteCutout");
+            if (shader != null)
+            {
+                projectileMaterial = new Material(shader) { name = "Drill Projectile Cutout (Runtime)" };
+                projectileMaterial.SetFloat("_WhiteThreshold", 0.94f);
+            }
+            return frames;
         }
 
         public void Handle(CombatEvent combatEvent)
@@ -123,6 +166,7 @@ namespace DigAndWonder
             var rect = item.GetComponent<RectTransform>();
             rect.anchoredPosition = enemyShot ? new Vector2(280, -20) : new Vector2(-300, -80);
             item.GetComponent<Image>().color = enemyShot ? new Color(1f, 0.39f, 0.29f) : new Color(0.47f, 0.91f, 0.78f);
+            rect.localRotation = Quaternion.identity;
             float targetX = enemyShot ? -300 : 300;
             float duration = Mathf.Clamp(combatEvent.Amount, 0.12f, 1.25f);
             var tween = rect.DOAnchorPos(new Vector2(targetX, -70), duration).SetEase(Ease.OutCubic).SetUpdate(true);
@@ -213,6 +257,10 @@ namespace DigAndWonder
                 DOTween.Kill(item.GetComponent<RectTransform>());
                 DOTween.Kill(item.GetComponent<CanvasGroup>());
             }
+            if (projectileMaterial != null) Destroy(projectileMaterial);
+            if (projectileFrames != null)
+                foreach (Sprite frame in projectileFrames)
+                    if (frame != null) Destroy(frame);
         }
 
         private void OnApplicationPause(bool paused)

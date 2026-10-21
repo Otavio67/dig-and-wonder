@@ -25,5 +25,4 @@ MonoBehaviour:
   duration: 2.9
   maxSimultaneous: 2
   targeting: "inimigo central marcado; sem ele, camada marcada no lan\xE7amento"
-  role: "4 golpes de 8 em 2,1 s ap\xF3s voo de 0,8 s; quebra ap\xF3s o \xFAltimo,
-    nunca defensor"
+  role: "4 golpes de 8 em 2,1 s ap\xF3s voo de 0,8 s; quebra ap\xF3s o \xFAltimo, nunca defensor"

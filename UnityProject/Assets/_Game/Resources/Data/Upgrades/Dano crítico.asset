@@ -19,5 +19,4 @@ MonoBehaviour:
   maxLevel: 0
   additiveBonus: 0
   implemented: 0
-  sourceNote: "N\xE3o existe n\xFAmero de dano cr\xEDtico nos dados Godot; permanece
-    indispon\xEDvel at\xE9 balanceamento rastre\xE1vel."
+  sourceNote: "N\xE3o existe n\xFAmero de dano cr\xEDtico nos dados Godot; permanece indispon\xEDvel at\xE9 balanceamento rastre\xE1vel."

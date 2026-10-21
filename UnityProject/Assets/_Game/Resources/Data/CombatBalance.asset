@@ -26,7 +26,4 @@ MonoBehaviour:
   maximumProjectiles: 24
   simulationStep: 0.05
   maximumFrameCatchUp: 0.25
-  sourceNote: "Ataque 6 e intervalo 1,25 s v\xEAm de cada canh\xE3o; ciclo usa dois
-    disparos, com desfasamento 0,28 s e voo 0,34 s conforme defense_run.gd. PV 120
-    v\xEAm do carrinho. A Pioneira vira especial. Fases/bosses v\xEAm do cat\xE1logo
-    legado; seus valores ainda n\xE3o foram reequilibrados para o novo loop."
+  sourceNote: "Ataque 6 e intervalo 1,25 s v\xEAm de cada canh\xE3o; ciclo usa dois disparos, com desfasamento 0,28 s e voo 0,34 s conforme defense_run.gd. PV 120 v\xEAm do carrinho. A Pioneira vira especial. Fases/bosses v\xEAm do cat\xE1logo legado; seus valores ainda n\xE3o foram reequilibrados para o novo loop."

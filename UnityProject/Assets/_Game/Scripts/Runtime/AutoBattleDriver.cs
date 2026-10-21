@@ -245,6 +245,11 @@ namespace DigAndWonder
             if (paused) SaveNow();
         }
 
+        public void SetAutoAttackEnabled(bool enabled)
+        {
+            if (Simulation != null) Simulation.AutoAttackEnabled = enabled;
+        }
+
         public bool TryPurchaseUpgrade(UpgradeKind kind)
         {
             if (Simulation == null || !Simulation.IsActive || IsSaveBlocked || applicationPaused) return false;

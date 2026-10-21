@@ -1,5 +1,7 @@
 # Documentação do projeto
 
+- [Identidade visual vigente — Toy-Mecha Subterrâneo e checagem antes de gerar imagens](IDENTIDADE-TOY-MECHA.md)
+
 - [Campanha final até a fase 100 — Unity 0.0.19](ENDGAME-100.md)
 - [Bíblia de conteúdo, faixas de inimigos e catálogos futuros — Unity 0.0.21](CONTENT-BIBLE-ENDGAME.md)
 - [Brief visual dos 50 inimigos — Unity 0.0.22](BRIEF-SPRITES-INIMIGOS.md)

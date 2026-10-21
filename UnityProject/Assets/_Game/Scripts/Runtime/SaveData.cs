@@ -91,6 +91,7 @@ namespace DigAndWonder
     public sealed class EnemySnapshot
     {
         public int Id;
+        public string VisualId;
         public float Health;
         public float AttackTimer;
         public bool IsBoss;

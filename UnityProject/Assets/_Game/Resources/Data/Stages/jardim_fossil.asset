@@ -48,7 +48,4 @@ MonoBehaviour:
     appearanceChance: 0.13
   regularEnemy: {fileID: 11400000, guid: 8232630b98d6cfb42bed12bc50a7429b, type: 2}
   boss: {fileID: 11400000, guid: 9e4553efbbfd57e4eb11af4faab9daf0, type: 2}
-  sourceNote: "Fase e boss vieram de content/phases/catalog.json (cat\xE1logo antigo
-    de escava\xE7\xE3o). Os ataques dos bosses reaproveitam os do Torr\xE3o porque
-    o cat\xE1logo antigo n\xE3o define ataques; essa equival\xEAncia \xE9 provis\xF3ria
-    e documentada."
+  sourceNote: "Fase e boss vieram de content/phases/catalog.json (cat\xE1logo antigo de escava\xE7\xE3o). Os ataques dos bosses reaproveitam os do Torr\xE3o porque o cat\xE1logo antigo n\xE3o define ataques; essa equival\xEAncia \xE9 provis\xF3ria e documentada."

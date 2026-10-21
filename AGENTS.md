@@ -6,6 +6,14 @@ Leia README.md e docs/DESENVOLVIMENTO.md antes de implementar. O usuário autori
 
 A direção ativa é Unity 6, combate automático lateral e broca protagonista, na branch `prototype/first-playable`. O usuário confirmou em 20/10/2026 que devemos focar em Unity. Leia também `UnityProject/README.md`, `docs/CONTINUAR-UNITY-LOCAL.md` e `docs/UNITY-CONTEXTO-LOCAL.md`. Godot é somente histórico/origem preservada; não orientar configuração, testes ou desenvolvimento por esse caminho. O marco atual é preparar e validar o protótipo Unity existente neste PC, sem ampliar conteúdo.
 
+## Identidade visual — leitura obrigatória antes de gerar imagens
+
+Antes de gerar ou editar qualquer imagem de Dig & Wonder, leia integralmente `docs/IDENTIDADE-TOY-MECHA.md` e as instruções da skill de geração/edição aplicável. Execute a checagem da seção 13 antes de montar o prompt e revise o resultado pelos mesmos critérios antes de entregar. Informe brevemente ao usuário que está aplicando o guia.
+
+Este guia é a referência vigente para novas imagens e revisões visuais Unity. Em caso de divergência, ele prevalece sobre paletas, tipografia, personagem protagonista e composição dos documentos históricos `docs/DIRECAO-DE-ARTE.md`, `docs/IDENTIDADE-VISUAL.md` e descrições visuais antigas de `docs/OFICINA-PERSONAGEM.md`. Preserve o histórico; regras de gameplay, economia e save não mudam por causa da direção de arte. Instruções novas do usuário têm precedência sobre o guia e devem ser registradas quando alterarem a identidade.
+
+Use as referências aprovadas para manter o mesmo personagem e materiais. Não gere imagens sem uma tarefa autorizada. Conceitos devem ser identificados como conceitos; capturas reais, como capturas. Para UI funcional, texto e números ficam no Unity e recursos visuais são modulares. Ícones de UI devem ter fonte vetorial editável quando apropriado, sem emojis/glifos de recursos.
+
 ## Economia de créditos
 
 O usuário quer economizar o máximo possível. Trabalhe por marcos pequenos, agrupe leituras/alterações e mantenha um resumo durável do estado para reduzir releituras. Use ferramentas diretas quando disponíveis, limite verificações ao que a mudança exige e evite consultas repetidas sem nova evidência. Salve commits em pontos úteis, sem necessidade de um commit por pequeno ajuste. Não inicie uma implementação grande quando o marco autorizado for apenas configuração. Registre os testes feitos para evitar repeti-los sem motivo.

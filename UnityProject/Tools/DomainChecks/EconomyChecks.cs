@@ -32,7 +32,7 @@ internal static class EconomyChecks
         string data = Path.Combine(Root, "UnityProject/Assets/_Game/Resources/Data");
         float Value(string path, string field)
         {
-            Match match = Regex.Match(File.ReadAllText(Path.Combine(data, path)), @"^  " + Regex.Escape(field) + @": ([0-9.]+)$", RegexOptions.Multiline);
+            Match match = Regex.Match(File.ReadAllText(Path.Combine(data, path)), @"^  " + Regex.Escape(field) + @": ([0-9.]+)\r?$", RegexOptions.Multiline);
             return float.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
         }
         EnemyCombatData Enemy(string path, string id, bool boss)

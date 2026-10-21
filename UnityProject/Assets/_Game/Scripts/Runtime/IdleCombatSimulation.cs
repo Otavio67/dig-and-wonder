@@ -30,6 +30,7 @@ namespace DigAndWonder
         public int Gold => profile.Gold;
         public int Keys => profile.Keys;
         public bool IsActive => run != null && !run.IsStageCleared && !run.IsPlayerDefeated;
+        public bool AutoAttackEnabled { get; set; } = true;
         public string CurrentStageId => run?.StageId;
         public string CurrentStageDisplayName => currentStage?.DisplayName;
         public string ActiveCharacterId => run?.CharacterId;
@@ -177,6 +178,7 @@ namespace DigAndWonder
             var enemy = new EnemySnapshot
             {
                 Id = run.NextEntityId++,
+                VisualId = definition.Id,
                 Health = definition.MaxHealth,
                 AttackTimer = definition.FirstAttackDelay,
                 IsBoss = isBoss,
@@ -266,6 +268,7 @@ namespace DigAndWonder
 
         private void UpdateBasicAttack(float step)
         {
+            if (!AutoAttackEnabled) return;
             if (run.AttackHitsRemaining > 0)
             {
                 run.AttackHitTimer -= step;
@@ -639,6 +642,7 @@ namespace DigAndWonder
         private static EnemySnapshot CloneEnemy(EnemySnapshot value) => new EnemySnapshot
         {
             Id = value.Id,
+            VisualId = value.VisualId,
             Health = value.Health,
             AttackTimer = value.AttackTimer,
             IsBoss = value.IsBoss,

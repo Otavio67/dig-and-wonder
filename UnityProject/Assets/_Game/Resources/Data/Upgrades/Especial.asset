@@ -19,5 +19,4 @@ MonoBehaviour:
   maxLevel: 0
   additiveBonus: 0
   implemented: 0
-  sourceNote: "O cat\xE1logo define dano/cooldown da Pioneira, mas n\xE3o define
-    curva/pre\xE7o de melhoria do especial no novo loop."
+  sourceNote: "O cat\xE1logo define dano/cooldown da Pioneira, mas n\xE3o define curva/pre\xE7o de melhoria do especial no novo loop."
