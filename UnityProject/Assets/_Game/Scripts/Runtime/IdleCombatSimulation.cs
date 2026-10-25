@@ -34,6 +34,25 @@ namespace DigAndWonder
         public string CurrentStageId => run?.StageId;
         public string CurrentStageDisplayName => currentStage?.DisplayName;
         public string ActiveCharacterId => run?.CharacterId;
+        public int StageWaveCount => currentStage.WaveCount;
+        public float SpecialCooldownSeconds => config.Special.Cooldown;
+        public float EnemyMaximumHealth(bool boss) => boss ? bossDefinition.MaxHealth : regularDefinition.MaxHealth;
+        public float BasicHitsPerSecond => (currentCharacter.BasicHitCount > 0 ? currentCharacter.BasicHitCount : config.BasicAttackHitCount)
+            * AttackSpeed / config.BasicAttackInterval;
+
+        public bool TryActivateSpecial()
+        {
+            if (!IsActive || run.SpecialHitsRemaining > 0 || run.SpecialCooldown > 0f) return false;
+            EnemySnapshot target = SelectTarget();
+            if (target == null) return false;
+            run.SpecialTargetId = target.Id;
+            run.SpecialHitsRemaining = config.Special.HitCount;
+            run.SpecialTravelTimer = config.Special.TravelTime;
+            run.SpecialHitTimer = 0f;
+            run.SpecialCooldown = config.Special.Cooldown;
+            Emit(CombatEventType.SpecialStarted, target.Id, config.Special.Damage, target.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
+            return true;
+        }
 
         public IdleCombatSimulation(CombatConfiguration configuration, GameSaveData saveData, string newStageId, uint randomSeed)
         {
@@ -228,16 +247,9 @@ namespace DigAndWonder
                 return;
             }
 
-            run.SpecialCooldown -= step;
-            if (run.SpecialCooldown > 0f) return;
-            EnemySnapshot target = SelectTarget();
-            if (target == null) return;
-            run.SpecialTargetId = target.Id;
-            run.SpecialHitsRemaining = config.Special.HitCount;
-            run.SpecialTravelTimer = config.Special.TravelTime;
-            run.SpecialHitTimer = 0f;
-            run.SpecialCooldown += config.Special.Cooldown;
-            Emit(CombatEventType.SpecialStarted, target.Id, config.Special.Damage, target.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
+            run.SpecialCooldown = Math.Max(0f, run.SpecialCooldown - step);
+            // O especial mantém sua automação; o mesmo contrato também aceita toque quando pronto.
+            TryActivateSpecial();
         }
 
         private void ApplySpecialHit()

@@ -18,6 +18,7 @@ namespace DigAndWonder
             "Art/UI/dw_hud_combat_atlas",
             "Art/UI/dw_hud_structure_atlas",
             "Art/UI/dw_nav_icons_v2",
+            "Art/UI/Extracted/gold_coin",
             "Art/Drill/drill_pioneira",
             "Art/Projectiles/drill_projectile",
             "Art/Enemies/toupeira",

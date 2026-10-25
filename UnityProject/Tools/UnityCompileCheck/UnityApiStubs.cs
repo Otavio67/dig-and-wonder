@@ -37,8 +37,8 @@ namespace UnityEngine
         public T GetComponentInChildren<T>() where T : class => null;
         public void SetActive(bool active) { }
     }
-    public class Transform : Component { public Transform parent; public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } }
-    public class RectTransform : Transform { public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta, pivot; }
+    public class Transform : Component { public Transform parent; public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } public Transform Find(string path) => null; public void SetAsFirstSibling() { } }
+    public class RectTransform : Transform { public Rect rect; public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta, pivot; }
     public struct Quaternion { public static Quaternion identity => new Quaternion(); }
     public class Sprite : Object
     {
@@ -129,6 +129,7 @@ namespace UnityEngine
     public static class Time { public static float deltaTime; public static float unscaledDeltaTime; }
     public static class Mathf
     {
+        public static float Sin(float value) => (float)Math.Sin(value);
         public static int CeilToInt(float value) => (int)Math.Ceiling(value);
         public static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));
         public static float Clamp01(float value) => Clamp(value, 0f, 1f);

@@ -13,9 +13,11 @@ Os elementos principais da composição final foram separados em dois atlases de
 
 `PrototypeGameUI` corta os atlases em sprites independentes durante a inicialização, mantendo textos, valores, estados de bloqueio e botões como elementos dinâmicos do jogo.
 
+Revisão 0.0.25: recortes corrigidos e reexportados por `scripts/export-hud-assets.ps1`. Os atlas precisam de `nPOTScale: 0` para preservar suas coordenadas em pixels. Recursos individuais são Sprite Single; originais e GUIDs existentes foram preservados.
+
 ## Chão de combate
 
-O `worldPanel` é a área exclusiva do cenário. A broca e os inimigos usam âncoras relativas a ele, com a linha de combate em aproximadamente 34–37% da altura a partir da base do cenário — sobre o caminho amarelo do fundo. O HUD inferior fica fora desse painel, portanto as unidades não são mais posicionadas em relação à borda da tela.
+O `worldPanel` é a área exclusiva do cenário. A linha de chão é específica por bioma: Prado 41,4%, Gruta/Fenda 38%, Jardim 33,7% da altura do cenário. As imagens se apoiam pela base; efeitos consultam as posições das unidades por ID. O HUD inferior fica fora desse painel. Esses ajustes aguardam revisão visual no Editor licenciado.
 
 ## Convenções
 

@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <UnityRoot Condition="'$(UnityRoot)' == ''">$(MSBuildThisFileDirectory)../../../.tools/unity/6000.0.23f1</UnityRoot>
-    <TemplateAssemblies>$(UnityRoot)/Editor/Data/Resources/PackageManager/ProjectTemplates/libcache/com.unity.template.2d-cross-platform-5.0.2/ScriptAssemblies</TemplateAssemblies>
+    <TemplateAssemblies Condition="'$(TemplateAssemblies)' == ''">$(UnityRoot)/Editor/Data/Resources/PackageManager/ProjectTemplates/libcache/com.unity.template.2d-cross-platform-5.0.2/ScriptAssemblies</TemplateAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Assets/_Game/Scripts/**/*.cs" />
@@ -18,7 +18,7 @@
     <Reference Include="../../Assets/_Game/ThirdParty/DOTween/DOTween.dll" />
   </ItemGroup>
   <Target Name="RequireUnityLibraries" BeforeTargets="ResolveReferences">
-    <Error Condition="!Exists('$(UnityRoot)/Editor/Unity')" Text="Prepare o Unity com python3 scripts/setup-unity-cloud.py, ou informe -p:UnityRoot=/caminho/do/editor." />
+    <Error Condition="!Exists('$(UnityRoot)/Editor/Unity') And !Exists('$(UnityRoot)/Editor/Unity.exe')" Text="Informe -p:UnityRoot=/caminho/do/editor instalado." />
     <Error Condition="!Exists('$(TemplateAssemblies)/Unity.InputSystem.dll')" Text="Esta checagem requer as DLLs do template 2D incluídas na imagem GameCI fixada pelo instalador." />
   </Target>
 </Project>

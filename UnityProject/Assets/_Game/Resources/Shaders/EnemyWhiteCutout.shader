@@ -37,8 +37,9 @@ Shader "DigAndWonder/EnemyWhiteCutout"
 
             fixed4 frag(v2f i) : SV_Target
             {
-                fixed4 c = tex2D(_MainTex, i.texcoord) * i.color;
-                float minimum = min(c.r, min(c.g, c.b));
+                fixed4 texel = tex2D(_MainTex, i.texcoord);
+                fixed4 c = texel * i.color;
+                float minimum = min(texel.r, min(texel.g, texel.b));
                 float whiteAlpha = 1.0 - smoothstep(_WhiteThreshold, 0.995, minimum);
                 c.a *= whiteAlpha;
                 return c;

@@ -357,6 +357,12 @@ namespace DigAndWonder
             else status.text = purchased ? "Broca turbinada! Progresso salvo." : "Ouro insuficiente ou melhoria no máximo.";
         }
 
+        public void ShowPower(int index)
+        {
+            powerPage = Math.Max(0, Math.Min(1, index / 2));
+            Show(1);
+        }
+
         public void Show(int tab = -1)
         {
             root.gameObject.SetActive(true);

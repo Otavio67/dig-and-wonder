@@ -1,5 +1,7 @@
 # Documentação do projeto
 
+- [Integração da gameplay e validação local — 0.0.25](GAMEPLAY-0.0.25.md)
+
 - [Carregamento branco e entrada direta no combate — 0.0.24](CARREGAMENTO-INICIAL.md)
 
 - [Identidade visual vigente — Toy-Mecha Subterrâneo e checagem antes de gerar imagens](IDENTIDADE-TOY-MECHA.md)

@@ -24,10 +24,20 @@ namespace DigAndWonder
         private RectTransform cave;
         private Sprite[] projectileFrames;
         private Material projectileMaterial;
+        private System.Func<Vector2> playerPoint;
+        private System.Func<int, Vector2> enemyPoint;
+        private readonly Dictionary<GameObject, int> projectileTargets = new Dictionary<GameObject, int>();
+        private Sprite goldSprite;
+        private TMP_FontAsset feedbackFont;
 
-        public void Initialize(RectTransform caveView)
+        public void Initialize(RectTransform caveView, System.Func<Vector2> resolvePlayer = null, System.Func<int, Vector2> resolveEnemy = null,
+            Sprite coinSprite = null, TMP_FontAsset font = null)
         {
             cave = caveView;
+            playerPoint = resolvePlayer ?? (() => Vector2.zero);
+            enemyPoint = resolveEnemy ?? (id => Vector2.zero);
+            goldSprite = coinSprite;
+            feedbackFont = font;
             projectileFrames = BuildProjectileFrames();
             projectiles = CreatePool("projectile", 24);
             damageNumbers = CreatePool("damage", 32);
@@ -61,6 +71,8 @@ namespace DigAndWonder
                 var framePlayer = gameObject.AddComponent<ProjectileFramePlayer2D>();
                 framePlayer.Configure(image, projectileFrames);
             }
+            else if (kind == "coin") image.sprite = goldSprite;
+            else if (kind == "particle") image.sprite = Resources.Load<Sprite>("Art/Workshop/core");
             gameObject.GetComponent<CanvasGroup>().interactable = false;
             gameObject.GetComponent<CanvasGroup>().blocksRaycasts = false;
             if (kind == "damage")
@@ -71,6 +83,9 @@ namespace DigAndWonder
                 labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
                 labelRect.offsetMin = Vector2.zero; labelRect.offsetMax = Vector2.zero;
                 var label = labelObject.GetComponent<TextMeshProUGUI>();
+                if (feedbackFont != null) label.font = feedbackFont;
+                label.outlineWidth = 0.15f;
+                label.outlineColor = new Color(0.03f, 0.06f, 0.10f);
                 label.fontSize = 26; label.alignment = TextAlignmentOptions.Center; label.raycastTarget = false;
             }
             gameObject.SetActive(false);
@@ -90,6 +105,7 @@ namespace DigAndWonder
 
         private void OnRelease(GameObject item)
         {
+            projectileTargets.Remove(item);
             if (activeTweens.TryGetValue(item, out Tween tween))
             {
                 activeTweens.Remove(item);
@@ -148,12 +164,21 @@ namespace DigAndWonder
                     ShowDamage(combatEvent.Amount, combatEvent.EntityId, combatEvent.Text == "CRÍTICO!");
                     break;
                 case CombatEventType.GoldAwarded:
-                    ShowCoin(combatEvent.Amount);
+                    ShowCoin(combatEvent.Amount, combatEvent.EntityId);
                     break;
                 case CombatEventType.ProjectileImpact:
+                    ShowImpact(enemyPoint(combatEvent.EntityId));
+                    break;
                 case CombatEventType.PlayerDamaged:
+                    ShowImpact(playerPoint());
+                    ShowDamage(combatEvent.Amount, 0, false);
+                    break;
                 case CombatEventType.EnemyDefeated:
-                    ShowImpact(combatEvent.EntityId);
+                    ShowImpact(enemyPoint(combatEvent.EntityId));
+                    CancelTarget(combatEvent.EntityId);
+                    break;
+                case CombatEventType.ProjectileDissipated:
+                    CancelTarget(combatEvent.EntityId);
                     break;
             }
         }
@@ -164,12 +189,14 @@ namespace DigAndWonder
             activeProjectiles.Add(item);
             bool enemyShot = combatEvent.Text.Contains("inimigo");
             var rect = item.GetComponent<RectTransform>();
-            rect.anchoredPosition = enemyShot ? new Vector2(280, -20) : new Vector2(-300, -80);
-            item.GetComponent<Image>().color = enemyShot ? new Color(1f, 0.39f, 0.29f) : new Color(0.47f, 0.91f, 0.78f);
+            rect.anchoredPosition = enemyShot ? enemyPoint(combatEvent.EntityId) : playerPoint();
+            item.GetComponent<Image>().color = enemyShot ? new Color(1f, 0.55f, 0.45f) : Color.white;
+            rect.localScale = new Vector3(enemyShot ? -1 : 1, 1, 1);
             rect.localRotation = Quaternion.identity;
-            float targetX = enemyShot ? -300 : 300;
-            float duration = Mathf.Clamp(combatEvent.Amount, 0.12f, 1.25f);
-            var tween = rect.DOAnchorPos(new Vector2(targetX, -70), duration).SetEase(Ease.OutCubic).SetUpdate(true);
+            Vector2 target = enemyShot ? playerPoint() : enemyPoint(combatEvent.EntityId);
+            if (!enemyShot) projectileTargets[item] = combatEvent.EntityId;
+            float duration = Mathf.Max(0.01f, combatEvent.Amount);
+            var tween = rect.DOAnchorPos(target, duration).SetEase(Ease.Linear);
             activeTweens[item] = tween;
             tween.OnComplete(() => { activeTweens.Remove(item); activeProjectiles.Remove(item); projectiles.Release(item); });
         }
@@ -181,26 +208,27 @@ namespace DigAndWonder
             item.GetComponent<Image>().color = Color.clear;
             item.GetComponentInChildren<TextMeshProUGUI>().text = "-" + Mathf.CeilToInt(amount) + (critical ? "!" : "");
             item.GetComponentInChildren<TextMeshProUGUI>().color = critical ? new Color(1f, 0.4f, 0.37f) : new Color(1f, 0.88f, 0.59f);
-            AnimatePopup(item, new Vector2(180 + (entityId % 3) * 55, -10), 0.72f, damageNumbers, activeDamage);
+            Vector2 point = entityId == 0 ? playerPoint() : enemyPoint(entityId);
+            point.y += 45;
+            AnimatePopup(item, point, 0.72f, damageNumbers, activeDamage);
         }
 
-        private void ShowCoin(float amount)
+        private void ShowCoin(float amount, int entityId)
         {
             GameObject item = coins.Get();
             activeCoins.Add(item);
             item.GetComponent<Image>().color = new Color(1f, 0.77f, 0.24f);
-            AnimatePopup(item, new Vector2(-240, 170), 0.58f, coins, activeCoins);
+            AnimatePopup(item, enemyPoint(entityId), 0.58f, coins, activeCoins);
         }
 
-        private void ShowImpact(int entityId)
+        private void ShowImpact(Vector2 point)
         {
             GameObject item = particles.Get();
             activeParticles.Add(item);
             item.GetComponent<Image>().color = new Color(0.62f, 0.94f, 0.8f, 0.94f);
             RectTransform rect = item.GetComponent<RectTransform>();
-            rect.anchoredPosition = new Vector2(200 + (entityId % 4) * 46, -35);
+            rect.anchoredPosition = point;
             var sequence = DOTween.Sequence();
-            sequence.SetUpdate(true);
             sequence.Append(rect.DOScale(1.9f, 0.24f).SetEase(Ease.OutBack));
             sequence.Join(item.GetComponent<CanvasGroup>().DOFade(0f, 0.24f));
             activeTweens[item] = sequence;
@@ -212,7 +240,6 @@ namespace DigAndWonder
             RectTransform rect = item.GetComponent<RectTransform>();
             rect.anchoredPosition = position;
             var sequence = DOTween.Sequence();
-            sequence.SetUpdate(true);
             sequence.Append(rect.DOAnchorPosY(position.y + 76, duration).SetEase(Ease.OutCubic));
             sequence.Join(rect.DOScale(1.12f, duration * 0.32f).SetEase(Ease.OutBack));
             sequence.Join(item.GetComponent<CanvasGroup>().DOFade(0f, duration * 0.48f).SetDelay(duration * 0.52f));
@@ -232,6 +259,21 @@ namespace DigAndWonder
             Cancel(activeCoins, coins);
             Cancel(activeParticles, particles);
         }
+
+        private void CancelTarget(int id)
+        {
+            for (int i = activeProjectiles.Count - 1; i >= 0; i--)
+            {
+                GameObject item = activeProjectiles[i];
+                if (!projectileTargets.TryGetValue(item, out int target) || target != id) continue;
+                activeProjectiles.RemoveAt(i);
+                projectiles.Release(item);
+            }
+        }
+
+        public void Clear() => CancelAll();
+
+        private void OnDisable() => CancelAll();
 
         private void Cancel(List<GameObject> active, ObjectPool<GameObject> pool)
         {

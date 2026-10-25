@@ -50,6 +50,7 @@ var checks = new (string Name, Action Test)[]
 
 checks = checks.Concat(EconomyChecks.All()).ToArray();
 checks = checks.Concat(CharacterCampaignChecks.All()).ToArray();
+checks = checks.Concat(GameplayHudChecks.All()).ToArray();
 if (args.Contains("--economy-report")) return EconomyChecks.WriteSimulationReports();
 
 int failed = 0;

@@ -366,3 +366,13 @@ Tag: `v0.0.23`.
 Fluxo, prévias e roteiro: [CARREGAMENTO-INICIAL.md](CARREGAMENTO-INICIAL.md).
 
 Tag: `v0.0.24`.
+
+## 0.0.25 — integração da gameplay e recortes do HUD
+
+- Atributos, força, custos e desbloqueios do HUD ligados ao domínio; sete melhorias compráveis, inclusive após derrota.
+- AUTO com toque habilitado, cinco módulos do especial/poderes existentes e acesso direto às páginas da Oficina. Loja usa transações existentes do tesouro; treino acessível em Modos após terminar uma tentativa.
+- Recortes de UI corrigidos, peças reexportadas e importação sem redimensionamento NPOT que invalidava coordenadas em pixels.
+- Unidades apoiadas pelo chão de cada bioma, alvos com IDs estáveis, projéteis/impactos nas posições correspondentes e clipes de inimigos pelas folhas recebidas. Cenário com deslocamento contínuo e vento.
+- 85 checks de domínio aprovados; compilações com stubs e DLLs instaladas do 6000.6.6f1 sem erros. Editor real encerrou com código 198 por ausência de licença válida: Play Mode e avaliação visual ainda pendentes. Não há APK ou medição Android desta revisão.
+
+Detalhes e limites: [GAMEPLAY-0.0.25.md](GAMEPLAY-0.0.25.md). Checkpoint local; sem tag de release antes da validação visual.

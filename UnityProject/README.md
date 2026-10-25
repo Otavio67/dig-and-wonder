@@ -1,5 +1,7 @@
 # Dig & Wonder — protótipo Unity 6
 
+**Revisão local 0.0.25:** gameplay/HUD integrados com os dados reais; consultar [GAMEPLAY-0.0.25.md](../docs/GAMEPLAY-0.0.25.md) para mudanças e evidências. A licença local do Unity bloqueou o Play Mode desta revisão. A descrição 0.0.24 abaixo registra o marco anterior.
+
 **Marco vigente 0.0.24:** abertura com arte cartoon, logo aprovada, carregamento branco e a ação **INICIAR MINERAÇÃO** branca em Titan One, sem placa. A ação só aparece após preparar recursos, perfil, HUD e pools. O jogo fica pausado até esse toque, inclusive com save existente; vitórias seguem diretamente para a próxima fase/mapa. O Acampamento foi substituído. Detalhes, arte, validação e roteiro pendente: [MENU-INICIAL.md](../docs/MENU-INICIAL.md) e [CARREGAMENTO-INICIAL.md](../docs/CARREGAMENTO-INICIAL.md). Editor atual: **6000.6.6f1**, conforme `ProjectSettings/ProjectVersion.txt`; números de instalação anteriores abaixo são históricos.
 
 Este é o primeiro protótipo de combate automático lateral. O projeto Godot permanece no repositório como origem dos valores e de parte da arte. O fluxo Unity preserva a fantasia de escavação, a broca como personagem, inimigos, ouro por derrota, melhorias e chefes como condição de avanço.

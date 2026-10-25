@@ -265,6 +265,9 @@ namespace DigAndWonder
             if (Simulation != null) Simulation.AutoAttackEnabled = enabled;
         }
 
+        public bool TryActivateSpecial()
+            => IsReady && !applicationPaused && !menuPaused && Simulation != null && Simulation.TryActivateSpecial();
+
         public bool TryPurchaseUpgrade(UpgradeKind kind)
         {
             if (Simulation == null || !Simulation.IsActive || IsSaveBlocked || applicationPaused) return false;
