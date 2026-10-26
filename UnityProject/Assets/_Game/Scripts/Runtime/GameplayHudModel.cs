@@ -45,8 +45,10 @@ namespace DigAndWonder
             {
                 case UpgradeKind.Health: return "health";
                 case UpgradeKind.Repair: return "repair";
-                case UpgradeKind.AttackSpeed: return "motor";
-                case UpgradeKind.Special: return "core";
+                case UpgradeKind.AttackSpeed: return "cadence";
+                case UpgradeKind.CriticalChance: return "critical";
+                case UpgradeKind.CriticalDamage: return "critical_damage";
+                case UpgradeKind.Special: return "special";
                 default: return "attack";
             }
         }

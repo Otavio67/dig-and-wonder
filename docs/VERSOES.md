@@ -376,3 +376,12 @@ Tag: `v0.0.24`.
 - 85 checks de domínio aprovados; compilações com stubs e DLLs instaladas do 6000.6.6f1 sem erros. Editor real encerrou com código 198 por ausência de licença válida: Play Mode e avaliação visual ainda pendentes. Não há APK ou medição Android desta revisão.
 
 Detalhes e limites: [GAMEPLAY-0.0.25.md](GAMEPLAY-0.0.25.md). Checkpoint local; sem tag de release antes da validação visual.
+
+## 0.0.26 — abertura do Editor e revisão do HUD
+
+- Licença reconhecida após abrir o Hub MSIX e atualizar as licenças. Mineração observada em Play Mode, com frames avançando e Console sem erros/avisos nas consultas realizadas.
+- Proporções de cenário/HUD, recorte do chão, espaçamento dos atributos e contraste de AUTO revisados a partir da captura real.
+- Quatorze pictogramas SVG/PNG e Nunito para leitura secundária; instrumentação temporária removida.
+- A conferência visual dos últimos ajustes foi interrompida pelo usuário. Checkpoint sem tag de release; Android e aprovação visual final pendentes.
+
+Detalhes: [GAMEPLAY-0.0.26.md](GAMEPLAY-0.0.26.md).
