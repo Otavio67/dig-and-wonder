@@ -370,7 +370,7 @@ namespace DigAndWonder
             if (tab >= 0 && tab < panes.Length) selectedTab = tab;
             if (tab == 3)
                 for (int i = 0; i < driver.CharacterCatalog.Length; i++)
-                    if (CharacterProgression.Find(driver.Profile, driver.CharacterCatalog[i].Id) != null) garageIndex = i;
+                    if (driver.Profile != null && driver.Profile.EquippedCharacterId == driver.CharacterCatalog[i].Id) { garageIndex = i; break; }
             SelectTab(selectedTab);
             Refresh();
         }
@@ -537,6 +537,9 @@ namespace DigAndWonder
             if (font != null) label.font = font;
             label.text = text;
             label.fontSize = size;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = size * 0.6f;
+            label.fontSizeMax = size;
             label.color = color;
             label.alignment = alignment;
             label.textWrappingMode = TextWrappingModes.Normal;
@@ -550,7 +553,7 @@ namespace DigAndWonder
             RectTransform rect = ArtRegion(name, parent, "button", Petroleum, x0, y0, x1, y1);
             Image target = rect.GetComponent<Image>();
             target.raycastTarget = true;
-            RectTransform front = ArtRegion("Button face", rect, "button", color, 0f, 0.06f, 1f, 1.06f);
+            RectTransform front = ArtRegion("Button face", rect, "button", color, 0.02f, 0.06f, 0.98f, 0.96f);
             face = front.GetComponent<Image>();
             label = Label(front, text, 32, Cream, 0.04f, 0.10f, 0.96f, 0.91f, true);
             Button button = rect.gameObject.AddComponent<Button>();

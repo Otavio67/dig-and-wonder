@@ -226,7 +226,7 @@ namespace TMPro
     public class TextMeshProUGUI : Graphic
     {
         public TMP_FontAsset font;
-        public string text; public int fontSize; public TextAlignmentOptions alignment; public TextWrappingModes textWrappingMode; public FontStyles fontStyle;
+        public string text; public int fontSize; public bool enableAutoSizing; public float fontSizeMin, fontSizeMax; public TextAlignmentOptions alignment; public TextWrappingModes textWrappingMode; public FontStyles fontStyle;
         public float outlineWidth; public UnityEngine.Color outlineColor;
     }
 }

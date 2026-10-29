@@ -61,7 +61,7 @@ namespace DigAndWonder
             gameObject.transform.SetParent(cave, false);
             var rect = (RectTransform)gameObject.transform;
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = kind == "damage" ? new Vector2(150, 64) : new Vector2(44, 44);
+            rect.sizeDelta = kind == "damage" ? new Vector2(150, 64) : kind == "projectile" ? new Vector2(76, 52) : new Vector2(44, 44);
             var image = gameObject.GetComponent<Image>();
             image.raycastTarget = false;
             if (kind == "projectile")

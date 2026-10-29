@@ -111,7 +111,7 @@ namespace DigAndWonder
             {
                 if (oneShot)
                 {
-                    SetClip(idleFrames, 0.16f, false);
+                    SetClip(walkFrames, 0.11f, false);
                     return;
                 }
 

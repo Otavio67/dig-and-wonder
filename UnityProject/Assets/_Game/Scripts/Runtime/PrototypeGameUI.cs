@@ -290,7 +290,7 @@ namespace DigAndWonder
             stageBackdrop = backdrop.gameObject.AddComponent<Image>();
             sceneryTiles[0] = stageBackdrop;
             stageBackdrop.raycastTarget = false;
-            stageBackdrop.preserveAspect = true;
+            stageBackdrop.preserveAspect = false;
             backdropAspect = backdrop.gameObject.AddComponent<AspectRatioFitter>();
             backdropAspect.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             for (int i = 1; i < sceneryTiles.Length; i++)
@@ -658,6 +658,7 @@ namespace DigAndWonder
                 sceneryTime += Time.unscaledDeltaTime;
                 UpdateScenery();
             }
+            UpdateEnemyEntrance();
             UpdateScrollThumb();
             if (refreshTimer >= 0.12f)
             {
@@ -746,6 +747,10 @@ namespace DigAndWonder
             playerHealthTrack.rectTransform.anchorMax = new Vector2(0.25f, ground + 0.18f);
             healthFill.rectTransform.anchorMin = playerHealthTrack.rectTransform.anchorMin;
             healthFill.rectTransform.anchorMax = playerHealthTrack.rectTransform.anchorMax;
+            drillIcon.rectTransform.offsetMin = drillIcon.rectTransform.offsetMax = Vector2.zero;
+            healthLabel.rectTransform.offsetMin = healthLabel.rectTransform.offsetMax = Vector2.zero;
+            playerHealthTrack.rectTransform.offsetMin = playerHealthTrack.rectTransform.offsetMax = Vector2.zero;
+            healthFill.rectTransform.offsetMin = healthFill.rectTransform.offsetMax = Vector2.zero;
             for (int i = 0; i < enemyVisualRoots.Length; i++)
             {
                 float left = 0.49f + i * 0.098f;
@@ -757,6 +762,10 @@ namespace DigAndWonder
                 enemyHealthTracks[i].rectTransform.anchorMax = new Vector2(left + 0.09f, ground + 0.14f);
                 enemyHealthFills[i].rectTransform.anchorMin = enemyHealthTracks[i].rectTransform.anchorMin;
                 enemyHealthFills[i].rectTransform.anchorMax = enemyHealthTracks[i].rectTransform.anchorMax;
+                enemyVisualRoots[i].offsetMin = enemyVisualRoots[i].offsetMax = Vector2.zero;
+                enemyHealth[i].rectTransform.offsetMin = enemyHealth[i].rectTransform.offsetMax = Vector2.zero;
+                enemyHealthTracks[i].rectTransform.offsetMin = enemyHealthTracks[i].rectTransform.offsetMax = Vector2.zero;
+                enemyHealthFills[i].rectTransform.offsetMin = enemyHealthFills[i].rectTransform.offsetMax = Vector2.zero;
             }
         }
 
@@ -770,6 +779,8 @@ namespace DigAndWonder
         {
             for (int i = 0; i < enemyIds.Length; i++)
             {
+                enemyVisualRoots[i].DOKill(false);
+                enemyVisualRoots[i].anchoredPosition = Vector2.zero;
                 enemyIds[i] = 0;
                 enemyMaximumHealth[i] = 0;
                 SetEnemyVisible(i, false, false);
@@ -815,6 +826,10 @@ namespace DigAndWonder
                     enemySprites[slot].Configure(string.IsNullOrEmpty(enemy.VisualId) ? "torrao" : enemy.VisualId, enemy.IsBoss);
                     enemySprites[slot].ResetForSpawn();
                     enemyAnimators[slot].ResetForRun();
+                    RectTransform entering = enemyVisualRoots[slot];
+                    entering.DOKill(false);
+                    entering.anchoredPosition = new Vector2(worldPanel.rect.width * (1.08f - entering.anchorMin.x), 0);
+                    entering.DOAnchorPosX(0, 1.4f).SetEase(Ease.OutCubic);
                 }
                 SetEnemyVisible(slot, true, true);
                 enemyMaximumHealth[slot] = Mathf.Max(enemyMaximumHealth[slot], enemy.Health);
@@ -829,11 +844,28 @@ namespace DigAndWonder
                     enemyHealthTracks[slot].rectTransform.anchorMax = new Vector2(unit.anchorMax.x, barY + 0.01f);
                     enemyHealth[slot].rectTransform.anchorMin = new Vector2(unit.anchorMin.x - 0.01f, barY + 0.012f);
                     enemyHealth[slot].rectTransform.anchorMax = new Vector2(unit.anchorMax.x + 0.01f, barY + 0.045f);
+                    enemyHealthTracks[slot].rectTransform.sizeDelta = Vector2.zero;
+                    enemyHealth[slot].rectTransform.sizeDelta = Vector2.zero;
                 }
                 float ratio = Mathf.Clamp01(enemy.Health / enemyMaximumHealth[slot]);
                 RectTransform track = enemyHealthTracks[slot].rectTransform;
                 enemyHealthFills[slot].rectTransform.anchorMin = track.anchorMin;
                 enemyHealthFills[slot].rectTransform.anchorMax = new Vector2(track.anchorMin.x + (track.anchorMax.x - track.anchorMin.x) * ratio, track.anchorMax.y);
+                enemyHealthFills[slot].rectTransform.sizeDelta = Vector2.zero;
+            }
+        }
+
+        // Mantém as barras junto das criaturas durante a entrada.
+        private void UpdateEnemyEntrance()
+        {
+            if (enemyIds == null) return;
+            for (int i = 0; i < enemyIds.Length; i++)
+            {
+                if (enemyIds[i] == 0) continue;
+                float x = enemyVisualRoots[i].anchoredPosition.x;
+                enemyHealth[i].rectTransform.anchoredPosition = new Vector2(x, 0);
+                enemyHealthTracks[i].rectTransform.anchoredPosition = new Vector2(x, 0);
+                enemyHealthFills[i].rectTransform.anchoredPosition = new Vector2(x, 0);
             }
         }
 
@@ -849,8 +881,8 @@ namespace DigAndWonder
             int slot = EnemySlot(id);
             if (slot < 0) return ResolvePlayerPoint();
             RectTransform unit = enemyVisualRoots[slot];
-            return new Vector2(((unit.anchorMin.x + unit.anchorMax.x) * 0.5f - 0.5f) * worldPanel.rect.width,
-                (unit.anchorMin.y + 0.05f - 0.5f) * worldPanel.rect.height);
+            return new Vector2(((unit.anchorMin.x + unit.anchorMax.x) * 0.5f - 0.5f) * worldPanel.rect.width + unit.anchoredPosition.x,
+                (unit.anchorMin.y + 0.05f - 0.5f) * worldPanel.rect.height + unit.anchoredPosition.y);
         }
 
         private void UpdateTab()
@@ -1270,15 +1302,15 @@ namespace DigAndWonder
             rowObject.transform.SetParent(content, false);
             RectTransform rowRect = (RectTransform)rowObject.transform;
             var element = rowObject.GetComponent<LayoutElement>();
-            element.preferredHeight = 92f;
-            element.minHeight = 92f;
+            element.preferredHeight = 110f;
+            element.minHeight = 110f;
             var rowImage = rowObject.GetComponent<Image>();
             rowImage.sprite = SpriteFor("upgrade_row_structure");
             rowImage.type = Image.Type.Simple;
             rowImage.color = Color.white;
             rowImage.raycastTarget = false;
             RectTransform iconFrame = Region("Locked icon", rowRect, 0.012f, 0.08f, 0.17f, 0.92f);
-            MakeIcon(iconFrame, icon, 0.13f, 0.13f, 0.87f, 0.87f, Dim);
+            MakeIcon(iconFrame, icon, 0.17f, 0.30f, 0.83f, 0.90f, Dim);
             TextMeshProUGUI levelLabel = MakeLabel("Locked level", iconFrame, "NV. 0", 13, Dim,
                 new Vector2(0.08f, 0.02f), new Vector2(0.92f, 0.27f), TextAlignmentOptions.Center);
             levelLabel.fontStyle = FontStyles.Bold;
@@ -1361,9 +1393,9 @@ namespace DigAndWonder
             highlight.GetComponent<Image>().raycastTarget = false;
             navHighlights[text] = highlight.gameObject;
             highlight.gameObject.SetActive(stateColor == Cyan);
-            MakeIcon(rect, icon, 0.18f, 0.33f, 0.82f, 0.91f, Color.white);
-            TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 28, Cream,
-                new Vector2(0.02f, 0.03f), new Vector2(0.98f, 0.34f), TextAlignmentOptions.Center);
+            MakeIcon(rect, icon, 0.21f, 0.38f, 0.79f, 0.89f, Color.white);
+            TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 23, Cream,
+                new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.37f), TextAlignmentOptions.Center);
             label.fontStyle = FontStyles.Bold;
             return rect;
         }
@@ -1534,6 +1566,7 @@ namespace DigAndWonder
             rect.anchorMin = min; rect.anchorMax = max; rect.offsetMin = Vector2.zero; rect.offsetMax = Vector2.zero;
             var label = rect.gameObject.GetComponent<TextMeshProUGUI>();
             label.text = text; label.fontSize = size; label.color = color; label.alignment = alignment;
+            label.enableAutoSizing = true; label.fontSizeMin = size * 0.65f; label.fontSizeMax = size;
             if (hudFont != null) label.font = hudFont;
             label.textWrappingMode = TextWrappingModes.Normal; label.raycastTarget = false;
             return label;

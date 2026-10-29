@@ -98,6 +98,8 @@ namespace DigAndWonder
             image.rectTransform.anchorMin = Vector2.zero;
             image.rectTransform.anchorMax = new Vector2(1, 0);
             image.rectTransform.pivot = new Vector2(0.5f, 0);
+            image.rectTransform.offsetMin = Vector2.zero;
+            image.rectTransform.offsetMax = Vector2.zero;
             AspectRatioFitter aspect = image.GetComponent<AspectRatioFitter>();
             if (aspect == null) aspect = image.gameObject.AddComponent<AspectRatioFitter>();
             aspect.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
