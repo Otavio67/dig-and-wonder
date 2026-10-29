@@ -447,11 +447,13 @@ namespace DigAndWonder
             bottomBar = MakeArtPanel("Bottom navigation", combatRoot, Color.white, "bottom_nav_structure", 0, 0, 1, 0.068f);
             string[] tabs = { "MINA", "MODOS", "OFICINA", "ÁLBUM", "BAÚS", "LOJA" };
             string[] icons = { "nav_mine", "nav_modes", "nav_workshop", "nav_album", "nav_chests", "nav_shop" };
+            // Inner cells in bottom_nav_structure (1484 px), excluding side endcaps and separators.
+            float[] cellLeft = { 80f, 318f, 539f, 751f, 966f, 1179f };
+            float[] cellRight = { 300f, 518f, 731f, 944f, 1156f, 1402f };
             for (int i = 0; i < tabs.Length; i++)
             {
                 string tab = tabs[i];
-                float left = i / 6f + 0.004f;
-                RectTransform tabButton = MakeNavButton("Tab " + tab, bottomBar, tab, icons[i], left, 0.05f, left + 0.159f, 0.97f,
+                RectTransform tabButton = MakeNavButton("Tab " + tab, bottomBar, tab, icons[i], cellLeft[i] / 1484f, .16f, cellRight[i] / 1484f, .88f,
                     () => { if (tab == "OFICINA") OpenProgression(); else if (tab == "BAÚS" || tab == "LOJA") OpenTreasury(); else if (tab == "ÁLBUM") OpenAlbum(); else SelectTab(tab); }, tab == currentTab ? Cyan : Steel);
                 tabButtonImages.Add(tab, tabButton.GetComponent<Image>());
             }
@@ -1614,9 +1616,9 @@ namespace DigAndWonder
             highlight.GetComponent<Image>().raycastTarget = false;
             navHighlights[text] = highlight.gameObject;
             highlight.gameObject.SetActive(stateColor == Cyan);
-            MakeIcon(rect, icon, 0.21f, 0.38f, 0.79f, 0.89f, Color.white);
-            TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 23, Cream,
-                new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.37f), TextAlignmentOptions.Center);
+            MakeIcon(rect, icon, .25f, .42f, .75f, .94f, Color.white);
+            TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 22, Cream,
+                new Vector2(.03f, .04f), new Vector2(.97f, .38f), TextAlignmentOptions.Center);
             label.fontStyle = FontStyles.Bold;
             return rect;
         }

@@ -207,3 +207,5 @@ O pedido de integrar as sugestões inclui o álbum. A navegação usa ÁLBUM no 
 O usuário pediu retirar o nível da broca no cenário, recuperar os ícones definidos, corrigir textos e devolver os upgrades. Nível e XP ficam no cartão superior da broca; vida acompanha a altura renderizada da máquina. O menu de ajuda é modal e mantém a lista de melhorias por baixo. A navegação permanece funcional, com álbum no lugar de Pets.
 
 Pictogramas de Mina, Modos, Oficina, Baús, Loja, ATQ, VIDA, AUTORREPARO e CADÊNCIA são recortes explícitos da referência v8 existente, sem gerar outra família. `hud-approved-v8.png` preserva o arquivo de referência inteiro; somente as áreas de desenho são renderizadas como sprites. Nenhum texto, preço ou nível do conceito é usado como informação funcional. Álbum e ícones sem equivalente na referência mantêm seus recursos existentes. Essa integração é uma etapa de produção; fontes vetoriais anteriores permanecem disponíveis.
+
+A revisão adicional da navegação mede as seis células internas da moldura para alinhar os botões. Não dividir a largura total do atlas em seis, pois isso inclui as tampas laterais e desloca ícones e textos.

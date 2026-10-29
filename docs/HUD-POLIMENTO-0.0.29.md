@@ -29,3 +29,7 @@ A instrumentação e o redirecionamento de save foram retirados da cópia antes 
 ## Limites
 
 A validação visual foi no Editor; safe area real, toque e desempenho precisam ser conferidos novamente no aparelho. A arte dos inimigos, contornos claros das folhas, identidade de mineração e expansão do polimento além do HUD ainda pedem trabalho. Este marco corrige os problemas de interface indicados, sem representar aprovação visual final de todo o jogo.
+
+## Ajuste adicional da navegação
+
+Após o usuário apontar novamente os ícones deslocados, foi identificada a causa estrutural: as abas eram distribuídas em sextos da largura total, mas a arte `bottom_nav_structure` inclui duas tampas laterais e seis células internas com outras posições. As âncoras de cada botão agora usam os limites das células na imagem original de 1484 px (80–300, 318–518, 539–731, 751–944, 966–1156 e 1179–1402). Ícone e rótulo compartilham o centro da respectiva célula e têm faixas verticais distintas. A correção não se limita a deslocar desenhos dentro de botões antigos: as áreas de toque também acompanham os encaixes. Nova captura em `hud-qa-nav-final.log`, perfil isolado `HudQaNavSave`.
