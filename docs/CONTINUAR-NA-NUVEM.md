@@ -1,5 +1,7 @@
-# Continuidade do projeto
+# Continuar o Dig & Wonder
 
-> **Direção ativa: Unity 6.** Não use os procedimentos Godot antigos desta pasta para configurar ou desenvolver o jogo. Abra `UnityProject/` no Unity Hub e siga [UnityProject/README.md](../UnityProject/README.md), [estado local](UNITY-CONTEXTO-LOCAL.md) e [correções e validação](UNITY-REVISAO-COMBATE-SAVE.md). O branch de trabalho é `prototype/first-playable`.
+Abra a raiz completa do repositório na branch `prototype/first-playable`, leia [README](../README.md), [desenvolvimento](DESENVOLVIMENTO.md) e [UnityProject/README](../UnityProject/README.md).
 
-Este arquivo substitui o guia de continuidade Godot criado antes da migração. Ele fica no repositório apenas para manter links antigos funcionando; setup, validação, APK e desenvolvimento atuais são os descritos nos documentos Unity acima.
+Trabalhe apenas no projeto Unity. Os catálogos JSON em `content/` e as fontes SVG atuais fazem parte dele. A antiga engine foi retirada do checkout; não recuperar suas ferramentas para validar Unity. O histórico anterior permanece nos commits do Git.
+
+Execute os checks .NET quando pertinentes e confirme a versão do Editor em `UnityProject/ProjectSettings/ProjectVersion.txt`. Não declarar Play Mode, APK ou desempenho Android a partir de compilação com stubs. [Ambiente e limites](NUVEM.md).

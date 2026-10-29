@@ -29,9 +29,7 @@ async function main() {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 128 128"><g stroke="#1B263B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">${body}</g></svg>\n`;
     fs.writeFileSync(path.join(source, name+'.svg'), svg);
   }
-  for (const [name, original] of [['nav_mine','picareta'],['nav_chests','chest']]) {
-    fs.copyFileSync(path.join(repo,'assets/ui',original+'.svg'),path.join(source,name+'.svg'));
-  }
+  // nav_mine.svg e nav_chests.svg já são fontes canônicas nesta pasta.
   for (const name of fs.readdirSync(source).filter(n=>n.endsWith('.svg'))) {
     await sharp(path.join(source,name)).resize(256,256).png().toFile(path.join(output,path.basename(name,'.svg')+'.png'));
   }

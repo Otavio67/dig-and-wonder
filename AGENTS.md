@@ -1,55 +1,36 @@
 # Dig & Wonder — instruções de desenvolvimento
 
-Leia README.md e docs/DESENVOLVIMENTO.md antes de implementar. O usuário autorizou autonomia nas decisões técnicas e criativas reversíveis. Trabalhe em português e registre decisões relevantes. Não peça aprovação para cada detalhe.
+Leia `README.md`, `docs/DESENVOLVIMENTO.md` e `UnityProject/README.md` antes de implementar. Trabalhe em português. O usuário autorizou decisões técnicas reversíveis e atualização do GitHub por marcos; não peça aprovação para cada detalhe.
 
-## Continuidade local — 20/10/2026
+## Direção ativa
 
-### Fluxo autorizado em 21/10/2026
+- Unity 6, C#, Android inicial, combate automático lateral e broca protagonista. Branch ativa: `prototype/first-playable`.
+- Em 29/10/2026 o usuário pediu remover o material antigo do Godot. Não reintroduza projeto, scripts, plugins, builds ou testes daquela engine. O histórico permanece no Git; os JSON compartilhados em `content/` continuam como fontes numéricas e de design do Unity.
+- A versão do Editor é a de `UnityProject/ProjectSettings/ProjectVersion.txt`. Abra `UnityProject/` pelo Hub. Se a licença não for reconhecida, confira a instalação MSIX do Hub e atualize as licenças antes de concluir que o Editor não funciona.
+- O jogo abre na tela ilustrada com a logo v3 aprovada. Loading branco acompanha recursos reais; somente depois aparece **INICIAR MINERAÇÃO**, branca em Titan One, sem placa/fundo. Não reintroduza loading por tempo decorativo ou Acampamento como entrada.
+- Vitória segue para o próximo mapa dentro do jogo. Derrota permite melhorar/recomeçar ali; a fase 100 encerra a campanha e permite treino. Oficina, poderes, tesouro e coleção ficam na navegação. Pets e Torre/Profundezas são futuros, sem promessa de implementação.
 
-Refinamento 0.0.24: usar a arte cartoon v2 e a ação **INICIAR MINERAÇÃO**, branca, sem placa/fundo, Titan One em tamanho moderado. Antes de liberar a ação, mostrar carregamento branco com barra vinculada às tarefas reais de recursos/perfil/HUD/pools. Guia: `docs/CARREGAMENTO-INICIAL.md`. Não reintroduzir um temporizador decorativo de loading.
+## Identidade visual
 
-O usuário substituiu o Acampamento por uma tela inicial ilustrada: abrir → **Iniciar a mineração** → combate. Mostrar essa tela também com save existente, pausando a tentativa até o toque. Vitória segue automaticamente para a próxima fase/mapa, sem retornar ao início; derrota permite melhorar/recomeçar dentro do jogo e a fase 100 encerra a campanha. Oficina, poderes, tesouro e coleção continuam acessíveis pela navegação. A logo `Art/StartMenu/dig-and-wonder-logo-v3.png` foi aprovada pelo usuário; preservar seu desenho. Guia e validação em `docs/MENU-INICIAL.md`. A versão vigente do Editor é a de `UnityProject/ProjectSettings/ProjectVersion.txt` (6000.6.6f1 no checkpoint 0.0.23), que prevalece sobre números históricos abaixo.
+Antes de gerar ou editar qualquer imagem, leia integralmente `docs/IDENTIDADE-TOY-MECHA.md` e a skill aplicável. Execute a checagem da seção 13 antes do prompt e após o resultado; informe que está aplicando o guia. O guia prevalece sobre documentos históricos. Instruções novas do usuário têm precedência e devem ser registradas.
 
-A direção ativa é Unity 6, combate automático lateral e broca protagonista, na branch `prototype/first-playable`. O usuário confirmou em 20/10/2026 que devemos focar em Unity. Leia também `UnityProject/README.md`, `docs/CONTINUAR-UNITY-LOCAL.md` e `docs/UNITY-CONTEXTO-LOCAL.md`. Godot é somente histórico/origem preservada; não orientar configuração, testes ou desenvolvimento por esse caminho. O marco atual é preparar e validar o protótipo Unity existente neste PC, sem ampliar conteúdo.
+Preserve referências e a logo aprovada. Não gere arte sem tarefa autorizada. Texto e números funcionais ficam no Unity, com recursos modulares. Para ícones, prefira fontes SVG editáveis; não use emojis ou glifos como recursos. Conceito não é captura de gameplay.
 
-## Identidade visual — leitura obrigatória antes de gerar imagens
+## Fontes e integridade
 
-Antes de gerar ou editar qualquer imagem de Dig & Wonder, leia integralmente `docs/IDENTIDADE-TOY-MECHA.md` e as instruções da skill de geração/edição aplicável. Execute a checagem da seção 13 antes de montar o prompt e revise o resultado pelos mesmos critérios antes de entregar. Informe brevemente ao usuário que está aplicando o guia.
+- Preserve economia, balanceamento, catálogos e compatibilidade de save ao fazer alterações visuais ou limpeza. `ContentCatalogImporter` lê os JSON do repositório e mantém os ScriptableObjects.
+- Preserve GUIDs ao renomear assets e não substitua progresso do usuário por fixtures. Use perfis de teste isolados para compras e ensaios.
+- Não versione `.tools/`, `Library`, `Temp`, `UserSettings`, APKs, saves, credenciais ou chaves. Preserve licenças das fontes, DOTween e demais dependências.
 
-Este guia é a referência vigente para novas imagens e revisões visuais Unity. Em caso de divergência, ele prevalece sobre paletas, tipografia, personagem protagonista e composição dos documentos históricos `docs/DIRECAO-DE-ARTE.md`, `docs/IDENTIDADE-VISUAL.md` e descrições visuais antigas de `docs/OFICINA-PERSONAGEM.md`. Preserve o histórico; regras de gameplay, economia e save não mudam por causa da direção de arte. Instruções novas do usuário têm precedência sobre o guia e devem ser registradas quando alterarem a identidade.
+## Verificação e entrega
 
-Use as referências aprovadas para manter o mesmo personagem e materiais. Não gere imagens sem uma tarefa autorizada. Conceitos devem ser identificados como conceitos; capturas reais, como capturas. Para UI funcional, texto e números ficam no Unity e recursos visuais são modulares. Ícones de UI devem ter fonte vetorial editável quando apropriado, sem emojis/glifos de recursos.
+Execute os checks adequados ao que mudou. A base é:
 
-## Economia de créditos
+```powershell
+dotnet run --project UnityProject/Tools/DomainChecks/DomainChecks.csproj
+dotnet build UnityProject/Tools/UnityCompileCheck/UnityCompileCheck.csproj
+```
 
-O usuário quer economizar o máximo possível. Trabalhe por marcos pequenos, agrupe leituras/alterações e mantenha um resumo durável do estado para reduzir releituras. Use ferramentas diretas quando disponíveis, limite verificações ao que a mudança exige e evite consultas repetidas sem nova evidência. Salve commits em pontos úteis, sem necessidade de um commit por pequeno ajuste. Não inicie uma implementação grande quando o marco autorizado for apenas configuração. Registre os testes feitos para evitar repeti-los sem motivo.
+Compilação com stubs não confirma importação nem renderização. Confirme erros no Editor quando possível; descreva exatamente o que foi testado. Meta de 60 FPS Android exige medição em aparelho. Não apresente screenshots conceituais, build técnico ou testes headless como aprovação visual, diversão ou desempenho.
 
-Preferência de modelos: priorizar GPT-6 Luna com esforço leve em configuração, documentação e alterações simples; reservar Sol para arquitetura, depuração difícil ou integrações complexas quando necessário. Manter modo rápido desligado. O seletor da interface controla o modelo; não afirmar uma troca sem verificar. Atualizar o GitHub em lotes por marcos funcionais ou pontos de recuperação.
-
-## Prioridades
-
-- Bonito: cartoon 2D expressivo, identidade própria, interface limpa e efeitos legíveis.
-- Leve: terreno por trechos, recursos otimizados, efeitos limitados e descarte de conteúdo distante.
-- Jogável: controle preciso, escavação satisfatória antes de upgrades e progresso compreensível.
-- Meta inicial: 60 FPS em Android intermediário. É uma meta pendente de medição em aparelho; não apresentar como resultado comprovado.
-
-## Ambiente
-
-Unity 6000.0.23f1, C#, Android como destino inicial. Abra `UnityProject/` pelo Unity Hub. Para checks .NET independentes do Editor, use os comandos registrados em `UnityProject/README.md`. O workflow `.github/workflows/validate.yml` valida a origem Godot e não substitui a validação do Unity.
-
-Não versione `.tools/`, `UnityProject/Library/`, APKs, credenciais ou chaves. Registre licenças dos recursos externos.
-
-## Ordem de trabalho
-
-Direção principal autorizada em 20/10/2026: defesa com escavação por camadas, carrinho fixo, dois canhões automáticos e unidades lançáveis. O modo manual em grade foi substituído. Especificação atual em `docs/DESENVOLVIMENTO.md`; material antigo em `docs/historico/`.
-
-1. Marco 1: uma fase curta, camada ativa, Pioneira com cooldown, Torrão, ouro, melhorias de dano/vida, derrota/reinício, perfil 6 e importação segura de legado.
-2. Marco 2 autorizado em 20/10: Pioneira de quatro golpes, Torrão pintado, clareza e somente o Escavador adicional. Implementação atual em docs/MARCO2.md. Não avançar ao Marco 3 automaticamente.
-3. Marco 3: fases/desbloqueios e novos inimigos um por vez.
-4. Marco 4: primeiro boss. Validar APK/toque/desempenho e anúncios isolados antes de publicação; não tornar anúncio requisito de tentativa.
-
-## Verificação
-
-Execute checks adequados ao que mudou. Ao implementar economia/save/transformações, teste recursos insuficientes, padrões distintos de destruição e recuperação do progresso. Headless não comprova qualidade visual, diversão, desempenho em Android ou funcionamento de anúncios. Documente resultados e limitações sem inventar verificações.
-
-O protótipo atual usa a entrada de defesa; não manter um segundo modo completo em paralelo. Não declarar APK, anúncios ou nuvem do Codex configurados sem evidência.
+Economize créditos: agrupe leituras e alterações, mantenha contexto durável e evite repetir testes sem nova evidência. Salve commits e atualize o GitHub por marcos úteis. Prefira modelos leves em tarefas simples quando disponíveis; o seletor controla o modelo, não afirme uma troca sem evidência. Mantenha o modo rápido desligado.

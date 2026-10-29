@@ -8,8 +8,8 @@ var checks = new (string Name, Action Test)[]
 {
     ("abertura: recursos carregáveis existem sem caminhos ambíguos", StartupAssetsExist),
     ("economia insuficiente não compra upgrade", InsufficientGoldDoesNotPurchase),
-    ("preço e aumento de dano do upgrade", AttackUpgradeUsesGodotFormula),
-    ("upgrade de vida aplica valor e custo Godot", HealthUpgradeUsesGodotFormula),
+    ("preço e aumento de dano do upgrade", AttackUpgradeUsesCatalogFormula),
+    ("upgrade de vida aplica valor e custo do catálogo", HealthUpgradeUsesCatalogFormula),
     ("oficina compra melhoria entre tentativas", BaseUpgradeUsesSameEconomy),
     ("ouro por inimigo só uma vez", EnemyGoldIsAwardedOnce),
     ("projétil respeita viagem e alvo removido", ProjectilesRespectTravelAndTargetIdentity),
@@ -45,7 +45,7 @@ var checks = new (string Name, Action Test)[]
     ("schema 2 incompleto não reinicia XP silenciosamente", MissingCharacterExperienceIsRejected),
     ("versão malformada recupera backup sem exceção", InvalidSchemaValueRecoversBackup),
     ("versão futura de save permanece intacta", FutureCharacterSaveIsPreserved),
-    ("ScriptableObject mapping stays tied to Godot source numbers", GodotNumbersMatchMappedData)
+    ("mapeamento preserva os números dos catálogos de conteúdo", CatalogNumbersMatchMappedData)
 };
 
 checks = checks.Concat(EconomyChecks.All()).ToArray();
@@ -92,7 +92,7 @@ static void InsufficientGoldDoesNotPurchase()
     Assert(save.Gold == 0 && save.AttackLevel == 0, "saldo ou nível mudou sem compra");
 }
 
-static void AttackUpgradeUsesGodotFormula()
+static void AttackUpgradeUsesCatalogFormula()
 {
     GameSaveData save = new GameSaveData { Gold = 50 };
     IdleCombatSimulation simulation = NewSimulation(save, waveCount: 100);
@@ -102,7 +102,7 @@ static void AttackUpgradeUsesGodotFormula()
     Assert(save.Gold == 0 && save.AttackLevel == 2, "custo do segundo nível não foi 32");
 }
 
-static void HealthUpgradeUsesGodotFormula()
+static void HealthUpgradeUsesCatalogFormula()
 {
     GameSaveData save = new GameSaveData { Gold = 20 };
     IdleCombatSimulation simulation = NewSimulation(save, waveCount: 100);
@@ -405,9 +405,9 @@ static void WithSaveDirectory(Action<string> test)
     finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
 }
 
-static void GodotNumbersMatchMappedData()
+static void CatalogNumbersMatchMappedData()
 {
-    string root = Directory.GetCurrentDirectory();
+    string root = EconomyChecks.Root;
     JObject prototype = JObject.Parse(File.ReadAllText(Path.Combine(root, "content/defense/prototype.json")));
     JObject abilities = JObject.Parse(File.ReadAllText(Path.Combine(root, "content/defense/abilities.json")));
     JObject phases = JObject.Parse(File.ReadAllText(Path.Combine(root, "content/phases/catalog.json")));

@@ -9,18 +9,18 @@ using UnityEngine;
 namespace DigAndWonder.Editor
 {
     [InitializeOnLoad]
-    public static class GodotCatalogImporter
+    public static class ContentCatalogImporter
     {
         private const string OutputRoot = "Assets/_Game/Resources/Data";
         private const string BalancePath = OutputRoot + "/CombatBalance.asset";
         private static bool isImporting;
 
-        static GodotCatalogImporter()
+        static ContentCatalogImporter()
         {
             EditorApplication.delayCall += ImportOnFirstOpen;
         }
 
-        [MenuItem("Dig & Wonder/Import Godot data" )]
+        [MenuItem("Dig & Wonder/Import content data" )]
         public static void ImportAll()
         {
             if (isImporting) return;
@@ -53,9 +53,9 @@ namespace DigAndWonder.Editor
                 UpgradeDefinition healthUpgrade = ImportUpgrade("Vida", UpgradeKind.Health, healthUpgradeJson, true,
                     "Valores de hull upgrade; PV do carrinho viram PV base da broca.");
                 UpgradeDefinition critChance = ImportUnavailableUpgrade("Crítico", UpgradeKind.CriticalChance,
-                    "Não existe número de crítico nos dados Godot; permanece indisponível até balanceamento rastreável.");
+                    "Não existe número de crítico nos catálogos de conteúdo; permanece indisponível até balanceamento rastreável.");
                 UpgradeDefinition critDamage = ImportUnavailableUpgrade("Dano crítico", UpgradeKind.CriticalDamage,
-                    "Não existe número de dano crítico nos dados Godot; permanece indisponível até balanceamento rastreável.");
+                    "Não existe número de dano crítico nos catálogos de conteúdo; permanece indisponível até balanceamento rastreável.");
                 UpgradeDefinition specialUpgrade = ImportUnavailableUpgrade("Especial", UpgradeKind.Special,
                     "O catálogo define dano/cooldown da Pioneira, mas não define curva/preço de melhoria do especial no novo loop.");
 
@@ -98,13 +98,13 @@ namespace DigAndWonder.Editor
                 balance.maximumProjectiles = limits.Value<int>("projectiles");
                 balance.simulationStep = 0.05f;
                 balance.maximumFrameCatchUp = 0.25f;
-                balance.sourceNote = "Ataque 6 e intervalo 1,25 s vêm de cada canhão; ciclo usa dois disparos, com desfasamento 0,28 s e voo 0,34 s conforme defense_run.gd. PV 120 vêm do carrinho. A Pioneira vira especial. Fases/bosses vêm do catálogo legado; seus valores ainda não foram reequilibrados para o novo loop.";
+                balance.sourceNote = "Ataque 6 e intervalo 1,25 s vêm de cada canhão; ciclo usa dois disparos, com desfasamento 0,28 s e voo 0,34 s conforme os valores de combate preservados. PV 120 vêm do carrinho. A Pioneira vira especial. Fases/bosses vêm do catálogo legado; seus valores ainda não foram reequilibrados para o novo loop.";
                 EditorUtility.SetDirty(balance);
 
                 ImportUiTheme();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
-                Debug.Log("Dados Godot importados em ScriptableObjects. Verifique a tabela de paridade antes de alterar o balanceamento.");
+                Debug.Log("Catálogos importados em ScriptableObjects. Verifique a tabela de paridade antes de alterar o balanceamento.");
             }
             finally
             {
@@ -282,7 +282,7 @@ namespace DigAndWonder.Editor
 
         private static JObject ReadObject(string path)
         {
-            if (!File.Exists(path)) throw new FileNotFoundException("Catálogo Godot não encontrado.", path);
+            if (!File.Exists(path)) throw new FileNotFoundException("Catálogo de conteúdo não encontrado.", path);
             return JObject.Parse(File.ReadAllText(path));
         }
 
@@ -294,7 +294,7 @@ namespace DigAndWonder.Editor
         private static string GetSourceRoot()
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, "../../content"));
-            if (!Directory.Exists(root)) throw new DirectoryNotFoundException("Pasta content do Godot não encontrada: " + root);
+            if (!Directory.Exists(root)) throw new DirectoryNotFoundException("Pasta content não encontrada: " + root);
             return root;
         }
     }

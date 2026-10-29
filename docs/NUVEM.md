@@ -1,5 +1,7 @@
-# Nuvem — registro histórico
+# Ambiente de desenvolvimento Unity
 
-> **O desenvolvimento ativo está no Unity 6**, na branch `prototype/first-playable`. Para abrir, testar ou preparar o projeto, siga [UnityProject/README.md](../UnityProject/README.md), [Unity na nuvem](UNITY-NUVEM.md) e [estado local](UNITY-CONTEXTO-LOCAL.md). Os comandos Godot registrados em documentos antigos não configuram nem validam o jogo Unity.
+O único projeto executável é `UnityProject/`. Use [README](../README.md) e [guia Unity](../UnityProject/README.md) para o estado atual; a versão do Editor está em `ProjectSettings/ProjectVersion.txt`.
 
-Este arquivo preserva notas da etapa anterior em que o repositório usava Godot. O ambiente Unity e suas limitações atuais estão descritos nos links acima.
+Os verificadores .NET e o workflow `unity-code.yml` podem rodar sem Editor. Importação, Play Mode e builds exigem Unity instalado e licença válida. Scripts de nuvem e MCP em `scripts/` são ferramentas de apoio: leia seus parâmetros e versões antes de executar. Não instalar ou testar Godot para trabalhar neste repositório.
+
+[Registro técnico da preparação Unity na nuvem](UNITY-NUVEM.md) conserva evidências históricas; seus números de versão antigos não substituem a configuração atual.

@@ -1,50 +1,23 @@
-# Proveniência dos ativos visuais
+# Proveniência e licenças dos assets atuais
 
-## Personagens SVG — 20/10/2026
+## Arte do Unity
 
-As 11 peças em `assets/personagens/` foram construídas em código SVG pelo Codex para Dig & Wonder, seguindo o briefing, a paleta e os conceitos existentes de Lia, Bento e broca-companheira. Não foram copiadas de jogos, bibliotecas ou pacotes externos. Esta declaração registra a proveniência; não atribui autoria humana nem estabelece uma licença geral para o projeto.
+As referências enviadas pelo usuário orientam personagem, materiais e composição. Não foram copiadas interfaces ou personagens dos jogos citados como referência. PNGs gerados para o projeto ou derivados das referências do usuário não são descritos como ilustrações feitas à mão; esta declaração não concede exclusividade nem uma licença geral ao projeto.
 
-Peças: `lia_cabeca.svg`, `lia_corpo.svg`, `lia_braco.svg`, `bento_cabeca.svg`, `bento_corpo.svg`, `bento_braco.svg`, `cristal.svg`, `chave.svg`, `broca_corpo.svg`, `broca_ponta.svg`, `broca_nucleo.svg`.
+A folha da Pioneira, os inimigos, projéteis, fundos e módulos visuais atuais ficam em `UnityProject/Assets/_Game/Resources/Art/`. Os PNGs da oficina foram construídos proceduralmente para o projeto com `scripts/create-workshop-art.py`. Sua integração e limitações estão documentadas nos guias de sprites, HUD e identidade em `docs/`.
 
-## Direção anterior
+## Ícones vetoriais atuais
 
-Os PNGs de Lia, Bento e broca em `assets/characters/` foram gerados com a ferramenta de imagens nas revisões anteriores. São legado e não participam do render ativo da etapa 1. Não são descritos como ilustrações feitas à mão.
+Os catorze SVGs em `assets/ui/gameplay/` são fontes editáveis de pictogramas construídos em código para Dig & Wonder, rasterizados por `scripts/export-gameplay-icons.cjs`. Mina e Baús foram reaproveitados da família vetorial anterior e agora têm fontes canônicas nessa mesma pasta. Não são extrações de interfaces de outros jogos.
 
-## Referências e dependências
+## Fontes
 
-As imagens enviadas pelo usuário e os jogos citados no documento de identidade servem como referência de direção, sem reutilização de seus personagens, interfaces ou arquivos. Licenças de dependências existentes, incluindo o plug-in AdMob, permanecem nos seus próprios diretórios.
+- **Titan One Regular**: Google Fonts, SIL Open Font License 1.1. Fonte e licença em `UnityProject/Assets/_Game/Resources/Fonts/Workshop/TitanOne-Regular.ttf` e `TitanOne-OFL.txt`. Origem: https://github.com/google/fonts/tree/main/ofl/titanone.
+- **DW Rounded ExtraBold**: derivação estática do Nunito variável, peso 800, instanciada com fontTools e renomeada para DW Rounded. Créditos e OFL preservados em `DWRounded-ExtraBold.ttf` e `Nunito-OFL.txt`. Origem: https://github.com/google/fonts/tree/main/ofl/nunito.
+- **Nunito Reading**: arquivo variável original do Nunito, usando o peso padrão de leitura. Arquivo `Nunito-Reading.ttf`, mesma OFL integral preservada no projeto.
 
-## Ilustrações integradas após a direção aprovada
+## Dependências e histórico
 
-Cinco PNGs foram gerados pela ferramenta integrada de imagens, com prompts próprios baseados na direção aprovada e na correção de estilo do usuário:
+Licenças das dependências Unity, incluindo DOTween, permanecem nos diretórios correspondentes. O antigo plugin Godot AdMob e seus arquivos foram retirados; ele não é uma dependência do Unity.
 
-- `ilustracoes/maquina-baus-atlas.png`: cabine, ponta e baú fechado/aberto; revisão com metal fosco e textura de pincel.
-- `terreno/materiais-atlas.png`: três variantes para terra, argila, rocha e cristal.
-- `ambientes/ambientes-atlas.png`: cinco composições de fundo distante, com cor contida e sem contornos.
-- `ambientes/intermediario.png` e `ambientes/proximo.png`: camadas transparentes pintadas, assimétricas e com centro livre.
-
-São imagens geradas para este projeto, não ilustrações atribuídas a uma pessoa nem recursos extraídos dos jogos citados. Não se declara licença de terceiros ou exclusividade. As primeiras tentativas mais brilhantes foram substituídas; somente a seleção integrada participa do render ativo.
-
-Os ícones SVG em `ui/` e o Theme foram construídos em código para o projeto. Picareta e bússola seguem a família de contorno existente. Os vídeos do usuário foram analisados como referência de linguagem; não foram copiados para o repositório nem usados como texturas.
-
-## Marco 1 — reaproveitamento no jogo de defesa
-
-Carroceria do carrinho e Pioneira reutilizam o atlas de máquina existente; canhões, munição, Torrão e fissuras provisórias foram desenhados em código nativo 2D pelo Codex. Não foram gerados assets externos novos neste marco nem atribuída autoria humana. Atlas/ícones/fundos mantêm a proveniência acima. A nova composição não copia personagens ou interface dos jogos de referência. Canhões e Torrão são placeholders, não arte final.
-
-## Revisão de solo — 20/10/2026
-solo-torroes-raizes.png: imagem gerada pela ferramenta integrada imagegen para este projeto. Prompt e integração em docs/REVISAO-MARCO1.md. Sem recurso externo copiado; não se atribui autoria humana à geração.
-
-## Atlas do Marco 2 — 20/10/2026
-`characters/torrao-poses.png` e `characters/escavador-poses.png`: imagens 2D geradas pela ferramenta integrada imagegen para este projeto. Prompts em docs/PROMPTS-MARCO2.md. Não foram usados modelos 3D ou personagens copiados. Não se atribui autoria humana à geração.
-
-## Folha da Broca Pioneira — 20/10/2026
-`UnityProject/Assets/_Game/Resources/Art/Drill/drill_pioneira.png`: folha RGBA 4 × 3 gerada pela ferramenta integrada de imagens a partir da referência enviada pelo usuário, com fundo removido e células normalizadas para o protótipo Unity. O arquivo não foi extraído de jogo ou biblioteca de terceiros e ainda precisa de revisão no Unity Editor antes de ser tratado como arte final.
-
-## Oficina Unity — 0.0.15
-
-As 18 peças PNG em `UnityProject/Assets/_Game/Resources/Art/Workshop/` foram desenhadas proceduralmente para este projeto com `scripts/create-workshop-art.py`, usando a paleta e o briefing enviados pelo usuário. São formas e ícones originais, sem extração da interface de jogos de referência. A Pioneira reutiliza a folha já registrada acima.
-
-- Titan One Regular: [Google Fonts / Titan One](https://github.com/google/fonts/tree/main/ofl/titanone), SIL Open Font License 1.1. Fonte original em `Resources/Fonts/Workshop/TitanOne-Regular.ttf`; licença integral `TitanOne-OFL.txt`. SHA-256 `563ff6de179bbd44bcd7d2a6c448d6dc3bf935834237cf1250e506e65cd86ff1`.
-- DW Rounded ExtraBold: derivação estática de [Nunito](https://github.com/google/fonts/tree/main/ofl/nunito), peso 800 da variável `Nunito[wght].ttf`, instanciada com fontTools. Família renomeada para **DW Rounded**, preservando créditos e licença OFL; fonte `DWRounded-ExtraBold.ttf`, licença integral `Nunito-OFL.txt`. SHA-256 `db1629b7a12d0f28142b0a2016f02cc410afb14e33eb20e6b199eb02dddb3e43`.
-
-As fontes podem ser redistribuídas com o aplicativo sob a OFL; as licenças e créditos acompanham o projeto. A captura em `docs/design/` é uma composição de design externa ao Unity, renderizada com esses ativos; não constitui evidência de execução do jogo.
+Recursos usados somente na implementação anterior foram removidos do checkout em 29/10/2026. A proveniência detalhada daquele material permanece no histórico Git, antes da limpeza. Tornar o repositório público não altera os termos das fontes ou dependências e não cria uma licença de código aberto para todo o projeto.

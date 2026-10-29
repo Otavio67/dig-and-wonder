@@ -13,7 +13,7 @@ internal static class EconomyChecks
         get
         {
             DirectoryInfo current = new DirectoryInfo(Directory.GetCurrentDirectory());
-            while (current != null && !File.Exists(Path.Combine(current.FullName, "project.godot"))) current = current.Parent;
+            while (current != null && !File.Exists(Path.Combine(current.FullName, "UnityProject", "ProjectSettings", "ProjectVersion.txt"))) current = current.Parent;
             return current?.FullName ?? throw new InvalidOperationException("Execute a partir do repositório.");
         }
     }

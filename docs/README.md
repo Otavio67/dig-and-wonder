@@ -1,5 +1,8 @@
 # Documentação do projeto
 
+- [Estado atual e limpeza do repositório Unity — 0.0.27](UNITY-ONLY-0.0.27.md)
+- [Revisão do HUD, ícones e licença local — 0.0.26](GAMEPLAY-0.0.26.md)
+
 - [Integração da gameplay e validação local — 0.0.25](GAMEPLAY-0.0.25.md)
 
 - [Carregamento branco e entrada direta no combate — 0.0.24](CARREGAMENTO-INICIAL.md)

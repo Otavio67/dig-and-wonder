@@ -43,7 +43,7 @@ namespace DigAndWonder
         public int Crystals;
     }
 
-    /// <summary>Tabela autoral da Unity. Valores históricos do Godot continuam preservados.</summary>
+    /// <summary>Tabela autoral da Unity. Preserva os valores numéricos dos catálogos de conteúdo.</summary>
     [Serializable]
     public sealed class EconomyRules
     {

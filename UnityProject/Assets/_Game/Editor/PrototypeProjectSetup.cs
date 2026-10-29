@@ -25,7 +25,7 @@ namespace DigAndWonder.Editor
         // Permite preparar e verificar a primeira abertura também sem interface gráfica.
         public static void PrepareForBatchMode()
         {
-            GodotCatalogImporter.ImportAll();
+            ContentCatalogImporter.ImportAll();
             EnsureProjectSetup();
             batchDeadline = EditorApplication.timeSinceStartup + 180;
             EditorApplication.update += WaitForBatchPreparation;

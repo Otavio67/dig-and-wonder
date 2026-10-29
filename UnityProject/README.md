@@ -1,103 +1,54 @@
-# Dig & Wonder — protótipo Unity 6
+# Dig & Wonder — Unity
 
-**Revisão local 0.0.25:** gameplay/HUD integrados com os dados reais; consultar [GAMEPLAY-0.0.25.md](../docs/GAMEPLAY-0.0.25.md) para mudanças e evidências. A licença local do Unity bloqueou o Play Mode desta revisão. A descrição 0.0.24 abaixo registra o marco anterior.
+Projeto ativo em C#, Unity 6, combate automático 2D em retrato e Android como destino inicial. Abra esta pasta no Unity Hub; mantenha a raiz do repositório junto dela, pois o importador lê `../content/`.
 
-**Marco vigente 0.0.24:** abertura com arte cartoon, logo aprovada, carregamento branco e a ação **INICIAR MINERAÇÃO** branca em Titan One, sem placa. A ação só aparece após preparar recursos, perfil, HUD e pools. O jogo fica pausado até esse toque, inclusive com save existente; vitórias seguem diretamente para a próxima fase/mapa. O Acampamento foi substituído. Detalhes, arte, validação e roteiro pendente: [MENU-INICIAL.md](../docs/MENU-INICIAL.md) e [CARREGAMENTO-INICIAL.md](../docs/CARREGAMENTO-INICIAL.md). Editor atual: **6000.6.6f1**, conforme `ProjectSettings/ProjectVersion.txt`; números de instalação anteriores abaixo são históricos.
+## Estado atual
 
-Este é o primeiro protótipo de combate automático lateral. O projeto Godot permanece no repositório como origem dos valores e de parte da arte. O fluxo Unity preserva a fantasia de escavação, a broca como personagem, inimigos, ouro por derrota, melhorias e chefes como condição de avanço.
+O checkpoint **0.0.27** retira a engine e as ferramentas Godot do checkout. Catálogos JSON independentes de engine, assets do Unity e SVGs atuais são preservados. O importador passou a se chamar `ContentCatalogImporter`, mantendo o GUID do script e os números.
 
-No PC local (20/10/2026), Unity **6000.0.23f1** e o toolchain Android foram instalados. A preparação/importação real terminou e um APK ARM64 assinado com a chave de depuração foi gerado em `.tools/build/DigAndWonder-debug.apk`; `aapt` leu o pacote e `apksigner` confirmou a assinatura. O APK ainda não foi instalado em aparelho. Consulte o [estado local e próximos passos](../docs/UNITY-CONTEXTO-LOCAL.md).
+A campanha vai até a fase 100. Ouro/cristais, onze brocas com XP individual, sete melhorias, quatro poderes por personagem, baús/chaves e save esquema 3 já têm lógica e cobertura de domínio. Pets, Torre/Profundezas, arte exclusiva do elenco e ampliação visual do bestiário continuam futuros.
 
-Para continuar no seu PC, consulte [transferência e configuração local](../docs/CONTINUAR-UNITY-LOCAL.md), com mensagem pronta para a nova conversa Codex.
-
-## O que está nesta amostra
-
-- O menu inicial aparece em todo início do aplicativo. **Iniciar mineração** começa uma tentativa ou retoma a posição segura salva. A tentativa não avança atrás da tela inicial.
-- A broca e os inimigos lutam automaticamente. A Pioneira mantém quatro impactos e dano base 32; nível, melhorias e poderes multiplicam o dano. O boss é o único requisito de avanço. A campanha numérica tem 100 fases, usando os biomas existentes; cada vitória dá um baú e uma chave. A fase 100 encerra a campanha atual e libera treino.
-- Oficina e tesouro abrem pela navegação do combate; a coleção fica em **Oficina → Brocas**. Vencer cada dez fases até 100 concede uma nova broca, começando no nível 0. Equipamentos colecionáveis, álbum e drones continuam em preparação.
-- A Oficina abre pela aba **Oficina** no combate. Abas **Oficina/Poderes/Tesouro/Brocas**, com paginação, custos, limites, requisitos e carteira. Sete melhorias globais, quatro poderes individuais e loja de cristais obtidos jogando. A garagem permite equipar personagens possuídas entre tentativas. A luta pausa nesse menu e volta ao mesmo estado ao fechar. Arte/fontes seguem [IDENTIDADE-TOY-MECHA.md](../docs/IDENTIDADE-TOY-MECHA.md); as onze brocas reutilizam provisoriamente a folha da Pioneira com cores diferentes.
-- XP e poderes pertencem a cada broca por ID estável; personagens novas começam no nível 0. Curva até 60: `ceil((20 + 12 × nível) × 1,125^nível)`. Nível 60 é uma meta de longo prazo, separada da fase 60. Save esquema 3 migra os esquemas Unity 1/2, preserva XP/carteira/tentativa e protege primeira vitória/sorteio dos baús. Toda a economia ativa vem de `Economy.asset` + `Economy/midgame.json`, sem reescrever os números históricos importados do Godot. Consulte [ECONOMIA-MIDGAME.md](../docs/ECONOMIA-MIDGAME.md).
-- A dificuldade recebe degraus extras nas fases 5/10/15…100; XP por inimigo aumenta a cada fase. A Pioneira é a inicial simples; o catálogo termina em dez recompensas de fase, de Rebite a Singular, com bases e padrões distintos. Desbloqueios e regras do end game estão em [ENDGAME-100.md](../docs/ENDGAME-100.md).
-- UI retrato, input de mouse/toque por botões, layout com CanvasScaler e ajuste de área segura.
-- A interface de combate usa composição por código, TMP e os atlas recebidos. O cenário tem movimento cosmético separado da lógica; a ilustração acompanha o mapa atual, com três fundos e uma variação provisória para a Fenda. Revisão final de renderização e toque permanece pendente no Editor/aparelho.
-- `DrillSpriteSheetPlayer2D` procura a folha RGBA da Pioneira em `Resources/Art/Drill`, escolhe frames por eventos reais e mantém o ícone TMP se a importação ainda não estiver pronta. `ProceduralAnimator2D` anima escala somente no elemento visual e interrompe idle ao atacar/receber impacto/morrer. `GroundDrillMotion2D` cuida do deslocamento cosmético no chão e nunca move a posição funcional. Pools aquecidos de projéteis (24), dano (32), moedas (8) e impactos/partículas (32). Efeitos usam DOTween em tempo não escalado e são limpos em derrota, vitória e suspensão do app. A simulação não instancia objetos visuais por ataque.
-
-A avaliação e o passo a passo para importar a folha de sprites da Broca Pioneira estão em [SPRITE-BROCA-UNITY.md](../docs/SPRITE-BROCA-UNITY.md).
+A 0.0.26 foi executada no Editor após atualizar as licenças no Hub MSIX. Uma captura de 28/10/2026 confirmou frames avançando e inimigo em combate, mas mostrou problemas de posicionamento de barras. Isso não representa aprovação visual final ou validação Android.
 
 ## Abrir
 
-1. Instale a versão de `ProjectSettings/ProjectVersion.txt` (**6000.6.6f1** neste checkpoint) com suporte Android se for compilar para celular.
-2. Abra `UnityProject` no Unity Hub e deixe o Package Manager resolver `Packages/manifest.json`.
-3. Ao abrir no Editor, o importador converte os JSON e o Theme Godot em ScriptableObjects e o preparador cria a cena vazia `Assets/_Game/Scenes/Prototype.unity`, define retrato/Input System e inclui a cena nos builds.
-4. Entre em Play e toque/clique **Iniciar mineração**. Feche e abra novamente: o menu reaparece e o botão retoma a tentativa salva.
+1. Use a versão de `ProjectSettings/ProjectVersion.txt`: **6000.6.6f1** neste checkpoint.
+2. Abra esta pasta pelo Hub, aguarde os pacotes e a importação.
+3. Abra `Assets/_Game/Scenes/Prototype.unity` e pressione Play.
+4. Aguarde a preparação real e clique em **Iniciar mineração**.
 
-O save fica em `Application.persistentDataPath`, não no cache temporário que o Android pode limpar. Ele grava em gatilhos de recompensa/melhoria/chefes, a cada 5 s e ao suspender/fechar; o arquivo é validado por checksum e recupera backup. Esse protótipo ainda não importa automaticamente o save Godot.
+O preparador mantém a cena nos builds, orientação retrato e Input System. O menu **Dig & Wonder → Import content data** reconverte os JSON compartilhados quando necessário. A abertura normal não exige instalação de Godot.
 
-### Reproduzir o ensaio de economia
+Vitória avança para o próximo mapa; derrota permite melhorar e recomeçar. Oficina, poderes, coleção e tesouro ficam na navegação. O save fica em `Application.persistentDataPath`; falhas de gravação pausam o combate e preservam os arquivos.
 
-```bash
-dotnet run --project UnityProject/Tools/DomainChecks/DomainChecks.csproj
-dotnet run --project UnityProject/Tools/DomainChecks/DomainChecks.csproj -- --economy-report
-python3 scripts/plot-economy.py
-```
+## Verificações sem Editor
 
-Execute a partir da raiz do repositório. Na nuvem, use antes `source scripts/unity-env.sh`. Os CSV ficam em `docs/balance/`. São ensaios da simulação C# real com compradores automáticos e trocas de broca, sem Play Mode ou desempenho de aparelho. O gráfico exige matplotlib. Evidências e roteiro manual atuais em [BROCAS-POR-FASE.md](../docs/BROCAS-POR-FASE.md).
+Na raiz do repositório, com .NET 8:
 
-O checkpoint de correções posterior à 0.0.7 limpa ações ao encerrar a luta, salva ao fim do passo e recupera também temporário válido quando principal/backup não podem ser lidos. Falha de escrita pausa o combate e tenta novamente. Veja [correções e roteiro pendente no Editor](../docs/UNITY-REVISAO-COMBATE-SAVE.md).
-
-## Toolchain na nuvem
-
-O Unity 6000.0.23f1 com módulo Android está instalado no ambiente remoto. Para reproduzir a instalação Linux x86_64 e habilitar os comandos:
-
-```bash
-python3 scripts/setup-unity-cloud.py
-source scripts/unity-env.sh
-unity -version
-bash scripts/check-unity.sh
-```
-
-O Editor fornece a interface de linha de comando, incluindo `-batchmode`; não é necessário um CLI Unity separado. A tentativa real de importação parou por falta de licença Unity ativada nesta máquina. O registro `packages.unity.com` também está bloqueado pela política de rede. Detalhes, fontes e resultados em [UNITY-NUVEM.md](../docs/UNITY-NUVEM.md).
-
-O comando `unity` criado por `scripts/unity-env.sh` é um wrapper do executável do Editor. Ele não é o produto Unity CLI e não aceita comandos como `unity auth login` ou `unity license activate`.
-
-O servidor Coplay MCP 10.0.0 está preparado e registrado no Codex CLI remoto. O protocolo respondeu, mas a consulta encontrou zero Editores conectados. A ponte foi declarada no manifesto; sua importação e a ativação Personal aguardam autenticação/rede. Comandos e evidências em [UNITY-MCP.md](../docs/UNITY-MCP.md).
-
-## Checagens que rodam sem Unity Editor
-
-No checkout do repositório, com .NET 8:
-
-```bash
+```powershell
 dotnet run --project UnityProject/Tools/DomainChecks/DomainChecks.csproj
 dotnet build UnityProject/Tools/UnityCompileCheck/UnityCompileCheck.csproj
 ```
 
-`DomainChecks` executa verificações de saldo/preço, recompensas únicas, duração/alvo de projéteis, quatro golpes do especial, regra do boss, retomada e recuperação de backup. O teste de paridade lê os dados Godot atuais. `UnityCompileCheck` compila os scripts Runtime/Editor contra stubs mínimos Unity e APIs simuladas de DOTween; é verificação estática, **não** substitui importação, compilação batchmode ou teste em Play.
+Os checks cobrem economia, recompensas, campanha, XP, poderes, retomada e recuperação de save. A raiz é localizada por `UnityProject/ProjectSettings/ProjectVersion.txt`. O workflow `.github/workflows/unity-code.yml` executa domínio e compilação com stubs; não há workflow Godot.
 
-Com o toolchain de nuvem instalado, `dotnet build UnityProject/Tools/UnityApiCompileCheck/UnityApiCompileCheck.csproj` também compila os fontes contra DLLs reais do Editor e do template 2D. Essa checagem usa os pacotes disponíveis no template, incluindo Input System 1.9.0, e não confirma a resolução das versões declaradas no projeto. O comando completo `scripts/check-unity.sh` tenta a importação real depois dessas checagens e retorna falha se o Editor não concluir.
+`UnityApiCompileCheck` também aceita DLLs reais do Editor e um caminho de assemblies dos pacotes. No PC atual:
 
-## Paridade observada nos dados
+```powershell
+dotnet build UnityProject/Tools/UnityApiCompileCheck/UnityApiCompileCheck.csproj '-p:UnityRoot=C:/Program Files/Unity/Hub/Editor/6000.6.6f1' '-p:TemplateAssemblies=C:/Users/otaau/OneDrive/Documents/ChatGPT/Dig & Wonder/Dig & Wonder/UnityProject/Library/ScriptAssemblies'
+```
 
-| Sistema | Godot | Unity | Resultado |
-| --- | ---: | ---: | --- |
-| Broca/ataque básico | 6 de dano por tiro | 6 | Igual |
-| Cadência básica | 1,25 s; segundo tiro após 0,28 s | 1,25 s; intervalo 0,28 s | Igual |
-| Vida base | 120 | 120 | Igual |
-| Pioneira | 32 em 4 impactos; cooldown 3 s | 32 em 4 impactos; cooldown 3 s | Igual |
-| Torrão | 48 PV; 8 de dano; 7 ouro | 48 PV; 8 de dano; 7 ouro | Igual |
-| Upgrade Dano | custo 18 + 14 × nível; +12%; máximo 10 | Mesma curva | Igual |
-| Upgrade Vida | custo 20 + 16 × nível; +35 PV; máximo 10 | Mesma curva | Igual |
+Compilação C# não substitui resolução de pacotes, importação, renderização ou Play Mode. O projeto usa uGUI/TMP, Input System, DOTween e a ponte Coplay já declarada; não instalar um segundo provider MCP por padrão.
 
-Os custos de Crítico, Crítico+ e Especial não existiam no combate Godot de origem; não foram ativados nem tiveram números inventados. O catálogo antigo fornece PV de boss desproporcionais ao dano do combate automático, então esses valores foram preservados e ainda precisam de balanceamento antes de considerar o desafio finalizado.
+## Ferramentas e assets
 
-## Limites deste checkpoint
+- `scripts/export-hud-assets.ps1`: peças extraídas dos atlas com as coordenadas usadas pelo runtime.
+- `scripts/export-gameplay-icons.cjs`: SVGs editáveis e PNGs dos pictogramas atuais; requer Node e Sharp.
+- `scripts/plot-economy.py`: gráficos dos ensaios, com matplotlib.
+- Scripts Unity de nuvem/MCP são apoio; confira seus parâmetros e a versão exigida antes de usá-los. Toolchain antigo de nuvem não comprova suporte ao Editor vigente.
 
-- O ambiente remoto de nuvem foi instalado via GameCI, mas o Editor remoto segue sem licença e os pacotes são bloqueados pelo proxy. Isso não impede o Editor local instalado acima. O projeto local já importou e gerou APK; Play Mode e teste em aparelho continuam pendentes.
-- URP 2D, Cinemachine 3, Input System, TMP, 2D Animation, Unity UI e Unity Test Framework estão declarados no Package Manager. O bootstrap usa Input System, UI e TMP; o pipeline URP/Renderer 2D e a câmera Cinemachine ainda precisam ser abertos e verificados no Editor.
-- Recursos essenciais TMP são importados automaticamente pelo preparador quando o pacote local disponibiliza o `.unitypackage`; se a fonte aparecer sem glifos no primeiro Play, execute **Window → TextMeshPro → Import TMP Essential Resources**.
-- Não foi feita revisão visual, gravação nem medição de desempenho; não há afirmação de 60 FPS. Instalação/toque real, safe area por aparelho, memória e desempenho aguardam um aparelho Android.
-- Não há anúncios Unity ligados. A prova de rewarded da versão Godot é histórica e separada do gameplay atual; anúncios não interrompem nem são requisito desta amostra.
-- Ouro, cristais obtidos jogando, baús com chave e poderes pertencem à economia ativa. Equipamentos colecionáveis, álbum, pets e modo adicional de escavação permanecem planejados. Não há compras com dinheiro real ou anúncios integrados.
+Licenças e proveniência em [assets/LICENCAS.md](../assets/LICENCAS.md). Instruções atuais em [DESENVOLVIMENTO.md](../docs/DESENVOLVIMENTO.md), identidade em [IDENTIDADE-TOY-MECHA.md](../docs/IDENTIDADE-TOY-MECHA.md) e limites da limpeza em [UNITY-ONLY-0.0.27.md](../docs/UNITY-ONLY-0.0.27.md).
 
-## Licenças
+## Android
 
-DOTween está copiado sem modificações do repositório oficial; origem, commit upstream, README e licença acompanham `Assets/_Game/ThirdParty/DOTween`. A licença permite redistribuição do pacote conforme seus termos. Pacotes Unity mantêm suas próprias licenças. O tema gráfico nesta amostra é composto por formas e cores provisórias.
+Instale Android Build Support compatível pelo Hub. O menu **Dig & Wonder → Build Android debug APK** gera o build técnico em `.tools/build/`. Um APK antigo não valida o checkpoint atual. Toque, áreas seguras e 60 FPS em aparelho continuam pendentes de medição.

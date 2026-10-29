@@ -1,4 +1,3 @@
-.godot/
 .tools/
 UnityProject/Library/
 UnityProject/.utmp/
@@ -14,7 +13,6 @@ UnityProject/Tools/UnityCompileCheck/obj/
 UnityProject/Tools/UnityApiCompileCheck/bin/
 UnityProject/Tools/UnityApiCompileCheck/obj/
 builds/
-docs/revisao-android/*.png.import
 *.apk
 *.aab
 *.keystore

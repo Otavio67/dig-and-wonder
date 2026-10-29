@@ -385,3 +385,12 @@ Detalhes e limites: [GAMEPLAY-0.0.25.md](GAMEPLAY-0.0.25.md). Checkpoint local; 
 - A conferência visual dos últimos ajustes foi interrompida pelo usuário. Checkpoint sem tag de release; Android e aprovação visual final pendentes.
 
 Detalhes: [GAMEPLAY-0.0.26.md](GAMEPLAY-0.0.26.md).
+
+## 0.0.27 — repositório exclusivo Unity
+
+- Retirados 262 arquivos da implementação Godot: engine, cenas, scripts, plugin, CI, recursos e documentação exclusiva daquela versão.
+- Catálogos JSON e assets atuais do Unity preservados; importador renomeado com GUID mantido e testes independentes de `project.godot`.
+- Incluídos os metadados finais de importação dos ícones; documentação de entrada atualizada para Unity.
+- Branch padrão deve apontar para `prototype/first-playable`, com repositório público solicitado pelo usuário. Histórico preservado; não é uma release Android nem aprovação visual final.
+
+Detalhes: [UNITY-ONLY-0.0.27.md](UNITY-ONLY-0.0.27.md).
