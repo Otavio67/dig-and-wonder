@@ -63,6 +63,7 @@ namespace DigAndWonder
         private PooledCombatFeedback feedback;
         private Image healthFill;
         private Image playerHealthTrack;
+        private Image playerExperienceTrack, playerExperienceFill;
         private TextMeshProUGUI drillIcon;
         private ProceduralAnimator2D drillAnimator;
         private GroundDrillMotion2D drillMotion;
@@ -381,6 +382,8 @@ namespace DigAndWonder
                 new Vector2(0.04f, 0.462f), new Vector2(0.38f, 0.493f), TextAlignmentOptions.Left);
             playerHealthTrack = MakePanel("Health track", worldPanel, Ink, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             healthFill = MakePanel("Health fill", worldPanel, Mint, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            playerExperienceTrack = MakePanel("Experience track", worldPanel, Ink, new Vector2(0.06f, 0.435f), new Vector2(0.25f, 0.442f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            playerExperienceFill = MakePanel("Experience fill", worldPanel, Cyan, new Vector2(0.06f, 0.435f), new Vector2(0.25f, 0.442f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             statusLabel = MakeLabel("Status", combatRoot, "", 18, Mint,
                 new Vector2(0.24f, 0.405f), new Vector2(0.96f, 0.429f), TextAlignmentOptions.Right);
             combatLog = MakeLabel("Combat log", combatRoot, "", 18, Cream,
@@ -695,6 +698,11 @@ namespace DigAndWonder
             float healthRatio = sim.PlayerMaximumHealth <= 0 ? 0 : sim.PlayerHealth / sim.PlayerMaximumHealth;
             RectTransform hpTrack = playerHealthTrack.rectTransform;
             healthFill.rectTransform.anchorMax = new Vector2(hpTrack.anchorMin.x + (hpTrack.anchorMax.x - hpTrack.anchorMin.x) * healthRatio, hpTrack.anchorMax.y);
+            CharacterLevelState characterLevel = driver.CurrentCharacterLevel;
+            float experienceRatio = characterLevel.IsMaximum ? 1f : characterLevel.ExperienceToNextLevel > 0
+                ? Mathf.Clamp01((float)characterLevel.ExperienceInLevel / characterLevel.ExperienceToNextLevel) : 0f;
+            RectTransform xpTrack = playerExperienceTrack.rectTransform;
+            playerExperienceFill.rectTransform.anchorMax = new Vector2(xpTrack.anchorMin.x + (xpTrack.anchorMax.x - xpTrack.anchorMin.x) * experienceRatio, xpTrack.anchorMax.y);
             SyncEnemyVisuals();
             UpdateTab();
             if (sim.Run.IsPlayerDefeated && currentTab == "MINA")
@@ -747,6 +755,12 @@ namespace DigAndWonder
             playerHealthTrack.rectTransform.anchorMax = new Vector2(0.25f, ground + 0.18f);
             healthFill.rectTransform.anchorMin = playerHealthTrack.rectTransform.anchorMin;
             healthFill.rectTransform.anchorMax = playerHealthTrack.rectTransform.anchorMax;
+            playerExperienceTrack.rectTransform.anchorMin = new Vector2(0.06f, ground + 0.155f);
+            playerExperienceTrack.rectTransform.anchorMax = new Vector2(0.25f, ground + 0.163f);
+            playerExperienceFill.rectTransform.anchorMin = playerExperienceTrack.rectTransform.anchorMin;
+            playerExperienceFill.rectTransform.anchorMax = playerExperienceTrack.rectTransform.anchorMax;
+            playerExperienceTrack.rectTransform.offsetMin = playerExperienceTrack.rectTransform.offsetMax = Vector2.zero;
+            playerExperienceFill.rectTransform.offsetMin = playerExperienceFill.rectTransform.offsetMax = Vector2.zero;
             drillIcon.rectTransform.offsetMin = drillIcon.rectTransform.offsetMax = Vector2.zero;
             healthLabel.rectTransform.offsetMin = healthLabel.rectTransform.offsetMax = Vector2.zero;
             playerHealthTrack.rectTransform.offsetMin = playerHealthTrack.rectTransform.offsetMax = Vector2.zero;
@@ -1556,6 +1570,7 @@ namespace DigAndWonder
             if (caveMotionTweens != null)
                 foreach (Tween tween in caveMotionTweens) tween?.Kill(false);
             drillMotion?.StopWalking();
+            drillFrames?.StopWalk();
         }
 
         private TextMeshProUGUI MakeLabel(string name, Transform parent, string text, int size, Color color, Vector2 min, Vector2 max, TextAlignmentOptions alignment)

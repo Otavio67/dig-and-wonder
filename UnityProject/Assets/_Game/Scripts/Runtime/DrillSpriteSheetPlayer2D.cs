@@ -27,6 +27,8 @@ namespace DigAndWonder
         private float frameTimer;
         private int frameIndex;
         private bool oneShot;
+        private bool walking;
+        private bool defeated;
         private float frameDuration = 0.14f;
 
         public bool IsReady { get; private set; }
@@ -68,13 +70,22 @@ namespace DigAndWonder
         public void ResetForRun()
         {
             if (!IsReady) return;
+            defeated = false;
+            walking = false;
             SetClip(idleFrames, 0.16f, false);
         }
 
         public void BeginWalk()
         {
-            if (!IsReady) return;
+            if (!IsReady || defeated) return;
+            walking = true;
             SetClip(walkFrames, 0.11f, false);
+        }
+
+        public void StopWalk()
+        {
+            walking = false;
+            if (IsReady && !defeated && !oneShot) SetClip(idleFrames, 0.16f, false);
         }
 
         public void PlayAttack(bool heavy)
@@ -92,6 +103,8 @@ namespace DigAndWonder
         public void PlayDeath()
         {
             if (!IsReady) return;
+            defeated = true;
+            walking = false;
             currentFrames = new[] { actionFrames[3] };
             frameIndex = 0;
             frameTimer = 0f;
@@ -111,7 +124,8 @@ namespace DigAndWonder
             {
                 if (oneShot)
                 {
-                    SetClip(walkFrames, 0.11f, false);
+                    if (walking) SetClip(walkFrames, 0.11f, false);
+                    else SetClip(idleFrames, 0.16f, false);
                     return;
                 }
 

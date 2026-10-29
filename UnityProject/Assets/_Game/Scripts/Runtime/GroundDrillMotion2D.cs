@@ -22,6 +22,7 @@ namespace DigAndWonder
         private Tween walkY;
         private Tween actionTween;
         private bool defeated;
+        private bool walkRequested;
 
         private void Awake()
         {
@@ -37,7 +38,8 @@ namespace DigAndWonder
         public void BeginWalk()
         {
             if (!isActiveAndEnabled || defeated) return;
-            StopWalking();
+            walkRequested = true;
+            StopWalkTweens();
             actionTween?.Kill(false);
             actionTween = null;
             RestoreBasePosition();
@@ -56,6 +58,12 @@ namespace DigAndWonder
         /// <summary>Pausa apenas a locomoção; deixa uma reação de ataque/derrota terminar.</summary>
         public void StopWalking()
         {
+            walkRequested = false;
+            StopWalkTweens();
+        }
+
+        private void StopWalkTweens()
+        {
             walkX?.Kill(false);
             walkY?.Kill(false);
             walkX = null;
@@ -66,7 +74,7 @@ namespace DigAndWonder
         public void PlayAttack(bool heavy)
         {
             if (defeated) return;
-            StopWalking();
+            StopWalkTweens();
             actionTween?.Kill(false);
             RestoreBasePosition();
 
@@ -81,7 +89,7 @@ namespace DigAndWonder
             actionTween.OnComplete(() =>
             {
                 actionTween = null;
-                BeginWalk();
+                if (walkRequested) BeginWalk();
             });
         }
 
@@ -89,7 +97,7 @@ namespace DigAndWonder
         public void PlayImpact()
         {
             if (defeated) return;
-            StopWalking();
+            StopWalkTweens();
             actionTween?.Kill(false);
             RestoreBasePosition();
 
@@ -100,7 +108,7 @@ namespace DigAndWonder
             actionTween.OnComplete(() =>
             {
                 actionTween = null;
-                BeginWalk();
+                if (walkRequested) BeginWalk();
             });
         }
 
@@ -156,7 +164,8 @@ namespace DigAndWonder
 
         private void CancelAllTweens()
         {
-            StopWalking();
+            walkRequested = true;
+            StopWalkTweens();
             actionTween?.Kill(false);
             actionTween = null;
         }
