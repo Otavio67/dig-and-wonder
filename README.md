@@ -4,7 +4,7 @@ Jogo 2D em retrato de combate automático e exploração subterrânea, desenvolv
 
 ## Projeto atual
 
-O projeto executável fica em `UnityProject/`. A branch ativa é **`prototype/first-playable`**. O checkpoint **0.0.28** integra o álbum de descobertas, inimigos com comportamentos diferentes, treino por fase e melhorias de combate. O projeto mantém catálogos JSON e fontes vetoriais editáveis.
+O projeto executável fica em `UnityProject/`. A branch ativa é **`prototype/first-playable`**. O checkpoint **0.0.29** faz uma rodada de polimento do HUD: nível no cartão superior, melhorias acessíveis na Mina, ajuda separada, pictogramas da referência v8 e ajustes de texto/posicionamento. O projeto mantém catálogos JSON e fontes vetoriais editáveis.
 
 A campanha vai até a fase 100, com ouro, cristais, XP individual das brocas, sete melhorias, quatro poderes por personagem, baús com chave e save esquema 4. A cada dez fases vencidas é liberada uma nova broca no nível zero. Depois da fase 100 há treino. Pets e Torre/Profundezas continuam como conteúdo futuro.
 

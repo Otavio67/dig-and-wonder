@@ -23,3 +23,5 @@ Licenças das dependências Unity, incluindo DOTween, permanecem nos diretórios
 Recursos usados somente na implementação anterior foram removidos do checkout em 29/10/2026. A proveniência detalhada daquele material permanece no histórico Git, antes da limpeza. Tornar o repositório público não altera os termos das fontes ou dependências e não cria uma licença de código aberto para todo o projeto.
 
 O ícone `nav_album.svg` (29/10/2026) foi desenhado em código para o álbum: livro com cristal, paleta Toy-Mecha, sem texto embutido. PNG rasterizado com Sharp; fonte vetorial editável preservada.
+
+Em 0.0.29, `hud-approved-v8.png` é uma cópia sem alteração da referência gerada `docs/design/gameplay-toy-mecha-v1/conceito-gameplay-hud-v8.png`. O runtime recorta apenas pictogramas selecionados; textos funcionais são TMP. Origem e limitações da referência permanecem as mesmas.

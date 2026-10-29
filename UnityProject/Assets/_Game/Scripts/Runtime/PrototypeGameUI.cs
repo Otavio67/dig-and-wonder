@@ -32,7 +32,8 @@ namespace DigAndWonder
         private TextMeshProUGUI crystalLabel;
         private TextMeshProUGUI missionLabel;
         private TextMeshProUGUI statusLabel;
-        private TextMeshProUGUI healthLabel;
+        private TextMeshProUGUI healthLabel, characterLevelLabel;
+        private RectTransform helpPanel;
         private TextMeshProUGUI combatLog;
         private TextMeshProUGUI menuTitle;
         private TextMeshProUGUI menuBody;
@@ -124,6 +125,7 @@ namespace DigAndWonder
         private readonly Dictionary<string, Image> tabButtonImages = new Dictionary<string, Image>();
         private ProgressionDefinition progression;
         private AbilityDefinition[] abilityCatalog;
+        private readonly Dictionary<string, Sprite> approvedIcons = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> uiSprites = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> uiAssetSprites = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> navIconSprites = new Dictionary<string, Sprite>();
@@ -133,6 +135,7 @@ namespace DigAndWonder
         {
             if (root != null) return;
             root = canvasRoot;
+            MakePanel("Screen matte", root.parent, Ink, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero).SetAsFirstSibling();
             startPanel = MakePanel("Start menu", root.parent, Ink, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             startPanel.gameObject.AddComponent<RectMask2D>();
             BuildStartMenu(startPanel);
@@ -229,6 +232,7 @@ namespace DigAndWonder
                 if (startFont.material != null) Destroy(startFont.material);
                 Destroy(startFont);
             }
+            foreach (Sprite sprite in approvedIcons.Values) if (sprite != null) Destroy(sprite);
             foreach (Sprite sprite in uiAssetSprites.Values)
                 if (sprite != null) Destroy(sprite);
             if (hudFont != null)
@@ -250,6 +254,7 @@ namespace DigAndWonder
         private void BuildInterface()
         {
             BuildUiAssetAtlases();
+            BuildApprovedHudIcons();
             Font body = Resources.Load<Font>("Fonts/Workshop/DWRounded-ExtraBold");
             if (body != null)
             {
@@ -265,30 +270,32 @@ namespace DigAndWonder
 
             combatRoot = MakePanel("Combat screen", background, Color.clear, new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
             combatRoot.GetComponent<Image>().raycastTarget = false;
-            MakePanel("Combat shade", combatRoot, new Color(0.015f, 0.045f, 0.065f, 0.48f), new Vector2(0, 0.84f), new Vector2(1, 1), Vector2.zero, Vector2.zero);
+
 
             RectTransform avatar = MakeArtPanel("Pilot avatar", combatRoot, Steel, "plate", 0.025f, 0.90f, 0.175f, 0.978f);
             MakeIconSprite(avatar, FindResourceSprite("Art/Drill/drill_pioneira", "idle_00"),
-                0.08f, 0.08f, 0.92f, 0.92f, Color.white);
+                0.12f, 0.30f, 0.88f, 0.94f, Color.white);
+            characterLevelLabel = MakeLabel("Character level", avatar, "NV. 0", 24, Cream, new Vector2(.06f, .12f), new Vector2(.94f, .32f), TextAlignmentOptions.Center);
             MakeArtPanel("Gold wallet", combatRoot, Color.white, "wallet_panel", 0.225f, 0.92f, 0.505f, 0.978f);
             walletLabel = MakeLabel("Wallet", combatRoot, "0", 36, White, new Vector2(0.315f, 0.925f), new Vector2(0.49f, 0.97f), TextAlignmentOptions.Center);
             MakeArtPanel("Crystal wallet", combatRoot, Color.white, "crystal_wallet", 0.52f, 0.92f, 0.82f, 0.978f);
             crystalLabel = MakeLabel("Crystals", combatRoot, "0", 36, White, new Vector2(0.60f, 0.925f), new Vector2(0.72f, 0.97f), TextAlignmentOptions.Center);
             RectTransform options = MakeArtPanel("Options", combatRoot, Color.white, "menu_button", 0.85f, 0.92f, 0.975f, 0.978f);
-            MakeOverlayButton("Open settings", options, "", 20, 0, 0, 1, 1, () => SelectTab("MENU"));
+            MakeOverlayButton("Open settings", options, "", 20, 0, 0, 1, 1, OpenHelp);
             MakeOverlayButton("Open crystal store", combatRoot, "", 20, 0.52f, 0.92f, 0.82f, 0.978f, OpenTreasury);
 
-            RectTransform stagePlate = MakeArtPanel("Stage plate", combatRoot, Color.white, "stage_plate", 0.20f, 0.873f, 0.80f, 0.928f);
+            RectTransform stagePlate = MakeArtPanel("Stage plate", combatRoot, Color.white, "stage_plate", 0.21f, 0.858f, 0.82f, 0.918f);
             stageLabel = MakeLabel("Stage", stagePlate, "PRADO CRISTALINO  •  1-1", 32, Cream,
-                new Vector2(0.04f, 0.34f), new Vector2(0.96f, 0.92f), TextAlignmentOptions.Center);
+                new Vector2(0.12f, 0.43f), new Vector2(0.88f, 0.82f), TextAlignmentOptions.Center);
             stageProgress = MakeLabel("Stage progress", stagePlate, "", 20, Cyan,
-                new Vector2(0.15f, 0.02f), new Vector2(0.85f, 0.36f), TextAlignmentOptions.Center);
+                new Vector2(0.15f, 0.16f), new Vector2(0.85f, 0.40f), TextAlignmentOptions.Center);
 
-            var missionPanel = MakeArtPanel("Mission banner", combatRoot, Color.white, "mission_banner_combat", 0.008f, 0.333f, 0.992f, 0.389f);
+            var missionPanel = MakeArtPanel("Mission banner", combatRoot, Color.white, "upgrade_row", 0.008f, 0.333f, 0.992f, 0.389f);
+            MakeIcon(missionPanel, "mission", .065f, .20f, .16f, .82f, Color.white);
             missionLabel = MakeLabel("Mission", missionPanel, "MISSÃO 01   DERROTE 10 INIMIGOS", 24, Cream,
-                new Vector2(0.27f, 0.16f), new Vector2(0.73f, 0.86f), TextAlignmentOptions.Left);
+                new Vector2(0.22f, 0.22f), new Vector2(0.66f, 0.78f), TextAlignmentOptions.Left);
             missionReward = MakeLabel("Mission reward", missionPanel, "", 21, Cream,
-                new Vector2(0.75f, 0.05f), new Vector2(0.97f, 0.30f), TextAlignmentOptions.Center);
+                new Vector2(0.69f, 0.20f), new Vector2(0.96f, 0.80f), TextAlignmentOptions.Center);
 
             worldPanel = MakePanel("Cave view", combatRoot, Color.clear, new Vector2(0, 0.389f), new Vector2(1, 1), Vector2.zero, Vector2.zero);
             worldPanel.SetAsFirstSibling();
@@ -309,6 +316,7 @@ namespace DigAndWonder
                 tile.localScale = new Vector3(i == 1 ? -1.06f : 1.06f, 1f, 1);
                 sceneryTiles[i] = tile.gameObject.AddComponent<Image>();
                 sceneryTiles[i].raycastTarget = false;
+                tile.gameObject.SetActive(false);
                 tile.gameObject.AddComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             }
             MakePanel("Ground shade", worldPanel, new Color(0.02f, 0.06f, 0.08f, 0.16f), new Vector2(0, 0), new Vector2(1, 0.08f), Vector2.zero, Vector2.zero);
@@ -404,12 +412,12 @@ namespace DigAndWonder
             bossBarText = MakeLabel("Boss health text", bossBar, "GUARDIÃO", 20, Cream, Vector2.zero, Vector2.one, TextAlignmentOptions.Center);
             bossBarText.raycastTarget = false;
             bossBar.gameObject.SetActive(false);
-            playerExperienceTrack = MakePanel("Experience track", worldPanel, Ink, new Vector2(0.06f, 0.435f), new Vector2(0.25f, 0.442f), Vector2.zero, Vector2.zero).GetComponent<Image>();
-            playerExperienceFill = MakePanel("Experience fill", worldPanel, Cyan, new Vector2(0.06f, 0.435f), new Vector2(0.25f, 0.442f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            playerExperienceTrack = MakePanel("Experience track", avatar, Ink, new Vector2(.12f, .06f), new Vector2(.88f, .10f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            playerExperienceFill = MakePanel("Experience fill", avatar, Cyan, new Vector2(.12f, .06f), new Vector2(.88f, .10f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             statusLabel = MakeLabel("Status", combatRoot, "", 18, Mint,
-                new Vector2(0.24f, 0.405f), new Vector2(0.96f, 0.429f), TextAlignmentOptions.Right);
+                new Vector2(0.04f, 0.410f), new Vector2(0.96f, 0.435f), TextAlignmentOptions.Right);
             combatLog = MakeLabel("Combat log", combatRoot, "", 18, Cream,
-                new Vector2(0.04f, 0.385f), new Vector2(0.96f, 0.402f), TextAlignmentOptions.Center);
+                new Vector2(0.04f, 0.391f), new Vector2(0.96f, 0.408f), TextAlignmentOptions.Center);
             BuildPowerBar(combatRoot);
             BuildNavIconAtlas();
 
@@ -449,6 +457,7 @@ namespace DigAndWonder
             }
 
             BuildAlbum();
+            BuildHelp();
             menuPanel.gameObject.SetActive(false);
             bottomBar.gameObject.SetActive(false);
             worldPanel.gameObject.SetActive(false);
@@ -464,6 +473,50 @@ namespace DigAndWonder
         {
             trainingStage = Math.Max(1, Math.Min(driver.Profile.HighestClearedStage, trainingStage + direction));
             UpdateTab();
+        }
+
+        private void BuildApprovedHudIcons()
+        {
+            Texture2D sheet = Resources.Load<Texture2D>("Art/UI/hud-approved-v8");
+            if (sheet == null) throw new InvalidOperationException("Referência de ícones v8 ausente.");
+            // Rectangles use top-left coordinates in the unchanged 841 x 1870 approved reference.
+            AddApprovedIcon(sheet, "mission", 51, 1176, 42, 54);
+            AddApprovedIcon(sheet, "nav_mine", 40, 1750, 78, 60);
+            AddApprovedIcon(sheet, "nav_modes", 177, 1750, 72, 62);
+            AddApprovedIcon(sheet, "nav_workshop", 306, 1747, 65, 66);
+            AddApprovedIcon(sheet, "nav_chests", 587, 1747, 72, 68);
+            AddApprovedIcon(sheet, "nav_shop", 721, 1747, 72, 67);
+            AddApprovedIcon(sheet, "attack", 64, 1386, 66, 43);
+            AddApprovedIcon(sheet, "drill", 64, 1386, 66, 43);
+            AddApprovedIcon(sheet, "health", 64, 1487, 66, 43);
+            AddApprovedIcon(sheet, "repair", 62, 1586, 72, 46);
+            AddApprovedIcon(sheet, "cadence", 65, 1683, 65, 48);
+        }
+
+        private void AddApprovedIcon(Texture2D sheet, string id, int x, int top, int width, int height)
+        {
+            approvedIcons[id] = Sprite.Create(sheet, new Rect(x, sheet.height - top - height, width, height), new Vector2(.5f, .5f), 100);
+        }
+
+        private void BuildHelp()
+        {
+            helpPanel = MakePanel("Combat help", combatRoot, new Color(.02f, .05f, .08f, .96f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            RectTransform card = MakeArtPanel("Help card", helpPanel, Panel, "plate", .06f, .22f, .94f, .78f);
+            MakeLabel("Help title", card, "COMO JOGAR", 36, Sand, new Vector2(.08f, .84f), new Vector2(.92f, .95f), TextAlignmentOptions.Center);
+            MakeLabel("Help text", card, "Use o ouro dos inimigos para melhorar a broca.\n\nAUTO liga os disparos básicos. Com AUTO desligado, toque na broca para atacar.\n\nO especial atravessa a armadura. Evite golpes fortes derrotando o inimigo durante a preparação.\n\nSeu progresso é salvo automaticamente.", 27, Cream, new Vector2(.09f, .24f), new Vector2(.91f, .81f), TextAlignmentOptions.Center);
+            RectTransform close = MakeButton("Close help", card, "VOLTAR AO JOGO", 27, .16f, .07f, .84f, .19f, () => {
+                helpPanel.gameObject.SetActive(false);
+                driver.SetMenuPaused(currentTab != "MINA");
+            }, Mint);
+            close.GetComponent<Image>().sprite = SpriteFor("plain_action");
+            close.GetComponent<Image>().color = Color.white;
+            helpPanel.gameObject.SetActive(false);
+        }
+
+        private void OpenHelp()
+        {
+            driver.SetMenuPaused(true);
+            helpPanel.gameObject.SetActive(true);
         }
 
         private void BuildAlbum()
@@ -675,6 +728,7 @@ namespace DigAndWonder
             if (driver.Simulation == null) return;
             currentTab = "MINA";
             albumPanel.gameObject.SetActive(false);
+            helpPanel.gameObject.SetActive(false);
             feedback?.Clear();
             if (driver.Simulation.IsActive) lastCharacterReward = null;
             ApplyCharacterColors();
@@ -696,7 +750,7 @@ namespace DigAndWonder
             missionLabel.gameObject.SetActive(true);
             statusLabel.gameObject.SetActive(true);
             combatLog.gameObject.SetActive(true);
-            if (resumed) statusLabel.text = "PROGRESSO RECUPERADO — CONTINUANDO DA ÚLTIMA POSIÇÃO";
+            if (resumed) statusLabel.text = "PARTIDA RETOMADA";
             else statusLabel.text = "A broca começou a avançar!";
             int hintPhase = driver.Simulation.Run.CampaignStage;
             combatLog.text = hintPhase == 1 ? "AUTO ataca. Use ouro para melhorar a broca." :
@@ -740,7 +794,7 @@ namespace DigAndWonder
                 pendingDiscovery = 0;
                 OpenAlbum(true);
             }
-            if (driver.CanContinueCampaign && !driver.IsSaveBlocked && currentTab == "MINA")
+            if (driver.CanContinueCampaign && !driver.IsSaveBlocked && currentTab == "MINA" && !helpPanel.gameObject.activeSelf)
             {
                 nextStageTimer += Time.unscaledDeltaTime;
                 if (nextStageTimer >= StageVictorySeconds && driver.TryContinueCampaign())
@@ -751,7 +805,7 @@ namespace DigAndWonder
                 }
             }
             refreshTimer += Time.unscaledDeltaTime;
-            if (driver.Simulation.IsActive && !driver.IsSaveBlocked && currentTab == "MINA" && sceneryMotion != null)
+            if (driver.Simulation.IsActive && !driver.IsSaveBlocked && currentTab == "MINA" && !helpPanel.gameObject.activeSelf && sceneryMotion != null)
             {
                 sceneryTime += Time.unscaledDeltaTime;
                 UpdateScenery();
@@ -794,7 +848,9 @@ namespace DigAndWonder
                 walletLabel.transform.localScale = Vector3.one;
                 walletLabel.transform.DOPunchScale(new Vector3(0.08f, 0.08f, 0), 0.22f, 5, 0.7f);
             }
-            healthLabel.text = "NV. " + driver.CurrentCharacterLevel.Level + "  •  " + GameplayHudModel.Number(Math.Ceiling(sim.PlayerHealth)) + " / " + GameplayHudModel.Number(Math.Ceiling(sim.PlayerMaximumHealth));
+            characterLevelLabel.text = "NV. " + driver.CurrentCharacterLevel.Level;
+            healthLabel.text = GameplayHudModel.Number(Math.Ceiling(sim.PlayerHealth)) + " / " + GameplayHudModel.Number(Math.Ceiling(sim.PlayerMaximumHealth));
+            UpdatePlayerHealthLayout();
             float healthRatio = sim.PlayerMaximumHealth <= 0 ? 0 : sim.PlayerHealth / sim.PlayerMaximumHealth;
             RectTransform hpTrack = playerHealthTrack.rectTransform;
             healthFill.rectTransform.anchorMax = new Vector2(hpTrack.anchorMin.x + (hpTrack.anchorMax.x - hpTrack.anchorMin.x) * healthRatio, hpTrack.anchorMax.y);
@@ -839,29 +895,28 @@ namespace DigAndWonder
 
         private void UpdateScenery()
         {
-            float width = Mathf.Max(worldPanel.rect.width, worldPanel.rect.height * backdropAspect.aspectRatio) * 1.06f;
-            if (width <= 0) return;
-            float offset = sceneryTime * 14f % (width * 2f);
-            for (int i = 0; i < sceneryTiles.Length; i++)
-                sceneryTiles[i].rectTransform.anchoredPosition = new Vector2(i * width - offset, 0);
+            // Overscan permits a small continuous camera drift without mirrored seams.
+            sceneryTiles[0].rectTransform.anchoredPosition = new Vector2(Mathf.Sin(sceneryTime * .16f) * worldPanel.rect.width * .012f, 0);
+        }
+
+        private void UpdatePlayerHealthLayout()
+        {
+            RectTransform unit = drillIcon.rectTransform;
+            Sprite sprite = drillFrames.GetComponent<Image>().sprite;
+            if (sprite == null || worldPanel.rect.height <= 0) return;
+            float height = (unit.anchorMax.x - unit.anchorMin.x) * worldPanel.rect.width * sprite.rect.height / sprite.rect.width;
+            float top = unit.anchorMin.y + height / worldPanel.rect.height;
+            playerHealthTrack.rectTransform.anchorMin = new Vector2(.06f, top + .010f);
+            playerHealthTrack.rectTransform.anchorMax = new Vector2(.25f, top + .018f);
+            healthFill.rectTransform.anchorMin = playerHealthTrack.rectTransform.anchorMin;
+            healthLabel.rectTransform.anchorMin = new Vector2(.045f, top + .021f);
+            healthLabel.rectTransform.anchorMax = new Vector2(.275f, top + .045f);
         }
 
         private void ApplyGroundLayout(float ground)
         {
             drillIcon.rectTransform.anchorMin = new Vector2(0.055f, ground - 0.012f);
             drillIcon.rectTransform.anchorMax = new Vector2(0.255f, ground + 0.20f);
-            healthLabel.rectTransform.anchorMin = new Vector2(0.045f, ground + 0.19f);
-            healthLabel.rectTransform.anchorMax = new Vector2(0.28f, ground + 0.225f);
-            playerHealthTrack.rectTransform.anchorMin = new Vector2(0.06f, ground + 0.17f);
-            playerHealthTrack.rectTransform.anchorMax = new Vector2(0.25f, ground + 0.18f);
-            healthFill.rectTransform.anchorMin = playerHealthTrack.rectTransform.anchorMin;
-            healthFill.rectTransform.anchorMax = playerHealthTrack.rectTransform.anchorMax;
-            playerExperienceTrack.rectTransform.anchorMin = new Vector2(0.06f, ground + 0.155f);
-            playerExperienceTrack.rectTransform.anchorMax = new Vector2(0.25f, ground + 0.163f);
-            playerExperienceFill.rectTransform.anchorMin = playerExperienceTrack.rectTransform.anchorMin;
-            playerExperienceFill.rectTransform.anchorMax = playerExperienceTrack.rectTransform.anchorMax;
-            playerExperienceTrack.rectTransform.offsetMin = playerExperienceTrack.rectTransform.offsetMax = Vector2.zero;
-            playerExperienceFill.rectTransform.offsetMin = playerExperienceFill.rectTransform.offsetMax = Vector2.zero;
             drillIcon.rectTransform.offsetMin = drillIcon.rectTransform.offsetMax = Vector2.zero;
             healthLabel.rectTransform.offsetMin = healthLabel.rectTransform.offsetMax = Vector2.zero;
             playerHealthTrack.rectTransform.offsetMin = playerHealthTrack.rectTransform.offsetMax = Vector2.zero;
@@ -963,9 +1018,9 @@ namespace DigAndWonder
                 SetEnemyVisible(slot, true, true);
                 enemyMaximumHealth[slot] = Mathf.Max(enemyMaximumHealth[slot], enemy.Health);
                 bool windingUp = sim.IsWindingUp(enemy.Id);
-                enemyHealth[slot].text = (windingUp ? "PREPARANDO" : sim.EnemyLabel(enemy)) + "\n" + GameplayHudModel.Number(Math.Ceiling(enemy.Health));
+                enemyHealth[slot].text = (windingUp ? "ATAQUE" : enemy.Archetype == EnemyArchetype.Charger ? "CARREG." : sim.EnemyLabel(enemy)) + "\n" + GameplayHudModel.Number(Math.Ceiling(enemy.Health));
                 enemyHealth[slot].color = windingUp ? Coral : Cream;
-                enemyHealthFills[slot].color = enemy.Archetype == EnemyArchetype.Armored ? Steel : Coral;
+                enemyHealthFills[slot].color = enemy.Archetype == EnemyArchetype.Armored ? Sand : Coral;
                 float ground = drillIcon.rectTransform.anchorMin.y + .012f;
                 bool mini = sim.Run.EncounterVersion >= 1 && sim.Run.CampaignStage % 10 == 5;
                 float left = enemy.IsBoss ? (mini ? .39f : .58f) : mini && sim.Run.BossSpawned ? .54f + regularIndex * .105f : .49f + regularIndex * .098f;
@@ -1063,7 +1118,7 @@ namespace DigAndWonder
                     menuBody.text = "Suprimentos da oficina\n\nOuro e cristais serão usados para reforços, visuais e itens especiais.\nCatálogo em preparação.";
                     break;
                 case "MENU":
-                    menuTitle.text = "EXPEDIÇÃO";
+                    menuTitle.text = "MELHORIAS DA BROCA";
                     menuBody.text = "Progresso salvo automaticamente.\n\nAUTO liga e desliga os disparos básicos.\nÁgeis atacam rápido; blindados resistem aos tiros.\nO especial atravessa armadura.\nPREPARANDO: derrote o inimigo antes do disparo.\nUse MINA para voltar às melhorias.";
                     break;
                 default:
@@ -1073,7 +1128,7 @@ namespace DigAndWonder
             }
             bool defeated = sim.Run.IsPlayerDefeated;
             bool cleared = sim.Run.IsStageCleared;
-            bool upgradesVisible = (currentTab == "MINA" || currentTab == "MELHORIAS") && (!cleared || !driver.CanContinueCampaign) && !driver.IsSaveBlocked;
+            bool upgradesVisible = currentTab == "MINA" || currentTab == "MELHORIAS";
             if (upgradeRowsRoot != null) upgradeRowsRoot.gameObject.SetActive(upgradesVisible);
             if (menuBody != null) menuBody.gameObject.SetActive(!upgradesVisible);
             foreach (KeyValuePair<UpgradeKind, UpgradeView> entry in upgradeViews)
@@ -1087,7 +1142,9 @@ namespace DigAndWonder
                 view.Value.text = GameplayHudModel.UpgradeValue(entry.Key, sim, driver.EquippedCharacter);
                 view.Lock.gameObject.SetActive(!unlocked);
                 view.Coin.gameObject.SetActive(unlocked && !maxed);
-                view.Price.text = !unlocked ? "REQUER NV. " + rule.UnlockLevel : maxed ? "MÁXIMO" : "Melhorar\n" + GameplayHudModel.Number(rule.Cost(level));
+                view.Price.text = !unlocked ? "NV. " + rule.UnlockLevel : maxed ? "MÁXIMO" : GameplayHudModel.Number(rule.Cost(level));
+                view.Button.transform.Find("Upgrade action title").GetComponent<TextMeshProUGUI>().text = !unlocked ? "REQUER" : maxed ? "MÁXIMO" : "MELHORAR";
+                view.Price.rectTransform.anchorMin = new Vector2(unlocked && !maxed ? .41f : .10f, .10f);
                 view.Button.interactable = driver.IsReady && GameplayHudModel.CanBuyUpgrade(sim.Profile, driver.Economy, entry.Key);
                 view.Face.color = view.Button.interactable ? Color.white : new Color(0.48f, 0.56f, 0.63f);
             }
@@ -1294,7 +1351,7 @@ namespace DigAndWonder
                     left, 0.279f, left + 0.09f, 0.328f);
                 powerFaces[i] = slot.GetComponent<Image>();
                 powerIcons[i] = MakeIcon(slot, powers[i], 0.14f, 0.27f, 0.86f, 0.92f, Color.white);
-                powerLabels[i] = MakeLabel("Power state", slot, "", 13, Cream, new Vector2(0.03f, 0.02f), new Vector2(0.97f, 0.29f), TextAlignmentOptions.Center);
+                powerLabels[i] = MakeLabel("Power state", slot, "", 17, Cream, new Vector2(0.03f, 0.06f), new Vector2(0.97f, 0.29f), TextAlignmentOptions.Center);
                 int powerIndex = i;
                 MakeOverlayButton("Inspect power " + i, slot, "", 15, 0, 0, 1, 1, () => OpenPower(powerIndex));
             }
@@ -1336,7 +1393,7 @@ namespace DigAndWonder
             content.offsetMin = Vector2.zero;
             content.offsetMax = Vector2.zero;
             var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 7f;
+            layout.spacing = 10f;
             layout.padding = new RectOffset(0, 0, 0, 8);
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
@@ -1430,29 +1487,33 @@ namespace DigAndWonder
             rowObject.transform.SetParent(content, false);
             RectTransform rowRect = (RectTransform)rowObject.transform;
             var element = rowObject.GetComponent<LayoutElement>();
-            element.preferredHeight = 110f;
-            element.minHeight = 110f;
+            element.preferredHeight = 124f;
+            element.minHeight = 124f;
             var rowImage = rowObject.GetComponent<Image>();
-            rowImage.sprite = SpriteFor("upgrade_row_structure");
+            rowImage.sprite = SpriteFor("upgrade_row");
             rowImage.type = Image.Type.Simple;
             rowImage.color = Color.white;
             rowImage.raycastTarget = false;
             RectTransform iconFrame = Region("Upgrade icon", rowRect, 0.012f, 0.08f, 0.17f, 0.92f);
-            MakeIcon(iconFrame, icon, 0.17f, 0.30f, 0.83f, 0.90f, Color.white);
-            TextMeshProUGUI levelLabel = MakeLabel("Upgrade level", iconFrame, "NV. 0", 18, Cream,
-                new Vector2(0.08f, 0.02f), new Vector2(0.92f, 0.27f), TextAlignmentOptions.Center);
+            MakeIcon(iconFrame, icon, 0.16f, 0.35f, 0.84f, 0.88f, Color.white);
+            TextMeshProUGUI levelLabel = MakeLabel("Upgrade level", iconFrame, "NV. 0", 24, Cream,
+                new Vector2(0.08f, 0.06f), new Vector2(0.92f, 0.32f), TextAlignmentOptions.Center);
             levelLabel.fontStyle = FontStyles.Bold;
             levelLabel.outlineWidth = 0.15f;
             levelLabel.outlineColor = Ink;
             upgradeLevelLabels[title] = levelLabel;
-            TextMeshProUGUI titleLabel = MakeLabel("Upgrade title", rowRect, title, 30, Cream, new Vector2(0.24f, 0.52f), new Vector2(0.66f, 0.94f), TextAlignmentOptions.Left);
+            TextMeshProUGUI titleLabel = MakeLabel("Upgrade title", rowRect, title, 28, Cream, new Vector2(0.22f, 0.54f), new Vector2(0.65f, 0.88f), TextAlignmentOptions.Left);
             titleLabel.fontStyle = FontStyles.Bold;
-            TextMeshProUGUI valueLabel = MakeLabel("Upgrade value", rowRect, value, 24, Dim, new Vector2(0.24f, 0.10f), new Vector2(0.66f, 0.55f), TextAlignmentOptions.Left);
+            TextMeshProUGUI valueLabel = MakeLabel("Upgrade value", rowRect, value, 23, new Color(.78f, .84f, .87f), new Vector2(0.22f, 0.17f), new Vector2(0.65f, 0.49f), TextAlignmentOptions.Left);
             if (readingFont != null) valueLabel.font = readingFont;
+            valueLabel.fontStyle = FontStyles.Bold;
             RectTransform button = MakeOverlayButton("Upgrade action", rowRect, "MELHORAR", 24, 0.68f, 0.13f, 0.98f, 0.87f, action);
-            MakeIcon(button, "gold_coin", 0.18f, 0.10f, 0.30f, 0.39f, Color.white);
+            button.GetComponentInChildren<TextMeshProUGUI>().gameObject.SetActive(false);
+            MakeLabel("Upgrade action title", button, "MELHORAR", 24, Cream, new Vector2(.06f, .50f), new Vector2(.94f, .88f), TextAlignmentOptions.Center);
+            MakeIcon(button, "gold_coin", .25f, .13f, .39f, .44f, Color.white);
+            TextMeshProUGUI costLabel = MakeLabel("Upgrade cost", button, "", 25, Cream, new Vector2(.41f, .10f), new Vector2(.90f, .46f), TextAlignmentOptions.Left);
             buttonComponent = button.GetComponent<Button>();
-            buttonLabel = button.GetComponentInChildren<TextMeshProUGUI>();
+            buttonLabel = costLabel;
             return button;
         }
 
@@ -1462,17 +1523,17 @@ namespace DigAndWonder
             rowObject.transform.SetParent(content, false);
             RectTransform rowRect = (RectTransform)rowObject.transform;
             var element = rowObject.GetComponent<LayoutElement>();
-            element.preferredHeight = 110f;
-            element.minHeight = 110f;
+            element.preferredHeight = 124f;
+            element.minHeight = 124f;
             var rowImage = rowObject.GetComponent<Image>();
-            rowImage.sprite = SpriteFor("upgrade_row_structure");
+            rowImage.sprite = SpriteFor("upgrade_row");
             rowImage.type = Image.Type.Simple;
             rowImage.color = Color.white;
             rowImage.raycastTarget = false;
             RectTransform iconFrame = Region("Locked icon", rowRect, 0.012f, 0.08f, 0.17f, 0.92f);
-            MakeIcon(iconFrame, icon, 0.17f, 0.30f, 0.83f, 0.90f, Dim);
+            MakeIcon(iconFrame, icon, 0.16f, 0.35f, 0.84f, 0.88f, Dim);
             TextMeshProUGUI levelLabel = MakeLabel("Locked level", iconFrame, "NV. 0", 13, Dim,
-                new Vector2(0.08f, 0.02f), new Vector2(0.92f, 0.27f), TextAlignmentOptions.Center);
+                new Vector2(0.08f, 0.06f), new Vector2(0.92f, 0.32f), TextAlignmentOptions.Center);
             levelLabel.fontStyle = FontStyles.Bold;
             levelLabel.outlineWidth = 0.15f;
             levelLabel.outlineColor = Ink;
@@ -1562,6 +1623,7 @@ namespace DigAndWonder
 
         private Sprite SpriteFor(string name)
         {
+            if (approvedIcons.TryGetValue(name, out Sprite approved)) return approved;
             if (uiSprites.TryGetValue(name, out Sprite cachedIcon)) return cachedIcon;
             Sprite dedicatedIcon = Resources.Load<Sprite>("Art/UI/Icons/" + name);
             if (dedicatedIcon != null)
@@ -1626,6 +1688,9 @@ namespace DigAndWonder
                 new RectInt(28, 44, 1484, 164),
                 new RectInt(650, 270, 40, 500)
             });
+            Texture2D structure = Resources.Load<Texture2D>("Art/UI/dw_hud_structure_atlas");
+            if (structure != null)
+                uiAssetSprites["plain_action"] = Sprite.Create(structure, new Rect(1280, 604, 210, 110), new Vector2(.5f, .5f), 100);
         }
 
         private void SliceUiAtlas(string resourcePath, string[] names, RectInt[] trimmedRects)

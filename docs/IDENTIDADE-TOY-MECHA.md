@@ -201,3 +201,9 @@ Sequência recomendada: uma tela conjunta de combate + HUD → uma oficina coere
 ## Implementação de 29/10/2026 — coleção
 
 O pedido de integrar as sugestões inclui o álbum. A navegação usa ÁLBUM no lugar da aba de Pets ainda não implementada. Ícone vetorial de livro com cristal, contorno petróleo e preenchimentos creme/aço/ciano, 256 × 256 transparente; sem texto embutido. Revisão do ícone realizada, incluindo margens e silhueta. O álbum usa cartões com nomes e descrições; ilustrações exclusivas dos achados não foram produzidas. Brocas reutilizam módulos e cores; inimigos usam folhas existentes com funções distintas. Isso não equivale a aprovação visual no Editor ou aparelho.
+
+## Polimento solicitado em 29/10/2026 — HUD 0.0.29
+
+O usuário pediu retirar o nível da broca no cenário, recuperar os ícones definidos, corrigir textos e devolver os upgrades. Nível e XP ficam no cartão superior da broca; vida acompanha a altura renderizada da máquina. O menu de ajuda é modal e mantém a lista de melhorias por baixo. A navegação permanece funcional, com álbum no lugar de Pets.
+
+Pictogramas de Mina, Modos, Oficina, Baús, Loja, ATQ, VIDA, AUTORREPARO e CADÊNCIA são recortes explícitos da referência v8 existente, sem gerar outra família. `hud-approved-v8.png` preserva o arquivo de referência inteiro; somente as áreas de desenho são renderizadas como sprites. Nenhum texto, preço ou nível do conceito é usado como informação funcional. Álbum e ícones sem equivalente na referência mantêm seus recursos existentes. Essa integração é uma etapa de produção; fontes vetoriais anteriores permanecem disponíveis.
