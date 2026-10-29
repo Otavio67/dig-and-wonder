@@ -33,3 +33,9 @@ A validação visual foi no Editor; safe area real, toque e desempenho precisam 
 ## Ajuste adicional da navegação
 
 Após o usuário apontar novamente os ícones deslocados, foi identificada a causa estrutural: as abas eram distribuídas em sextos da largura total, mas a arte `bottom_nav_structure` inclui duas tampas laterais e seis células internas com outras posições. As âncoras de cada botão agora usam os limites das células na imagem original de 1484 px (80–300, 318–518, 539–731, 751–944, 966–1156 e 1179–1402). Ícone e rótulo compartilham o centro da respectiva célula e têm faixas verticais distintas. A correção não se limita a deslocar desenhos dentro de botões antigos: as áreas de toque também acompanham os encaixes. Nova captura em `hud-qa-nav-final.log`, perfil isolado `HudQaNavSave`.
+
+## APK final
+
+Build com a navegação corrigida concluído em 29/10/2026 pelo Unity 6000.6.6f1, log `.tools/logs/android-0.0.29-nav-final-build.log`. APK em `.tools/build/DigAndWonder-0.0.29.apk`, 65,888,534 bytes, versão 0.0.29/código 29, `com.DigAndWonder.DigWonder`, ARM64, Android mínimo API 26 e target API 36. AAPT confirmou manifest e arquitetura; `apksigner verify` aprovou assinatura v2. SHA-256: `162090071bcd4bfe7629b752b89f3b3157a539bfe5d800cf7b9d9920638a81d8`. Procedência em `.tools/build/DigAndWonder-0.0.29.provenance.json`.
+
+O build usou o mesmo contorno temporário do pacote gráfico documentado na 0.0.28. Antes da compilação final, os hashes de `PrototypeGameUI.cs` e `AutoBattleDriver.cs` da cópia foram comparados com o repositório e coincidiram. A captura final está em `.tools/build/hud-0.0.29-preview.png`. Este APK substitui a tentativa intermediária 0.0.29 feita antes do ajuste das células. Nenhuma tentativa intermediária foi publicada no Git. Teste físico no Android permanece pendente.
