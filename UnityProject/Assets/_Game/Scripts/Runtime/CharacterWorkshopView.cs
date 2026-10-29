@@ -153,7 +153,7 @@ namespace DigAndWonder
             showcaseFrames = drill.gameObject.AddComponent<DrillSpriteSheetPlayer2D>();
             // Idle discreto. O pedestal permanece fixo para transmitir contato com o chão.
             drill.gameObject.AddComponent<ProceduralAnimator2D>();
-            Slot(chamber, "BROCA", "drill", 0.015f, 0.53f, 0.22f, 0.97f,
+            Slot(chamber, "BROCA", "hud_drill", 0.015f, 0.53f, 0.22f, 0.97f,
                 "Ponta da Pioneira. A troca de peças estará disponível em uma próxima atualização.");
             Slot(chamber, "CHASSI", "chassis", 0.015f, 0.06f, 0.22f, 0.50f,
                 "Chassi da Pioneira. A vida máxima já pode ser melhorada na aba Oficina.");
@@ -182,7 +182,7 @@ namespace DigAndWonder
             Label(cartridge, "MÓDULO DE COMBATE", 22, Cream, 0.035f, 0.7f, 0.56f, 0.96f, true, TextAlignmentOptions.Left);
             Label(cartridge, "PASSIVOS", 22, Cream, 0.62f, 0.7f, 0.965f, 0.96f, true);
             RectTransform module = Plate("Pioneer module", cartridge, Teal, 0.025f, 0.10f, 0.16f, 0.68f);
-            Icon(module, "drill", 0.06f, 0.07f, 0.94f, 0.93f);
+            Icon(module, "hud_drill", 0.06f, 0.07f, 0.94f, 0.93f);
             string specialText = balance != null && balance.specialAbility != null
                 ? balance.specialAbility.hitCount + " impactos\n" + Number(balance.specialAbility.damage) + " de dano base"
                 : "Pioneira\nDados indisponíveis";

@@ -287,7 +287,7 @@ namespace DigAndWonder
             stageProgress = MakeLabel("Stage progress", stagePlate, "", 20, Cyan,
                 new Vector2(0.15f, 0.16f), new Vector2(0.85f, 0.40f), TextAlignmentOptions.Center);
 
-            var missionPanel = MakeArtPanel("Mission banner", combatRoot, Color.white, "upgrade_row", 0.008f, 0.333f, 0.992f, 0.389f);
+            var missionPanel = MakeArtPanel("Mission banner", combatRoot, new Color(.10f, .22f, .28f), "plate", 0.008f, 0.333f, 0.992f, 0.389f);
             MakeIcon(missionPanel, "mission", .065f, .20f, .16f, .82f, Color.white);
             missionLabel = MakeLabel("Mission", missionPanel, "MISSÃO 01   DERROTE 10 INIMIGOS", 24, Cream,
                 new Vector2(0.22f, 0.22f), new Vector2(0.66f, 0.78f), TextAlignmentOptions.Left);
@@ -390,6 +390,8 @@ namespace DigAndWonder
                 enemyAnimators[i] = visualRootObject.AddComponent<ProceduralAnimator2D>();
                 enemyHealth[i] = MakeLabel("Enemy HP " + i, worldPanel, "", 18, Cream,
                     new Vector2(left - 0.01f, 0.555f), new Vector2(left + 0.105f, 0.585f), TextAlignmentOptions.Center);
+                enemyHealth[i].outlineWidth = .18f;
+                enemyHealth[i].outlineColor = Ink;
                 enemyHealthTracks[i] = MakePanel("Enemy HP track " + i, worldPanel, new Color(0.03f, 0.06f, 0.08f, 0.92f),
                     new Vector2(left - 0.005f, 0.535f), new Vector2(left + 0.10f, 0.55f), Vector2.zero, Vector2.zero).GetComponent<Image>();
                 enemyHealthFills[i] = MakePanel("Enemy HP fill " + i, worldPanel, Coral,
@@ -437,8 +439,12 @@ namespace DigAndWonder
             trainingButton.gameObject.SetActive(false);
 
             trainingPicker = Region("Training selection", menuPanel, 0.06f, 0.25f, 0.94f, 0.47f);
-            MakeButton("Previous training", trainingPicker, "<", 24, 0, 0, .22f, 1, () => ChangeTraining(-1), Steel);
-            MakeButton("Next training", trainingPicker, ">", 24, .78f, 0, 1, 1, () => ChangeTraining(1), Steel);
+            RectTransform previousTraining = MakeButton("Previous training", trainingPicker, "<", 28, 0, 0, .22f, 1, () => ChangeTraining(-1), Steel);
+            RectTransform nextTraining = MakeButton("Next training", trainingPicker, ">", 28, .78f, 0, 1, 1, () => ChangeTraining(1), Steel);
+            previousTraining.GetComponent<Image>().sprite = nextTraining.GetComponent<Image>().sprite = SpriteFor("slot");
+            previousTraining.GetComponentInChildren<TextMeshProUGUI>().color = nextTraining.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
+            trainingButton.GetComponent<Image>().sprite = SpriteFor("plain_action");
+            trainingButton.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
             trainingSelection = MakeLabel("Selected training stage", trainingPicker, "", 20, Cream, new Vector2(.23f, 0), new Vector2(.77f, 1), TextAlignmentOptions.Center);
             trainingPicker.gameObject.SetActive(false);
 
