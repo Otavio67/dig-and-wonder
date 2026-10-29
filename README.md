@@ -8,6 +8,8 @@ O projeto executável fica em `UnityProject/`. A branch ativa é **`prototype/fi
 
 A campanha vai até a fase 100, com ouro, cristais, XP individual das brocas, sete melhorias, quatro poderes por personagem, baús com chave e save esquema 3. A cada dez fases vencidas é liberada uma nova broca no nível zero. Depois da fase 100 há treino. Pets e Torre/Profundezas continuam como conteúdo futuro.
 
+Alterações locais em desenvolvimento organizam as 100 fases em dez capítulos: ondas de 3–5 inimigos, mini-chefe acompanhado na fase 5 e chefe sozinho na fase 10. As recompensas e o dano das ondas foram ajustados; [regras e limites](docs/DESENVOLVIMENTO.md). Essa versão passou por testes de lógica, mas ainda exige Play Mode e revisão visual no Editor.
+
 A tela inicial prepara recursos reais antes de liberar **Iniciar mineração**. A vitória segue para o próximo mapa; a derrota permite melhorar e recomeçar dentro da partida. Oficina, poderes, tesouro e coleção ficam na navegação. A arte exclusiva das onze brocas, o alinhamento visual final e a validação Android ainda precisam de trabalho.
 
 ## Abrir o jogo

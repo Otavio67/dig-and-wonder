@@ -64,6 +64,8 @@ namespace DigAndWonder
         public string StageId;
         public string CharacterId = CharacterProgression.StarterCharacterId;
         public int CampaignStage = 1;
+        // 0 identifica tentativas gravadas antes da campanha por capítulos.
+        public int EncounterVersion;
         public float ElapsedSeconds;
         public float PlayerHealth;
         public float AttackTimer;

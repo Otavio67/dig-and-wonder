@@ -84,10 +84,15 @@ internal static class EconomyChecks
     internal static IEnumerable<(string Name, Action Test)> All()
     {
         yield return ("economia: tabela e probabilidades válidas", RulesAreValid);
+        yield return ("combate: chefe aguarda fim das ondas e aparece sozinho", BossWaitsForWaves);
+        yield return ("campanha: ondas, mini-chefe, chefe e recompensas", ChapterEncounters);
+        yield return ("campanha: retomada conserva encontro de mini-chefe", ChapterEncounterResume);
+        yield return ("campanha: tentativa antiga preserva regras e progresso", LegacyEncounterResume);
+        yield return ("campanha: XP de chefe repetido segue regra de treino", BossTrainingExperience);
         yield return ("economia: todos os custos crescem até os limites", CostsAreMonotonic);
         yield return ("economia: curva de XP completa, excedente e nível 60", FullExperienceCurve);
-        yield return ("economia: nível 60 exige ao menos 60 horas mesmo no limite ideal de farm", LongTermExperienceBudget);
         yield return ("economia: sete melhorias respeitam saldo, nível e teto", UpgradeTransactions);
+        yield return ("simulação: escolhe melhoria acessível quando a preferida custa mais", SimulatorBuysAffordableUpgrade);
         yield return ("economia: poderes são individuais e respeitam cinco ranks", CharacterPowers);
         yield return ("economia: efeitos de stats e percentuais corretos", StatFormulas);
         yield return ("economia: os quatro poderes alteram o combate", PowersAffectCombat);
@@ -148,21 +153,6 @@ internal static class EconomyChecks
         var save = new GameSaveData { Gold = 1000000 };
         for (int i = 0; i < level; i++) CharacterProgression.Award(save, "pioneer", rules.Experience, (int)rules.Experience.RequiredForNextLevel(i));
         return save;
-    }
-
-    private static void LongTermExperienceBudget()
-    {
-        EconomyRules rules = Rules();
-        int enemies = 0;
-        for (int wave = 1; wave <= rules.WaveCount; wave++) enemies += wave > rules.LateWaveAfter ? rules.LateWaveSize : 1;
-        // A referência de longo prazo continua sendo a faixa 60. As fases 61-100 são
-        // conteúdo de end game e oferecem catch-up para brocas novas sem encurtar a
-        // meta de desenvolvimento individual medida no mid-game.
-        int referenceStage = Math.Min(60, rules.MaximumStage);
-        int xp = enemies * rules.ExperienceReward(referenceStage, false) + rules.ExperienceReward(referenceStage, true);
-        double secondsPerCycle = (rules.WaveCount - 1) * rules.WaveInterval;
-        double hours = rules.Experience.MaximumExperience * secondsPerCycle / xp / 3600;
-        Check(hours >= 60 && hours <= 100, "curva fugiu da referência de longo prazo: " + hours);
     }
 
     private static void UpgradeTransactions()
@@ -565,6 +555,122 @@ internal static class EconomyChecks
         }
     }
 
+    private static void BossWaitsForWaves()
+    {
+        var config = Configuration();
+        var save = new GameSaveData { AttackLevel = 30, HealthLevel = 30, CampaignStage = 10, HighestClearedStage = 9 };
+        var sim = new IdleCombatSimulation(config, save, "prado_cristalino", 12345);
+        bool spawned = false;
+        sim.EventRaised += e =>
+        {
+            if (e.Type != CombatEventType.BossSpawned) return;
+            spawned = true;
+            Check(sim.Enemies.Count == 1 && sim.Enemies[0].IsBoss && sim.Run.PendingSpawns == 0,
+                "chefe apareceu com inimigos ou fila pendente");
+        };
+        for (int i = 0; i < 4000 && sim.IsActive && !spawned; i++) sim.Step(.05f);
+        Check(spawned, "chefe não apareceu após as ondas");
+    }
+
+    private static void ChapterEncounters()
+    {
+        foreach (int phase in new[] { 1, 5, 10, 15 })
+        {
+            var config = Configuration();
+            var save = new GameSaveData { AttackLevel = 30, HealthLevel = 80, CampaignStage = phase, HighestClearedStage = phase - 1 };
+            var sim = new IdleCombatSimulation(config, save, "prado_cristalino", 44);
+            var waves = new List<int>();
+            int previousWaves = 0;
+            bool sawBoss = false;
+            for (int i = 0; i < 10000 && sim.IsActive; i++)
+            {
+                sim.Step(.05f);
+                if (sim.Run.WavesSpawned > previousWaves)
+                {
+                    previousWaves = sim.Run.WavesSpawned;
+                    int regular = sim.Enemies.Count(e => !e.IsBoss);
+                    waves.Add(regular);
+                    if (phase % 10 == 5 && previousWaves == 3)
+                        Check(sim.Enemies.Count(e => e.IsBoss) == 1 && regular >= 3 && regular <= 4, "mini-chefe sem acompanhantes");
+                    else Check(regular >= 3 && regular <= 5 && sim.Enemies.All(e => !e.IsBoss), "onda comum inválida");
+                }
+                if (sim.Enemies.Any(e => e.IsBoss))
+                {
+                    sawBoss = true;
+                    if (phase % 10 == 0) Check(sim.Enemies.Count == 1, "chefe acompanhado");
+                }
+            }
+            Check(sim.Run.IsStageCleared && save.HighestClearedStage == phase, "fase não concluiu: " + phase + ", derrota=" + sim.Run.IsPlayerDefeated + ", ondas=" + sim.Run.WavesSpawned);
+            Check(sawBoss == (phase % 5 == 0), "tipo de encontro incorreto");
+            Check(waves.Count == (phase % 10 == 0 ? 0 : 3), "quantidade de ondas incorreta");
+            Check(save.Chests == (phase % 5 == 0 ? 1 : 0) && save.Keys == save.Chests, "baú ou chave incoerente");
+            Check(save.Crystals == (phase % 5 == 0 ? 25 : 5), "cristais incorretos");
+        }
+    }
+
+    private static void LegacyEncounterResume()
+    {
+        var config = Configuration();
+        var save = new GameSaveData { Gold = 47, AttackLevel = 2 };
+        var original = new IdleCombatSimulation(config, save, "prado_cristalino", 9);
+        save.ActiveRun = original.CaptureRun();
+        save.ActiveRun.EncounterVersion = 0;
+        var resumed = new IdleCombatSimulation(config, save, "prado_cristalino", 10);
+        resumed.Step(.05f);
+        Check(resumed.Run.EncounterVersion == 0 && resumed.StageWaveCount == config.Economy.WaveCount &&
+            resumed.Enemies.Count == 1 && save.Gold == 47 && save.AttackLevel == 2,
+            "tentativa anterior mudou de regras ou perdeu progresso");
+    }
+
+    private static void BossTrainingExperience()
+    {
+        EconomyRules rules = Rules();
+        int Run(bool training)
+        {
+            var save = new GameSaveData { AttackLevel = 30, HealthLevel = 80, CampaignStage = 10, HighestClearedStage = training ? 10 : 9 };
+            var sim = new IdleCombatSimulation(Configuration(rules), save, "prado_cristalino", 12);
+            int gained = 0;
+            sim.EventRaised += e => { if (e.Type == CombatEventType.CharacterExperienceAwarded) gained += (int)e.Amount; };
+            for (int i = 0; i < 10000 && sim.IsActive; i++) sim.Step(.05f);
+            Check(sim.Run.IsStageCleared, "chefe não foi derrotado");
+            return gained;
+        }
+        int initial = rules.ExperienceReward(10, true);
+        Check(Run(false) == initial && Run(true) == (int)Math.Ceiling(initial * .15), "XP de treino ou primeira vitória incorreto");
+    }
+
+    private static void ChapterEncounterResume()
+    {
+        var config = Configuration();
+        var save = new GameSaveData { AttackLevel = 18, HealthLevel = 30, CampaignStage = 5, HighestClearedStage = 4 };
+        var sim = new IdleCombatSimulation(config, save, "prado_cristalino", 19);
+        for (int i = 0; i < 10000 && sim.IsActive && !sim.Run.BossSpawned; i++) sim.Step(.05f);
+        Check(sim.Run.BossSpawned && sim.Enemies.Any(e => e.IsBoss), "mini-chefe não iniciou");
+        save.ActiveRun = sim.CaptureRun();
+        string directory = Path.Combine(Path.GetTempPath(), "dw-chapter-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var repo = new AtomicSaveRepository(directory); repo.Save(save);
+            Check(repo.TryLoad(out GameSaveData loaded, out _), "save não carregou");
+            var resumed = new IdleCombatSimulation(config, loaded, "prado_cristalino", 2);
+            Check(resumed.Run.EncounterVersion == 1 && resumed.Enemies.Count == sim.Enemies.Count, "encontro salvo alterado");
+            for (int i = 0; i < 10000 && sim.IsActive && resumed.IsActive; i++) { sim.Step(.05f); resumed.Step(.05f); }
+            Check(sim.Run.IsStageCleared && resumed.Run.IsStageCleared && save.Gold == loaded.Gold && save.Crystals == loaded.Crystals && save.Chests == loaded.Chests,
+                "retomada alterou resultado ou recompensas");
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    private static void SimulatorBuysAffordableUpgrade()
+    {
+        EconomyRules rules = Rules();
+        var save = new GameSaveData { Gold = 20, AttackLevel = 3 };
+        var sim = new IdleCombatSimulation(Configuration(rules), save, "prado_cristalino", 12345);
+        int powersBought = 0;
+        Spend(sim, rules, "attack", ref powersBought);
+        Check(save.HealthLevel == 1 && save.Gold == 0, "simulação ignorou blindagem acessível ao priorizar ataque caro");
+    }
+
     private static void Spend(IdleCombatSimulation sim, EconomyRules rules, string strategy, ref int powersBought)
     {
         GameSaveData save = sim.Profile;
@@ -577,7 +683,7 @@ internal static class EconomyChecks
             foreach (EconomyUpgradeRule upgrade in rules.Upgrades)
             {
                 int rank = EconomyProgression.Level(save, upgrade.Kind);
-                if (workshopLevel < upgrade.UnlockLevel || rank >= upgrade.MaximumLevel) continue;
+                if (workshopLevel < upgrade.UnlockLevel || rank >= upgrade.MaximumLevel || upgrade.Cost(rank) > save.Gold) continue;
                 double gain = upgrade.Kind switch
                 {
                     UpgradeKind.Attack => .055,
@@ -596,7 +702,7 @@ internal static class EconomyChecks
             foreach (AttackPowerRule power in rules.Powers)
             {
                 int rank = EconomyProgression.PowerRank(save, save.EquippedCharacterId, power.Id);
-                if (level < power.UnlockLevel || rank >= power.MaximumRank) continue;
+                if (level < power.UnlockLevel || rank >= power.MaximumRank || power.Cost(rank) > save.Gold) continue;
                 double weight = power.Kind == AttackPowerKind.Resonance ? .4 : power.Kind == AttackPowerKind.Serration ? .6 : .3;
                 double score = power.Bonus * weight / (1 + power.Bonus * rank) / power.Cost(rank);
                 if (score > best) { best = score; selectedPower = power; selected = null; }

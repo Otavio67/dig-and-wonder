@@ -7,6 +7,11 @@ namespace DigAndWonder
     public static class GameplayHudModel
     {
         private static readonly CultureInfo Portuguese = CultureInfo.GetCultureInfo("pt-BR");
+        public static string CampaignPosition(int stage)
+        {
+            if (stage < 1) throw new ArgumentOutOfRangeException(nameof(stage));
+            return "CAPÍTULO " + ((stage - 1) / 10 + 1) + " • FASE " + ((stage - 1) % 10 + 1);
+        }
         public static readonly UpgradeKind[] UpgradeOrder = {
             UpgradeKind.Attack, UpgradeKind.Health, UpgradeKind.Repair, UpgradeKind.AttackSpeed,
             UpgradeKind.CriticalChance, UpgradeKind.CriticalDamage, UpgradeKind.Special

@@ -7,8 +7,10 @@ internal static class GameplayHudChecks
         yield return ("HUD: atributos acompanham compra e poder sem valores fixos", LiveStats);
         yield return ("HUD: sete melhorias respeitam requisito, saldo e máximo", UpgradeEligibility);
         yield return ("HUD: números pequenos não viram frações artificiais", NumberFormatting);
+        yield return ("campanha: fases contínuas exibem capítulo e fase corretos", ChapterPosition);
         yield return ("combate: especial manual respeita cooldown e alvo", ManualSpecial);
         yield return ("combate: AUTO desligado suspende disparos básicos", AutoToggle);
+        yield return ("combate: ataque manual respeita alvo, rajada e cadência", ManualBasicAttack);
         yield return ("HUD: recortes cabem nos atlas e importação preserva pixels", AtlasRectangles);
     }
 
@@ -58,6 +60,14 @@ internal static class GameplayHudChecks
         Require(GameplayHudModel.Number(double.NaN) == "—", "Valor não finito exposto");
     }
 
+    private static void ChapterPosition()
+    {
+        Require(GameplayHudModel.CampaignPosition(1) == "CAPÍTULO 1 • FASE 1", "início incorreto");
+        Require(GameplayHudModel.CampaignPosition(10) == "CAPÍTULO 1 • FASE 10", "fim do capítulo incorreto");
+        Require(GameplayHudModel.CampaignPosition(11) == "CAPÍTULO 2 • FASE 1", "segundo capítulo incorreto");
+        Require(GameplayHudModel.CampaignPosition(100) == "CAPÍTULO 10 • FASE 10", "fim da campanha incorreto");
+    }
+
     private static void ManualSpecial()
     {
         var sim = new IdleCombatSimulation(EconomyChecks.Configuration(), new GameSaveData(), "prado_cristalino", 8);
@@ -79,6 +89,24 @@ internal static class GameplayHudChecks
         Require(shots == 0, "AUTO OFF dispara tiros básicos");
         sim.AutoAttackEnabled = true; sim.Step(0.05f);
         Require(shots > 0, "AUTO ON não retoma");
+    }
+
+    private static void ManualBasicAttack()
+    {
+        var sim = new IdleCombatSimulation(EconomyChecks.Configuration(), new GameSaveData(), "prado_cristalino", 9);
+        int shots = 0;
+        sim.EventRaised += e => { if (e.Type == CombatEventType.DrillAttack) shots++; };
+        Require(!sim.TryManualBasicAttack(), "ataque manual permitido com AUTO ligado");
+        sim.AutoAttackEnabled = false;
+        Require(!sim.TryManualBasicAttack(), "ataque manual permitido sem alvo");
+        sim.Step(.05f);
+        Require(sim.TryManualBasicAttack() && shots == 1, "toque não iniciou ataque");
+        Require(!sim.TryManualBasicAttack(), "toques duplicaram rajada ou ignoraram cadência");
+        for (int i = 0; i < 20; i++) sim.Step(.05f);
+        Require(shots == 2, "rajada manual não completou seus dois golpes");
+        for (int i = 0; i < 50; i++) sim.Step(.05f);
+        Require(shots == 2, "modo manual disparou sozinho");
+        Require(sim.TryManualBasicAttack(), "cadência não liberou próximo toque");
     }
 
     private static void AtlasRectangles()

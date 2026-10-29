@@ -63,6 +63,9 @@ namespace DigAndWonder
         private PooledCombatFeedback feedback;
         private Image healthFill;
         private Image playerHealthTrack;
+        private RectTransform bossBar;
+        private Image bossBarFill;
+        private TextMeshProUGUI bossBarText;
         private Image playerExperienceTrack, playerExperienceFill;
         private TextMeshProUGUI drillIcon;
         private ProceduralAnimator2D drillAnimator;
@@ -335,6 +338,12 @@ namespace DigAndWonder
             drillAspect.aspectRatio = initialDrill == null ? 1.35f : initialDrill.rect.width / initialDrill.rect.height;
             drillAnimator = drillVisualObject.AddComponent<ProceduralAnimator2D>();
             drillMotion = drillVisualObject.AddComponent<GroundDrillMotion2D>();
+            MakeOverlayButton("Manual drill attack", drillIcon.transform, "", 15, 0, 0, 1, 1, () =>
+            {
+                if (driver != null && driver.Simulation != null && !driver.Simulation.AutoAttackEnabled &&
+                    !driver.TryManualBasicAttack() && statusLabel != null)
+                    statusLabel.text = "AGUARDE A CADÊNCIA OU UM ALVO";
+            });
 
             // Quatro criaturas + o guardião, que pode surgir antes de terminar a onda anterior.
             enemyVisualRoots = new RectTransform[5];
@@ -382,6 +391,13 @@ namespace DigAndWonder
                 new Vector2(0.04f, 0.462f), new Vector2(0.38f, 0.493f), TextAlignmentOptions.Left);
             playerHealthTrack = MakePanel("Health track", worldPanel, Ink, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             healthFill = MakePanel("Health fill", worldPanel, Mint, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            bossBar = MakePanel("Boss health", worldPanel, Ink, new Vector2(0.08f, 0.80f), new Vector2(0.92f, 0.86f), Vector2.zero, Vector2.zero);
+            bossBar.GetComponent<Image>().raycastTarget = false;
+            bossBarFill = MakePanel("Boss health fill", bossBar, Coral, new Vector2(0.01f, 0.1f), new Vector2(0.99f, 0.9f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            bossBarFill.raycastTarget = false;
+            bossBarText = MakeLabel("Boss health text", bossBar, "GUARDIÃO", 20, Cream, Vector2.zero, Vector2.one, TextAlignmentOptions.Center);
+            bossBarText.raycastTarget = false;
+            bossBar.gameObject.SetActive(false);
             playerExperienceTrack = MakePanel("Experience track", worldPanel, Ink, new Vector2(0.06f, 0.435f), new Vector2(0.25f, 0.442f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             playerExperienceFill = MakePanel("Experience fill", worldPanel, Cyan, new Vector2(0.06f, 0.435f), new Vector2(0.25f, 0.442f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             statusLabel = MakeLabel("Status", combatRoot, "", 18, Mint,
@@ -674,14 +690,18 @@ namespace DigAndWonder
         {
             IdleCombatSimulation sim = driver.Simulation;
             if (sim == null) return;
-            stageLabel.text = (sim.CurrentStageDisplayName == null ? "NOVA EXPEDIÇÃO" : sim.CurrentStageDisplayName.ToUpperInvariant()) + "  •  " + sim.Run.CampaignStage + "-1";
+            stageLabel.text = GameplayHudModel.CampaignPosition(sim.Run.CampaignStage);
             int stageNumber = sim.Run.CampaignStage;
-            missionLabel.text = sim.Run.IsStageCleared ? "Missão concluída" : "Derrote o guardião";
-            stageProgress.text = sim.Run.IsStageCleared ? "GUARDIÃO DERROTADO" : sim.Run.BossSpawned ? "GUARDIÃO À FRENTE" : "ONDA " + sim.Run.WavesSpawned + " / " + sim.StageWaveCount;
+            int chapterPhase = (stageNumber - 1) % 10 + 1;
+            bool chapterEncounter = sim.Run.EncounterVersion == 1;
+            bool specialEncounter = !chapterEncounter || chapterPhase == 5 || chapterPhase == 10;
+            string enemyTitle = chapterEncounter && chapterPhase == 5 ? "MINI-CHEFE" : "GUARDIÃO";
+            missionLabel.text = sim.Run.IsStageCleared ? "Missão concluída" : specialEncounter ? "Derrote " + enemyTitle.ToLowerInvariant() : "Elimine as ondas";
+            stageProgress.text = sim.Run.IsStageCleared ? "FASE CONCLUÍDA" : chapterEncounter && chapterPhase == 10 && sim.Profile.HighestClearedStage >= stageNumber ? "TREINO DE CHEFE • 15% XP" : sim.Run.BossSpawned ? enemyTitle + " À FRENTE" : "ONDA " + sim.Run.WavesSpawned + " / " + sim.StageWaveCount;
             bool firstClear = sim.Profile.HighestClearedStage < stageNumber;
             int crystals = firstClear ? driver.Economy.FirstClearCrystals +
                 (stageNumber % driver.Economy.MilestoneInterval == 0 ? driver.Economy.MilestoneCrystals : 0) : 0;
-            missionReward.text = crystals > 0 ? "+" + crystals + " CRISTAIS" : "BAÚ + CHAVE";
+            missionReward.text = crystals > 0 ? "+" + crystals + " CRISTAIS" : specialEncounter ? "BAÚ + CHAVE" : "BÔNUS DE OURO";
             forceValue.text = GameplayHudModel.Number(GameplayHudModel.PowerRating(sim, driver.EquippedCharacter));
             RefreshPowerBar();
             if (displayedGold != sim.Gold || displayedCrystals != sim.Profile.Crystals)
@@ -714,7 +734,7 @@ namespace DigAndWonder
             else if (sim.Run.IsStageCleared)
             {
                 statusLabel.text = driver.CanContinueCampaign
-                    ? (string.IsNullOrEmpty(lastCharacterReward) ? "Guardião derrotado!" : lastCharacterReward + " LIBERADA!") + " Próximo mapa..."
+                    ? (string.IsNullOrEmpty(lastCharacterReward) ? "Fase concluída!" : lastCharacterReward + " LIBERADA!") + " Próxima fase..."
                     : "CAMPANHA CONCLUÍDA! Abra a Oficina ou repita a última fase.";
             }
             if (driver.IsSaveBlocked)
@@ -812,6 +832,19 @@ namespace DigAndWonder
         private void SyncEnemyVisuals()
         {
             IdleCombatSimulation sim = driver.Simulation;
+            EnemySnapshot boss = null;
+            foreach (EnemySnapshot candidate in sim.Enemies)
+                if (candidate.IsBoss && candidate.Health > 0f) { boss = candidate; break; }
+            bool showBossBar = boss != null && (sim.Run.EncounterVersion == 0 || sim.Run.CampaignStage % 10 == 0);
+            bossBar.gameObject.SetActive(showBossBar);
+            if (showBossBar)
+            {
+                float maximum = sim.EnemyMaximumHealth(true);
+                float bossRatio = maximum > 0f ? Mathf.Clamp01(boss.Health / maximum) : 0f;
+                bossBarFill.rectTransform.anchorMax = new Vector2(0.01f + 0.98f * bossRatio, 0.9f);
+                string bossTitle = sim.Run.EncounterVersion == 1 && sim.Run.CampaignStage % 10 == 5 ? "MINI-CHEFE" : "GUARDIÃO";
+                bossBarText.text = bossTitle + "  " + GameplayHudModel.Number(Math.Ceiling(boss.Health)) + " / " + GameplayHudModel.Number(Math.Ceiling(maximum));
+            }
             for (int i = 0; i < enemyIds.Length; i++)
             {
                 bool present = false;
@@ -1163,6 +1196,7 @@ namespace DigAndWonder
         {
             bool enabled = driver == null || driver.Simulation == null || driver.Simulation.AutoAttackEnabled;
             driver?.SetAutoAttackEnabled(!enabled);
+            if (statusLabel != null && enabled) statusLabel.text = "MODO MANUAL: TOQUE NA BROCA PARA ATACAR";
             RefreshAutoToggle();
         }
 

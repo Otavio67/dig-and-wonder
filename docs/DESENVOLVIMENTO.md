@@ -1,5 +1,15 @@
 # Dig & Wonder — desenvolvimento Unity
 
+## Nova direção aprovada: capítulos e ondas
+
+O usuário definiu uma campanha com **capítulos compostos de fases** (Capítulo 1 — Fase 1, Capítulo 1 — Fase 2, etc.). A proposta inicial é 10 fases por capítulo: fases 1–4 e 6–9 têm ondas comuns de **3 a 5 inimigos**, variando entre ondas; na fase 5 há um encontro de mini-chefe acompanhado de **3 ou 4 inimigos comuns**; na fase 10 o chefe aparece **sozinho**, sem inimigos comuns, com uma barra de vida grande, visível e ligada à sua vida real. Se houver ondas antes do mini-chefe, o encontro dele só começa quando elas forem eliminadas. Uma fase comum termina ao derrotar todas as ondas, não ao derrotar um chefe.
+
+O HUD converte a numeração contínua de 1 a 100 em dez capítulos de dez fases. Em tentativas novas, as fases comuns têm três ondas sequenciais de 3 a 5 inimigos; a fase 5 tem duas ondas e então o mini-chefe com 3 ou 4 acompanhantes; a fase 10 começa com o chefe sozinho e barra de vida ampla. A fase termina quando todos os inimigos do encontro são derrotados. Cada onda só começa quando a anterior termina. O mini-chefe reutiliza provisoriamente a arte do guardião; sua vida é 3 vezes a de um inimigo comum. Dano comum cai para 55% da curva anterior para acomodar grupos maiores; dano do mini-chefe é 1,2 vez o dano comum ajustado. O chefe final conserva os multiplicadores anteriores.
+
+Primeira vitória em cada fase concede 5 cristais; fases 5 e 10 acrescentam 20. Fases comuns concedem um bônus de ouro equivalente a dez inimigos comuns; mini-chefe e chefe concedem um baú e uma chave ao concluir a fase. Repetir o chefe isolado concede 15% do XP de chefe, sinalizado no HUD, para evitar que sua luta curta acelere desproporcionalmente o XP. O ouro de inimigos e as melhorias persistem após derrota. Brocas continuam liberadas a cada dez fases vencidas.
+
+O save registra a versão do encontro: uma tentativa antiga retoma as regras antigas e novas tentativas usam capítulos. A implementação passou nos testes de domínio e simulações, mas a interface, o ritmo, o equilíbrio e a compatibilidade em jogo precisam ser verificados no Editor e em aparelho. O tempo do botão AUTO manual e a aparência do mini-chefe continuam pendentes de revisão visual.
+
 Referência atual após a retirada do projeto Godot em 29/10/2026. O histórico anterior permanece nos commits do Git. A limpeza não altera números, recompensas ou formato de save.
 
 ## Ciclo principal
@@ -13,7 +23,7 @@ O menu inicial mostra a arte aprovada e prepara recursos antes de liberar **Inic
 - Sete melhorias compartilhadas: ATQ, VIDA, AUTORREPARO, CADÊNCIA, CHANCE CRÍTICA, DANO CRÍTICO e ESPECIAL.
 - XP individual das brocas até nível 60 e quatro poderes por personagem. Novas brocas são concedidas ao vencer os marcos de dez fases, sempre no nível zero.
 - Ouro, cristais, baús e chaves usam as regras existentes. A loja usa as transações do tesouro; isto não comprova compras com dinheiro real.
-- AUTO alterna o ataque básico. O especial mantém sua automação e permite toque quando pronto; os demais módulos abrem os poderes existentes na Oficina.
+- AUTO alterna o ataque básico. Com AUTO desligado, tocar na broca solicita uma rajada com a mesma cadência; a implementação ainda precisa de teste no Editor e em aparelho. O especial mantém sua automação e permite toque quando pronto; os demais módulos abrem os poderes existentes na Oficina.
 - Abrir a Oficina pausa a tentativa. Não mudar essa regra só por causa de um mockup.
 
 Regras numéricas: `UnityProject/Assets/_Game/Resources/Data/CombatBalance.asset`, `Data/Economy/midgame.json` e os catálogos JSON em `content/`. O `ContentCatalogImporter` converte os dados de combate e fases em ScriptableObjects sem depender de outra engine. Consulte [economia](ECONOMIA-MIDGAME.md), [campanha](ENDGAME-100.md) e [brocas por fase](BROCAS-POR-FASE.md).

@@ -268,6 +268,9 @@ namespace DigAndWonder
         public bool TryActivateSpecial()
             => IsReady && !applicationPaused && !menuPaused && Simulation != null && Simulation.TryActivateSpecial();
 
+        public bool TryManualBasicAttack()
+            => IsReady && !applicationPaused && !menuPaused && Simulation != null && Simulation.TryManualBasicAttack();
+
         public bool TryPurchaseUpgrade(UpgradeKind kind)
         {
             if (Simulation == null || !Simulation.IsActive || IsSaveBlocked || applicationPaused) return false;

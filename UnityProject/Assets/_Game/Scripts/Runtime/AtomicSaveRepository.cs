@@ -141,7 +141,7 @@ namespace DigAndWonder
             if (run.IsPlayerDefeated && run.IsStageCleared) throw new InvalidDataException("A tentativa tem resultados incompatíveis.");
             RequireFinite(run.ElapsedSeconds, run.PlayerHealth, run.AttackTimer, run.AttackHitTimer,
                 run.SpecialCooldown, run.SpecialTravelTimer, run.SpecialHitTimer, run.NextWaveTimer);
-            if (run.CampaignStage < 1 || run.ElapsedSeconds < 0f || run.PlayerHealth < 0f || run.AttackHitsRemaining < 0 || run.SpecialHitsRemaining < 0 ||
+            if (run.EncounterVersion < 0 || run.EncounterVersion > 1 || run.CampaignStage < 1 || run.ElapsedSeconds < 0f || run.PlayerHealth < 0f || run.AttackHitsRemaining < 0 || run.SpecialHitsRemaining < 0 ||
                 run.WavesSpawned < 0 || run.PendingSpawns < 0 || run.NextEntityId < 1 || run.AttackTargetId < 0 || run.SpecialTargetId < 0 ||
                 (!run.IsPlayerDefeated && !run.IsStageCleared && run.PlayerHealth <= 0f))
                 throw new InvalidDataException("A tentativa tem contadores ou vida inválidos.");
