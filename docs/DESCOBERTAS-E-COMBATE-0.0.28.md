@@ -46,3 +46,7 @@ Relatórios finais: `docs/balance/*-0.0.28.csv`. A coluna `discoveries` permite 
 O Windows bloqueou temporariamente a execução de um binário recompilado; os comandos normais executaram com sucesso após as alterações finais. Nenhuma política de segurança foi alterada. Somente o Editor 6000.0.23f1 consta na instalação local; o projeto exige 6000.6.6f1. Não foi aberto na versão errada.
 
 Ainda falta abrir **6000.6.6f1** e verificar importação, Play Mode, álbum/pausa/retorno, troca de broca, tamanho dos textos e das barras em retrato, falha real de gravação e retomada. Depois, validar toque, safe area e FPS em Android. Os testes e a compilação não comprovam esses itens. A arte exclusiva do elenco e dos colecionáveis não está concluída; os módulos reutilizados precisam de revisão visual em movimento.
+
+## Validação Android posterior
+
+Após a instalação local do Editor correto e dos módulos Android, foi gerado o APK 0.0.28 com build bem-sucedido e assinatura verificada. O ambiente exigiu uma cópia curta com SRP Core editável para recuperar metadados ausentes. Consulte [APK de teste](APK-0.0.28.md). Testes em aparelho e revisão visual continuam pendentes.
