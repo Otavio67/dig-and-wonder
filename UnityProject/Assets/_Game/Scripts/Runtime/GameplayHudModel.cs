@@ -17,6 +17,16 @@ namespace DigAndWonder
             UpgradeKind.CriticalChance, UpgradeKind.CriticalDamage, UpgradeKind.Special
         };
 
+        public static string DefeatAdvice(IdleCombatSimulation sim)
+        {
+            string kept = "Ouro e XP mantidos. ";
+            UpgradeKind preferred = sim.Run.ElapsedSeconds < 20 ? UpgradeKind.Health : UpgradeKind.Attack;
+            if (CanBuyUpgrade(sim.Profile, sim.Economy, preferred)) return kept + "Você já pode melhorar " + UpgradeTitle(preferred) + ".";
+            foreach (UpgradeKind kind in UpgradeOrder)
+                if (CanBuyUpgrade(sim.Profile, sim.Economy, kind)) return kept + "Você já pode melhorar " + UpgradeTitle(kind) + ".";
+            return kept + (sim.Profile.HighestClearedStage > 0 ? "Treine uma fase vencida em MODOS." : "Tente novamente para juntar ouro.");
+        }
+
         public static string Number(double value)
         {
             if (double.IsNaN(value) || double.IsInfinity(value)) return "—";

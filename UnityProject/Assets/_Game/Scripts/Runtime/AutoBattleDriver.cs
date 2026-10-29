@@ -147,10 +147,19 @@ namespace DigAndWonder
 
         private static GameSaveData CreateProfile() => new GameSaveData { LootRandomState = (uint)DateTime.UtcNow.Ticks };
 
-        public bool TryStartTraining()
+        public bool TryStartTraining(int stage = 0)
         {
             if (!IsReady || applicationPaused || Simulation != null && Simulation.IsActive || Profile == null ||
-                !EconomyProgression.TrySelectTrainingStage(Profile)) return false;
+                !EconomyProgression.TrySelectTrainingStage(Profile, stage)) return false;
+            StartNewGame();
+            return IsReady && Simulation != null && Simulation.IsActive;
+        }
+
+        public bool TryReturnToCampaign()
+        {
+            if (!IsReady || applicationPaused || Profile == null || Simulation != null && Simulation.IsActive ||
+                Profile.HighestClearedStage >= Economy.MaximumStage) return false;
+            Profile.CampaignStage = Profile.HighestClearedStage + 1;
             StartNewGame();
             return IsReady && Simulation != null && Simulation.IsActive;
         }

@@ -389,7 +389,7 @@ internal static class EconomyChecks
         ((JObject)payload["Characters"][0]).Remove("Powers");
         string path = Path.Combine(directory, "dig-and-wonder.save.json"); Envelope(path, payload, 2); string bytes = File.ReadAllText(path);
         var repository = new AtomicSaveRepository(directory);
-        Check(repository.TryLoad(out GameSaveData loaded, out _) && loaded.SchemaVersion == 3 && loaded.Gold == 1000 && loaded.Keys == 3 && loaded.Chests == 4 && loaded.AttackLevel == 10 &&
+        Check(repository.TryLoad(out GameSaveData loaded, out _) && loaded.SchemaVersion == GameSaveData.CurrentSchemaVersion && loaded.Gold == 1000 && loaded.Keys == 3 && loaded.Chests == 4 && loaded.AttackLevel == 10 &&
             loaded.Characters[0].TotalExperience == original.Characters[0].TotalExperience && loaded.CampaignStage == 1 && loaded.Crystals == 0, "migração perdeu dados");
         Check(File.ReadAllText(path) == bytes, "leitura escreveu sobre legado"); repository.Save(loaded);
         Check(File.ReadAllText(path + ".bak") == bytes, "backup perdeu original");
@@ -452,7 +452,7 @@ internal static class EconomyChecks
             }
         }
         File.WriteAllLines(Path.Combine(output, $"upgrade-costs-{reportVersion}.csv"), upgrades);
-        var results = new List<string> { "strategy,seed,phase,result,simulated_minutes,attempts,character_level,attack_level,health_level,gold,crystals,gold_earned,gold_spent,powers_bought,active_character,next_character" };
+        var results = new List<string> { "strategy,seed,phase,result,simulated_minutes,attempts,character_level,attack_level,health_level,gold,crystals,gold_earned,gold_spent,powers_bought,active_character,next_character,discoveries" };
         foreach (string strategy in new[] { "balanced", "attack", "survival" })
             foreach (uint seed in new uint[] { 12345, 54321, 98765 }) Simulate(config, strategy, seed, results);
         File.WriteAllLines(Path.Combine(output, $"simulation-{reportVersion}.csv"), results);
@@ -549,7 +549,7 @@ internal static class EconomyChecks
             int beforePurchase = save.Gold; Spend(sim, rules, strategy, ref powersBought); goldSpent += beforePurchase - save.Gold;
             if (sim.Run.IsPlayerDefeated) stageFailures[phase] = stageFailures.GetValueOrDefault(phase) + 1;
             bool blocked = stageFailures.GetValueOrDefault(phase) >= 20 || sim.IsActive;
-            report.Add(FormattableString.Invariant($"{strategy},{seed},{phase},{(blocked ? "blocked" : sim.Run.IsStageCleared ? training ? "training" : "clear" : "defeat")},{time / 60:F2},{attempts},{level},{save.AttackLevel},{save.HealthLevel},{save.Gold},{save.Crystals},{goldEarned},{goldSpent},{powersBought},{foughtCharacter},{save.EquippedCharacterId}"));
+            report.Add(FormattableString.Invariant($"{strategy},{seed},{phase},{(blocked ? "blocked" : sim.Run.IsStageCleared ? training ? "training" : "clear" : "defeat")},{time / 60:F2},{attempts},{level},{save.AttackLevel},{save.HealthLevel},{save.Gold},{save.Crystals},{goldEarned},{goldSpent},{powersBought},{foughtCharacter},{save.EquippedCharacterId},{save.DiscoveryStages.Count}"));
             if (blocked) break;
             if (sim.Run.IsPlayerDefeated) EconomyProgression.TrySelectTrainingStage(save);
         }
@@ -653,7 +653,7 @@ internal static class EconomyChecks
             var repo = new AtomicSaveRepository(directory); repo.Save(save);
             Check(repo.TryLoad(out GameSaveData loaded, out _), "save não carregou");
             var resumed = new IdleCombatSimulation(config, loaded, "prado_cristalino", 2);
-            Check(resumed.Run.EncounterVersion == 1 && resumed.Enemies.Count == sim.Enemies.Count, "encontro salvo alterado");
+            Check(resumed.Run.EncounterVersion == sim.Run.EncounterVersion && resumed.Enemies.Count == sim.Enemies.Count, "encontro salvo alterado");
             for (int i = 0; i < 10000 && sim.IsActive && resumed.IsActive; i++) { sim.Step(.05f); resumed.Step(.05f); }
             Check(sim.Run.IsStageCleared && resumed.Run.IsStageCleared && save.Gold == loaded.Gold && save.Crystals == loaded.Crystals && save.Chests == loaded.Chests,
                 "retomada alterou resultado ou recompensas");

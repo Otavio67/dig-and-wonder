@@ -39,6 +39,12 @@ namespace DigAndWonder
         private RectTransform restartButton;
         private RectTransform continueButton;
         private RectTransform trainingButton;
+        private RectTransform trainingPicker, albumPanel;
+        private TextMeshProUGUI trainingSelection, albumTitle, albumCount;
+        private readonly TextMeshProUGUI[] discoveryCards = new TextMeshProUGUI[2];
+        private readonly Image[] drillModules = new Image[3];
+        private int trainingStage, albumChapter = 1, pendingDiscovery;
+
         private sealed class UpgradeView
         {
             public TextMeshProUGUI Value, Level, Price;
@@ -418,24 +424,31 @@ namespace DigAndWonder
                 () => { driver.StartNewGame(); EnterGame(false); }, Coral).GetComponent<RectTransform>();
             restartButton.gameObject.SetActive(false);
             continueButton = MakeButton("Continue stage", menuPanel, "TREINAR", 18, 0.70f, 0.905f, 0.97f, 0.99f,
-                () => { if (driver.TryStartTraining()) EnterGame(false); }, Mint).GetComponent<RectTransform>();
+                () => { if (driver.TryReturnToCampaign() || driver.TryStartTraining()) { currentTab = "MINA"; EnterGame(false); } }, Mint).GetComponent<RectTransform>();
             continueButton.gameObject.SetActive(false);
-            trainingButton = MakeButton("Training mode", menuPanel, "TREINAR ÚLTIMA FASE", 22, 0.16f, 0.04f, 0.84f, 0.20f,
-                () => { if (driver.TryStartTraining()) { currentTab = "MINA"; EnterGame(false); } }, Mint);
+            trainingButton = MakeButton("Training mode", menuPanel, "INICIAR TREINO", 22, 0.16f, 0.04f, 0.84f, 0.20f,
+                () => { if (driver.TryStartTraining(trainingStage)) { currentTab = "MINA"; EnterGame(false); } }, Mint);
             trainingButton.gameObject.SetActive(false);
 
+            trainingPicker = Region("Training selection", menuPanel, 0.06f, 0.25f, 0.94f, 0.47f);
+            MakeButton("Previous training", trainingPicker, "<", 24, 0, 0, .22f, 1, () => ChangeTraining(-1), Steel);
+            MakeButton("Next training", trainingPicker, ">", 24, .78f, 0, 1, 1, () => ChangeTraining(1), Steel);
+            trainingSelection = MakeLabel("Selected training stage", trainingPicker, "", 20, Cream, new Vector2(.23f, 0), new Vector2(.77f, 1), TextAlignmentOptions.Center);
+            trainingPicker.gameObject.SetActive(false);
+
             bottomBar = MakeArtPanel("Bottom navigation", combatRoot, Color.white, "bottom_nav_structure", 0, 0, 1, 0.068f);
-            string[] tabs = { "MINA", "MODOS", "OFICINA", "PETS", "BAÚS", "LOJA" };
-            string[] icons = { "nav_mine", "nav_modes", "nav_workshop", "nav_pets", "nav_chests", "nav_shop" };
+            string[] tabs = { "MINA", "MODOS", "OFICINA", "ÁLBUM", "BAÚS", "LOJA" };
+            string[] icons = { "nav_mine", "nav_modes", "nav_workshop", "nav_album", "nav_chests", "nav_shop" };
             for (int i = 0; i < tabs.Length; i++)
             {
                 string tab = tabs[i];
                 float left = i / 6f + 0.004f;
                 RectTransform tabButton = MakeNavButton("Tab " + tab, bottomBar, tab, icons[i], left, 0.05f, left + 0.159f, 0.97f,
-                    () => { if (tab == "OFICINA") OpenProgression(); else if (tab == "BAÚS" || tab == "LOJA") OpenTreasury(); else SelectTab(tab); }, tab == currentTab ? Cyan : Steel);
+                    () => { if (tab == "OFICINA") OpenProgression(); else if (tab == "BAÚS" || tab == "LOJA") OpenTreasury(); else if (tab == "ÁLBUM") OpenAlbum(); else SelectTab(tab); }, tab == currentTab ? Cyan : Steel);
                 tabButtonImages.Add(tab, tabButton.GetComponent<Image>());
             }
 
+            BuildAlbum();
             menuPanel.gameObject.SetActive(false);
             bottomBar.gameObject.SetActive(false);
             worldPanel.gameObject.SetActive(false);
@@ -445,6 +458,58 @@ namespace DigAndWonder
             missionLabel.gameObject.SetActive(false);
             progressionPanel.gameObject.SetActive(false);
             combatRoot.gameObject.SetActive(false);
+        }
+
+        private void ChangeTraining(int direction)
+        {
+            trainingStage = Math.Max(1, Math.Min(driver.Profile.HighestClearedStage, trainingStage + direction));
+            UpdateTab();
+        }
+
+        private void BuildAlbum()
+        {
+            albumPanel = MakePanel("Discovery album", combatRoot, Ink, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            albumPanel.GetComponent<Image>().raycastTarget = true;
+            albumTitle = MakeLabel("Album title", albumPanel, "ÁLBUM DE DESCOBERTAS", 34, Sand, new Vector2(.06f, .86f), new Vector2(.94f, .95f), TextAlignmentOptions.Center);
+            albumCount = MakeLabel("Album progress", albumPanel, "", 24, Cyan, new Vector2(.06f, .77f), new Vector2(.94f, .86f), TextAlignmentOptions.Center);
+            for (int i = 0; i < 2; i++)
+            {
+                float bottom = i == 0 ? .48f : .22f;
+                RectTransform card = MakePanel("Discovery card " + i, albumPanel, Panel, new Vector2(.08f, bottom), new Vector2(.92f, bottom + .23f), Vector2.zero, Vector2.zero);
+                discoveryCards[i] = MakeLabel("Discovery description", card, "", 27, Cream, new Vector2(.06f, .08f), new Vector2(.94f, .92f), TextAlignmentOptions.Center);
+                if (readingFont != null) discoveryCards[i].font = readingFont;
+            }
+            MakeButton("Previous chapter", albumPanel, "<", 28, .08f, .12f, .25f, .20f, () => { albumChapter = Math.Max(1, albumChapter - 1); RefreshAlbum(); }, Steel);
+            MakeButton("Next chapter", albumPanel, ">", 28, .75f, .12f, .92f, .20f, () => { albumChapter = Math.Min(10, albumChapter + 1); RefreshAlbum(); }, Steel);
+            MakeButton("Close album", albumPanel, "CONTINUAR", 26, .28f, .045f, .72f, .13f, () => {
+                albumPanel.gameObject.SetActive(false);
+                SelectTab("MINA");
+            }, Mint);
+            albumPanel.gameObject.SetActive(false);
+        }
+
+        private void OpenAlbum(bool newDiscovery = false)
+        {
+            currentTab = "ÁLBUM";
+            driver.SetMenuPaused(true);
+            feedback?.Clear();
+            albumTitle.text = newDiscovery ? "NOVA DESCOBERTA!" : "ÁLBUM DE DESCOBERTAS";
+            albumPanel.gameObject.SetActive(true);
+            RefreshAlbum();
+        }
+
+        private void RefreshAlbum()
+        {
+            albumCount.text = driver.Profile.DiscoveryStages.Count + " / " + DiscoveryCatalog.Entries.Count + " ACHADOS  •  CAPÍTULO " + albumChapter;
+            for (int i = 0; i < 2; i++)
+            {
+                int stage = (albumChapter - 1) * 10 + (i == 0 ? 5 : 10);
+                DiscoveryDefinition item = DiscoveryCatalog.Find(stage);
+                bool owned = driver.Profile.DiscoveryStages.Contains(stage);
+                discoveryCards[i].color = owned ? Cream : Dim;
+                discoveryCards[i].text = owned ? (item.IsRelic ? "RELÍQUIA" : "FÓSSIL") + " • " + item.Name.ToUpperInvariant() + "\n\n" + item.Description
+                    : "DESCOBERTA DESCONHECIDA\n\nVença " + (i == 0 ? "o mini-chefe e a escolta" : "o guardião") + " na fase " + (i == 0 ? "5" : "10") + " deste capítulo.";
+            }
         }
 
         private void BuildStartMenu(RectTransform panel)
@@ -608,6 +673,8 @@ namespace DigAndWonder
         private void EnterGame(bool resumed)
         {
             if (driver.Simulation == null) return;
+            currentTab = "MINA";
+            albumPanel.gameObject.SetActive(false);
             feedback?.Clear();
             if (driver.Simulation.IsActive) lastCharacterReward = null;
             ApplyCharacterColors();
@@ -631,6 +698,12 @@ namespace DigAndWonder
             combatLog.gameObject.SetActive(true);
             if (resumed) statusLabel.text = "PROGRESSO RECUPERADO — CONTINUANDO DA ÚLTIMA POSIÇÃO";
             else statusLabel.text = "A broca começou a avançar!";
+            int hintPhase = driver.Simulation.Run.CampaignStage;
+            combatLog.text = hintPhase == 1 ? "AUTO ataca. Use ouro para melhorar a broca." :
+                hintPhase == 2 ? "Ágeis têm pouca vida e atacam mais rápido." :
+                hintPhase == 3 ? "Blindados resistem aos tiros; o especial atravessa a armadura." :
+                hintPhase == 4 ? "PREPARANDO: derrote o inimigo para interromper o ataque." :
+                hintPhase % 5 == 0 ? "Vença o encontro para revelar uma descoberta no álbum." : "";
             RefreshAutoToggle();
             drillAnimator.ResetForRun();
             drillFrames.ResetForRun();
@@ -661,7 +734,13 @@ namespace DigAndWonder
             }
             if (driver.Simulation == null) return;
             // Avanço fora do evento de vitória: o driver já terminou o passo e salvou as recompensas.
-            if (driver.CanContinueCampaign && !driver.IsSaveBlocked)
+            if (pendingDiscovery > 0)
+            {
+                albumChapter = (pendingDiscovery - 1) / 10 + 1;
+                pendingDiscovery = 0;
+                OpenAlbum(true);
+            }
+            if (driver.CanContinueCampaign && !driver.IsSaveBlocked && currentTab == "MINA")
             {
                 nextStageTimer += Time.unscaledDeltaTime;
                 if (nextStageTimer >= StageVictorySeconds && driver.TryContinueCampaign())
@@ -672,7 +751,7 @@ namespace DigAndWonder
                 }
             }
             refreshTimer += Time.unscaledDeltaTime;
-            if (driver.Simulation.IsActive && !driver.IsSaveBlocked && sceneryMotion != null)
+            if (driver.Simulation.IsActive && !driver.IsSaveBlocked && currentTab == "MINA" && sceneryMotion != null)
             {
                 sceneryTime += Time.unscaledDeltaTime;
                 UpdateScenery();
@@ -693,15 +772,16 @@ namespace DigAndWonder
             stageLabel.text = GameplayHudModel.CampaignPosition(sim.Run.CampaignStage);
             int stageNumber = sim.Run.CampaignStage;
             int chapterPhase = (stageNumber - 1) % 10 + 1;
-            bool chapterEncounter = sim.Run.EncounterVersion == 1;
+            bool chapterEncounter = sim.Run.EncounterVersion >= 1;
             bool specialEncounter = !chapterEncounter || chapterPhase == 5 || chapterPhase == 10;
             string enemyTitle = chapterEncounter && chapterPhase == 5 ? "MINI-CHEFE" : "GUARDIÃO";
-            missionLabel.text = sim.Run.IsStageCleared ? "Missão concluída" : specialEncounter ? "Derrote " + enemyTitle.ToLowerInvariant() : "Elimine as ondas";
-            stageProgress.text = sim.Run.IsStageCleared ? "FASE CONCLUÍDA" : chapterEncounter && chapterPhase == 10 && sim.Profile.HighestClearedStage >= stageNumber ? "TREINO DE CHEFE • 15% XP" : sim.Run.BossSpawned ? enemyTitle + " À FRENTE" : "ONDA " + sim.Run.WavesSpawned + " / " + sim.StageWaveCount;
+            missionLabel.text = sim.Run.IsStageCleared ? "Missão concluída" : specialEncounter ? (chapterPhase == 5 ? "Vença o mini-chefe e a escolta" : "Derrote o guardião") : "Elimine as ondas";
+            stageProgress.text = sim.Run.IsStageCleared ? "FASE CONCLUÍDA" : chapterEncounter && chapterPhase == 10 && sim.Profile.HighestClearedStage >= stageNumber ? "TREINO DE CHEFE • 15% XP" : sim.Run.BossSpawned ? enemyTitle + " À FRENTE" : "ONDA " + Math.Max(1, sim.Run.WavesSpawned) + " / " + sim.StageWaveCount;
             bool firstClear = sim.Profile.HighestClearedStage < stageNumber;
             int crystals = firstClear ? driver.Economy.FirstClearCrystals +
                 (stageNumber % driver.Economy.MilestoneInterval == 0 ? driver.Economy.MilestoneCrystals : 0) : 0;
-            missionReward.text = crystals > 0 ? "+" + crystals + " CRISTAIS" : specialEncounter ? "BAÚ + CHAVE" : "BÔNUS DE OURO";
+            bool newDiscovery = sim.Run.EncounterVersion >= 2 && DiscoveryCatalog.Find(stageNumber) != null && !sim.Profile.DiscoveryStages.Contains(stageNumber);
+            missionReward.text = sim.Run.IsStageCleared ? "CONCLUÍDA" : newDiscovery ? "DESCOBERTA\n+ BAÚ / CHAVE" : crystals > 0 ? "+" + crystals + " CRISTAIS" : specialEncounter ? "BAÚ + CHAVE" : "BÔNUS DE OURO";
             forceValue.text = GameplayHudModel.Number(GameplayHudModel.PowerRating(sim, driver.EquippedCharacter));
             RefreshPowerBar();
             if (displayedGold != sim.Gold || displayedCrystals != sim.Profile.Crystals)
@@ -727,15 +807,15 @@ namespace DigAndWonder
             UpdateTab();
             if (sim.Run.IsPlayerDefeated && currentTab == "MINA")
             {
-                statusLabel.text = "A broca parou. Seu ouro está salvo.";
+                statusLabel.text = GameplayHudModel.DefeatAdvice(sim);
                 menuTitle.text = "TENTATIVA ENCERRADA";
-                menuBody.text = "Melhore a broca e tente novamente.";
+                menuBody.text = GameplayHudModel.DefeatAdvice(sim);
             }
             else if (sim.Run.IsStageCleared)
             {
                 statusLabel.text = driver.CanContinueCampaign
                     ? (string.IsNullOrEmpty(lastCharacterReward) ? "Fase concluída!" : lastCharacterReward + " LIBERADA!") + " Próxima fase..."
-                    : "CAMPANHA CONCLUÍDA! Abra a Oficina ou repita a última fase.";
+                    : sim.Run.IsTraining ? "TREINO CONCLUÍDO! Progresso da campanha preservado." : "CAMPANHA CONCLUÍDA! Confira seu álbum e suas brocas.";
             }
             if (driver.IsSaveBlocked)
             {
@@ -753,6 +833,7 @@ namespace DigAndWonder
         private void SelectTab(string tab)
         {
             currentTab = tab;
+            driver.SetMenuPaused(tab != "MINA" && tab != "MELHORIAS");
             UpdateTab();
         }
 
@@ -842,7 +923,7 @@ namespace DigAndWonder
                 float maximum = sim.EnemyMaximumHealth(true);
                 float bossRatio = maximum > 0f ? Mathf.Clamp01(boss.Health / maximum) : 0f;
                 bossBarFill.rectTransform.anchorMax = new Vector2(0.01f + 0.98f * bossRatio, 0.9f);
-                string bossTitle = sim.Run.EncounterVersion == 1 && sim.Run.CampaignStage % 10 == 5 ? "MINI-CHEFE" : "GUARDIÃO";
+                string bossTitle = sim.Run.EncounterVersion >= 1 && sim.Run.CampaignStage % 10 == 5 ? "MINI-CHEFE" : "GUARDIÃO";
                 bossBarText.text = bossTitle + "  " + GameplayHudModel.Number(Math.Ceiling(boss.Health)) + " / " + GameplayHudModel.Number(Math.Ceiling(maximum));
             }
             for (int i = 0; i < enemyIds.Length; i++)
@@ -856,6 +937,7 @@ namespace DigAndWonder
                     if (!dying) enemyIds[i] = 0;
                 }
             }
+            int regularIndex = 0;
             foreach (EnemySnapshot enemy in sim.Enemies)
             {
                 int slot = EnemySlot(enemy.Id);
@@ -868,9 +950,9 @@ namespace DigAndWonder
                     }
                     if (slot < 0) continue;
                     enemyIds[slot] = enemy.Id;
-                    enemyMaximumHealth[slot] = Mathf.Max(sim.EnemyMaximumHealth(enemy.IsBoss), enemy.Health);
+                    enemyMaximumHealth[slot] = Mathf.Max(sim.EnemyMaximumHealth(enemy), enemy.Health);
                     SetEnemyVisible(slot, true, true);
-                    enemySprites[slot].Configure(string.IsNullOrEmpty(enemy.VisualId) ? "torrao" : enemy.VisualId, enemy.IsBoss);
+                    enemySprites[slot].Configure(string.IsNullOrEmpty(enemy.VisualId) ? "torrao" : enemy.VisualId, enemy.IsBoss, sim.Run.EncounterVersion >= 1 && sim.Run.CampaignStage % 10 == 5 ? 1.05f : 1.3f);
                     enemySprites[slot].ResetForSpawn();
                     enemyAnimators[slot].ResetForRun();
                     RectTransform entering = enemyVisualRoots[slot];
@@ -880,17 +962,27 @@ namespace DigAndWonder
                 }
                 SetEnemyVisible(slot, true, true);
                 enemyMaximumHealth[slot] = Mathf.Max(enemyMaximumHealth[slot], enemy.Health);
-                enemyHealth[slot].text = GameplayHudModel.Number(Math.Ceiling(enemy.Health));
+                bool windingUp = sim.IsWindingUp(enemy.Id);
+                enemyHealth[slot].text = (windingUp ? "PREPARANDO" : sim.EnemyLabel(enemy)) + "\n" + GameplayHudModel.Number(Math.Ceiling(enemy.Health));
+                enemyHealth[slot].color = windingUp ? Coral : Cream;
+                enemyHealthFills[slot].color = enemy.Archetype == EnemyArchetype.Armored ? Steel : Coral;
+                float ground = drillIcon.rectTransform.anchorMin.y + .012f;
+                bool mini = sim.Run.EncounterVersion >= 1 && sim.Run.CampaignStage % 10 == 5;
+                float left = enemy.IsBoss ? (mini ? .39f : .58f) : mini && sim.Run.BossSpawned ? .54f + regularIndex * .105f : .49f + regularIndex * .098f;
+                if (!enemy.IsBoss) regularIndex++;
+                float unitWidth = enemy.IsBoss ? (mini ? .14f : .23f) : .095f;
+                enemyVisualRoots[slot].anchorMin = new Vector2(left, ground - .012f);
+                enemyVisualRoots[slot].anchorMax = new Vector2(left + unitWidth, ground + .18f);
                 Sprite visual = enemyImages[slot].sprite;
                 if (visual != null && worldPanel.rect.height > 0)
                 {
                     RectTransform unit = enemyVisualRoots[slot];
                     float width = (unit.anchorMax.x - unit.anchorMin.x) * worldPanel.rect.width;
-                    float barY = unit.anchorMin.y + width * visual.rect.height / visual.rect.width * (enemy.IsBoss ? 1.3f : 1f) / worldPanel.rect.height + 0.008f;
+                    float barY = unit.anchorMin.y + width * visual.rect.height / visual.rect.width * (enemy.IsBoss ? (mini ? 1.05f : 1.3f) : 1f) / worldPanel.rect.height + 0.008f;
                     enemyHealthTracks[slot].rectTransform.anchorMin = new Vector2(unit.anchorMin.x, barY);
                     enemyHealthTracks[slot].rectTransform.anchorMax = new Vector2(unit.anchorMax.x, barY + 0.01f);
                     enemyHealth[slot].rectTransform.anchorMin = new Vector2(unit.anchorMin.x - 0.01f, barY + 0.012f);
-                    enemyHealth[slot].rectTransform.anchorMax = new Vector2(unit.anchorMax.x + 0.01f, barY + 0.045f);
+                    enemyHealth[slot].rectTransform.anchorMax = new Vector2(unit.anchorMax.x + 0.01f, barY + 0.073f);
                     enemyHealthTracks[slot].rectTransform.sizeDelta = Vector2.zero;
                     enemyHealth[slot].rectTransform.sizeDelta = Vector2.zero;
                 }
@@ -959,9 +1051,8 @@ namespace DigAndWonder
                     break;
                 case "MODOS":
                     menuTitle.text = "MODOS DE EXPEDIÇÃO";
-                    menuBody.text = "CAMPANHA  " + sim.Run.CampaignStage + " / " + driver.Economy.MaximumStage +
-                        "\nTREINO: repita a última fase vencida.\n" + (sim.IsActive ? "Termine a tentativa atual para treinar." : "") +
-                        "\nTORRE INVERTIDA\nNovo modo em preparação.";
+                    menuBody.text = "TREINO: escolha uma fase vencida.\n" +
+                        (sim.IsActive ? "Termine a tentativa atual para treinar." : "Ouro e XP persistem. Cristais de estreia não se repetem.");
                     break;
                 case "PETS":
                     menuTitle.text = "PETS DE APOIO";
@@ -973,7 +1064,7 @@ namespace DigAndWonder
                     break;
                 case "MENU":
                     menuTitle.text = "EXPEDIÇÃO";
-                    menuBody.text = "Progresso salvo automaticamente.\n\nAUTO liga e desliga os disparos básicos.\nToque nos módulos para consultar ou melhorar poderes.\nUse MINA para voltar às melhorias.";
+                    menuBody.text = "Progresso salvo automaticamente.\n\nAUTO liga e desliga os disparos básicos.\nÁgeis atacam rápido; blindados resistem aos tiros.\nO especial atravessa armadura.\nPREPARANDO: derrote o inimigo antes do disparo.\nUse MINA para voltar às melhorias.";
                     break;
                 default:
                     menuTitle.text = "PERFIL DA EXPEDIÇÃO";
@@ -1002,17 +1093,24 @@ namespace DigAndWonder
             }
             if (scrollThumb != null) scrollThumb.parent.gameObject.SetActive(upgradesVisible);
             restartButton.gameObject.SetActive(defeated && !driver.IsSaveBlocked);
-            continueButton.gameObject.SetActive(cleared && !driver.CanContinueCampaign && !driver.IsSaveBlocked);
+            continueButton.gameObject.SetActive((cleared && !driver.CanContinueCampaign || defeated && sim.Run.IsTraining) && !driver.IsSaveBlocked);
+            continueButton.anchorMin = new Vector2(defeated && sim.Run.IsTraining ? .40f : .70f, .905f);
+            continueButton.anchorMax = new Vector2(defeated && sim.Run.IsTraining ? .68f : .97f, .99f);
             trainingButton.gameObject.SetActive(currentTab == "MODOS");
+            trainingPicker.gameObject.SetActive(currentTab == "MODOS");
+            menuBody.rectTransform.anchorMin = new Vector2(.08f, currentTab == "MODOS" ? .50f : .16f);
+            if (trainingStage < 1 || trainingStage > sim.Profile.HighestClearedStage) trainingStage = Math.Max(1, sim.Profile.HighestClearedStage);
+            trainingSelection.text = sim.Profile.HighestClearedStage < 1 ? "VENÇA A FASE 1" : GameplayHudModel.CampaignPosition(trainingStage);
+            continueButton.GetComponentInChildren<TextMeshProUGUI>().text = sim.Profile.HighestClearedStage < driver.Economy.MaximumStage ? "CAMPANHA" : "TREINAR";
             trainingButton.GetComponent<Button>().interactable = driver.IsReady && !sim.IsActive && sim.Profile.HighestClearedStage > 0;
-            if (cleared && driver.CanContinueCampaign)
+            if (cleared && currentTab == "MINA")
                 menuBody.text = driver.IsSaveBlocked ? "Aguardando salvar para continuar. Seu progresso foi preservado."
-                    : "Baú, chave e progresso salvos. Avançando para o próximo mapa...";
+                    : sim.LastClearSummary + (driver.CanContinueCampaign ? "\nPróxima fase..." : "");
             foreach (KeyValuePair<string, Image> button in tabButtonImages)
                 button.Value.color = new Color(1f, 1f, 1f, 0f);
             foreach (KeyValuePair<string, GameObject> item in navHighlights)
                 item.Value.SetActive(item.Key == currentTab);
-            menuTitle.rectTransform.anchorMax = new Vector2(defeated || cleared && !driver.CanContinueCampaign ? 0.68f : 0.965f, 0.99f);
+            menuTitle.rectTransform.anchorMax = new Vector2(defeated && sim.Run.IsTraining ? .39f : defeated || cleared && !driver.CanContinueCampaign ? 0.68f : 0.965f, 0.99f);
         }
 
         private string BuildUpgradeSummary(IdleCombatSimulation sim, int attackCost, int healthCost)
@@ -1079,7 +1177,7 @@ namespace DigAndWonder
             string equipmentState = currentStage < 2 ? "BLOQUEADO  FASE 2" : "DESBLOQUEADO  •  EM BREVE";
             return "BAÚS GUARDADOS  " + sim.Profile.Chests + "   •   CHAVES  " + sim.Profile.Keys +
                 "\nO guardião entrega baús e chaves da fase.\n\nEQUIPAMENTOS  " + equipmentState +
-                "\nÁLBUM DE DESCOBERTAS  " + equipmentState;
+                "\nÁLBUM DE DESCOBERTAS  " + sim.Profile.DiscoveryStages.Count + "/" + DiscoveryCatalog.Entries.Count;
         }
 
         private int GetStageNumber(string stageId)
@@ -1107,7 +1205,8 @@ namespace DigAndWonder
             switch (e.Type)
             {
                 case CombatEventType.EnemySpawned: statusLabel.text = "UMA CRIATURA SURGIU!"; break;
-                case CombatEventType.BossSpawned: statusLabel.text = "GUARDIÃO À FRENTE!"; statusLabel.transform.DOPunchScale(new Vector3(0.18f, 0.18f, 0), 0.35f, 4, 0.65f); break;
+                case CombatEventType.DiscoveryAwarded: pendingDiscovery = (int)e.Amount; break;
+                case CombatEventType.BossSpawned: statusLabel.text = driver.Simulation.Run.CampaignStage % 10 == 5 ? "MINI-CHEFE E ESCOLTA À FRENTE!" : "GUARDIÃO À FRENTE!"; statusLabel.transform.DOPunchScale(new Vector3(0.18f, 0.18f, 0), 0.35f, 4, 0.65f); break;
                 case CombatEventType.SpecialStarted: combatLog.text = "ESPECIAL: " + driver.EquippedCharacter.DisplayName.ToUpperInvariant(); break;
                 case CombatEventType.SpecialStrike: combatLog.text = "IMPACTO ESPECIAL  •  " + Mathf.CeilToInt(e.Amount); break;
                 case CombatEventType.CharacterUnlocked:
@@ -1160,7 +1259,20 @@ namespace DigAndWonder
             CharacterCombatData character = driver.EquippedCharacter;
             if (character == null) return;
             var tint = new Color(character.TintR, character.TintG, character.TintB);
-            if (drillFrames != null) drillFrames.GetComponent<Image>().color = tint;
+            if (drillFrames != null)
+            {
+                drillFrames.GetComponent<Image>().color = tint;
+                if (drillModules[0] == null)
+                {
+                    drillModules[0] = MakeIcon(drillFrames.transform, "shield", .16f, .28f, .39f, .62f, tint);
+                    drillModules[1] = MakeIcon(drillFrames.transform, "bolt", .35f, .55f, .54f, .88f, tint);
+                    drillModules[2] = MakeIcon(drillFrames.transform, "core", .02f, .38f, .23f, .72f, tint);
+                }
+                drillModules[0].gameObject.SetActive(character.UnlockStage > 0);
+                drillModules[1].gameObject.SetActive(character.BasicHitCount >= 3);
+                drillModules[2].gameObject.SetActive(character.SpecialTargetCount > 1 || character.InnateRicochet > 0);
+                foreach (Image module in drillModules) { module.color = tint; module.raycastTarget = false; }
+            }
         }
 
         private void BuildPowerBar(RectTransform parent)
@@ -1564,6 +1676,12 @@ namespace DigAndWonder
         private Sprite NavIconFor(string name)
         {
             if (navIconSprites.TryGetValue(name, out Sprite sprite)) return sprite;
+            if (name == "nav_album")
+            {
+                sprite = Resources.Load<Sprite>("Art/UI/Icons/nav_album");
+                if (sprite != null) navIconSprites[name] = sprite;
+                return sprite;
+            }
             return Resources.Load<Sprite>("Art/Workshop/gear");
         }
 

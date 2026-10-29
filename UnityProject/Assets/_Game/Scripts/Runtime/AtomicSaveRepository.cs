@@ -89,7 +89,7 @@ namespace DigAndWonder
         private static void Validate(GameSaveData data, bool allowLegacy = false)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
-            bool legacy = allowLegacy && (data.SchemaVersion == 1 || data.SchemaVersion == 2);
+            bool legacy = allowLegacy && (data.SchemaVersion >= 1 && data.SchemaVersion < CurrentSchemaVersion);
             if (data.SchemaVersion != CurrentSchemaVersion && !legacy) throw new InvalidDataException("Versão de save incompatível.");
             if (data.Gold < 0 || data.Keys < 0 || data.Chests < 0 || data.AttackLevel < 0 || data.HealthLevel < 0 ||
                 data.CriticalChanceLevel < 0 || data.CriticalDamageLevel < 0 || data.SpecialLevel < 0 ||
@@ -133,6 +133,14 @@ namespace DigAndWonder
                 if (data.ActiveRun != null && data.ActiveRun.CharacterId != data.EquippedCharacterId)
                     throw new InvalidDataException("A personagem da tentativa diverge da personagem equipada.");
             }
+            if (data.SchemaVersion >= 4)
+            {
+                if (data.DiscoveryStages == null) throw new InvalidDataException("Coleção ausente.");
+                var discoveries = new HashSet<int>();
+                foreach (int stage in data.DiscoveryStages)
+                    if (DiscoveryCatalog.Find(stage) == null || stage > data.HighestClearedStage || !discoveries.Add(stage))
+                        throw new InvalidDataException("Descoberta inválida ou duplicada.");
+            }
             if (data.ActiveRun == null) return;
             ActiveRunSnapshot run = data.ActiveRun;
             if (!run.IsStageCleared && !run.IsPlayerDefeated && run.CampaignStage != data.CampaignStage)
@@ -141,7 +149,7 @@ namespace DigAndWonder
             if (run.IsPlayerDefeated && run.IsStageCleared) throw new InvalidDataException("A tentativa tem resultados incompatíveis.");
             RequireFinite(run.ElapsedSeconds, run.PlayerHealth, run.AttackTimer, run.AttackHitTimer,
                 run.SpecialCooldown, run.SpecialTravelTimer, run.SpecialHitTimer, run.NextWaveTimer);
-            if (run.EncounterVersion < 0 || run.EncounterVersion > 1 || run.CampaignStage < 1 || run.ElapsedSeconds < 0f || run.PlayerHealth < 0f || run.AttackHitsRemaining < 0 || run.SpecialHitsRemaining < 0 ||
+            if (run.EncounterVersion < 0 || run.EncounterVersion > 2 || run.CampaignStage < 1 || run.ElapsedSeconds < 0f || run.PlayerHealth < 0f || run.AttackHitsRemaining < 0 || run.SpecialHitsRemaining < 0 ||
                 run.WavesSpawned < 0 || run.PendingSpawns < 0 || run.NextEntityId < 1 || run.AttackTargetId < 0 || run.SpecialTargetId < 0 ||
                 (!run.IsPlayerDefeated && !run.IsStageCleared && run.PlayerHealth <= 0f))
                 throw new InvalidDataException("A tentativa tem contadores ou vida inválidos.");
@@ -152,7 +160,7 @@ namespace DigAndWonder
                 {
                     if (enemy == null) throw new InvalidDataException("Inimigo ausente no snapshot.");
                     RequireFinite(enemy.Health, enemy.AttackTimer);
-                    if (enemy.Id < 1 || enemy.Id >= run.NextEntityId || !ids.Add(enemy.Id) || enemy.Health <= 0f || enemy.GoldReward < 0)
+                    if (enemy.Id < 1 || enemy.Id >= run.NextEntityId || !ids.Add(enemy.Id) || enemy.Health <= 0f || enemy.GoldReward < 0 || (int)enemy.Archetype < 0 || (int)enemy.Archetype > 3 || enemy.IsBoss && enemy.Archetype != EnemyArchetype.Regular)
                         throw new InvalidDataException("Inimigo inválido no snapshot.");
                 }
             }
@@ -161,8 +169,8 @@ namespace DigAndWonder
                 foreach (PendingHitSnapshot hit in run.PendingHits)
                 {
                     if (hit == null) throw new InvalidDataException("Projétil ausente no snapshot.");
-                    RequireFinite(hit.Damage, hit.RemainingTravel);
-                    if (hit.Damage < 0f || hit.SourceEntityId < 0 || hit.TargetEntityId < 0)
+                    RequireFinite(hit.Damage, hit.RemainingTravel, hit.TelegraphRemaining);
+                    if (hit.TelegraphRemaining < 0f || hit.TelegraphRemaining > System.Math.Max(0f, hit.RemainingTravel) + .001f || hit.Damage < 0f || hit.SourceEntityId < 0 || hit.TargetEntityId < 0)
                         throw new InvalidDataException("Projétil inválido no snapshot.");
                 }
             }
@@ -224,6 +232,20 @@ namespace DigAndWonder
                             if (!(hit is JObject projectile) || projectile["IsBasic"]?.Type != JTokenType.Boolean ||
                                 projectile["IsCritical"]?.Type != JTokenType.Boolean) return false;
                 }
+                if (envelope.SchemaVersion >= 4)
+                {
+                    if (!(payload["DiscoveryStages"] is JArray)) return false;
+                    if (payload["ActiveRun"] is JObject newRun)
+                    {
+                        if (newRun["IsTraining"]?.Type != JTokenType.Boolean || newRun["EncounterVersion"]?.Type != JTokenType.Integer) return false;
+                        if (newRun["Enemies"] is JArray newEnemies)
+                            foreach (JToken enemy in newEnemies)
+                                if (!(enemy is JObject savedEnemy) || savedEnemy["Archetype"]?.Type != JTokenType.Integer) return false;
+                        if (newRun["PendingHits"] is JArray newHits)
+                            foreach (JToken hit in newHits)
+                                if (!(hit is JObject savedHit) || savedHit["TelegraphRemaining"] == null) return false;
+                    }
+                }
                 data = JsonConvert.DeserializeObject<GameSaveData>(envelope.Payload);
                 if (data == null) return false;
                 Validate(data, allowLegacy: true);
@@ -241,13 +263,17 @@ namespace DigAndWonder
                         };
                         if (data.ActiveRun != null) data.ActiveRun.CharacterId = CharacterProgression.StarterCharacterId;
                     }
-                    data.CampaignStage = 1;
-                    data.HighestClearedStage = 0;
-                    data.Crystals = data.SpecialLevel = data.AttackSpeedLevel = data.RepairLevel = 0;
-                    data.LootRandomState = 0xA341316Cu;
-                    data.ChestStacks = new List<ChestStackData>();
-                    foreach (CharacterProgressData character in data.Characters) character.Powers = new List<PowerProgressData>();
-                    if (data.ActiveRun != null) data.ActiveRun.CampaignStage = 1;
+                    if (originalVersion < 3)
+                    {
+                        data.CampaignStage = 1;
+                        data.HighestClearedStage = 0;
+                        data.Crystals = data.SpecialLevel = data.AttackSpeedLevel = data.RepairLevel = 0;
+                        data.LootRandomState = 0xA341316Cu;
+                        data.ChestStacks = new List<ChestStackData>();
+                        foreach (CharacterProgressData character in data.Characters) character.Powers = new List<PowerProgressData>();
+                        if (data.ActiveRun != null) data.ActiveRun.CampaignStage = 1;
+                    }
+                    data.DiscoveryStages = new List<int>();
                     Validate(data);
                 }
                 return data != null;

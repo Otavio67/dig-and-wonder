@@ -28,13 +28,19 @@ namespace DigAndWonder
         public EconomyRules Economy => config.Economy;
         public float PlayerHealth => run.PlayerHealth;
         public int Gold => profile.Gold;
+        public string LastClearSummary { get; private set; } = "";
+        public float EnemyMaximumHealth(EnemySnapshot enemy) => EnemyMaximumHealth(enemy.IsBoss) * EnemyArchetypes.Health(enemy.Archetype);
+        public bool IsWindingUp(int enemyId) => pendingHits.Any(hit => hit.SourceEntityId == enemyId && hit.TelegraphRemaining > 0);
+        public string EnemyLabel(EnemySnapshot enemy) => enemy.IsBoss
+            ? (run.EncounterVersion >= 1 && run.CampaignStage % 10 == 5 ? "MINI-CHEFE" : "GUARDIÃO")
+            : EnemyArchetypes.Label(enemy.Archetype);
         public int Keys => profile.Keys;
         public bool IsActive => run != null && !run.IsStageCleared && !run.IsPlayerDefeated;
         public bool AutoAttackEnabled { get; set; } = true;
         public string CurrentStageId => run?.StageId;
         public string CurrentStageDisplayName => currentStage?.DisplayName;
         public string ActiveCharacterId => run?.CharacterId;
-        public int StageWaveCount => run.EncounterVersion == 1 ? (run.CampaignStage % 10 == 0 ? 0 : 3) : currentStage.WaveCount;
+        public int StageWaveCount => run.EncounterVersion >= 1 ? (run.CampaignStage % 10 == 0 ? 0 : 3) : currentStage.WaveCount;
         public float SpecialCooldownSeconds => config.Special.Cooldown;
         public float EnemyMaximumHealth(bool boss) => boss ? bossDefinition.MaxHealth : regularDefinition.MaxHealth;
         public float BasicHitsPerSecond => (currentCharacter.BasicHitCount > 0 ? currentCharacter.BasicHitCount : config.BasicAttackHitCount)
@@ -103,15 +109,17 @@ namespace DigAndWonder
         {
             if (stage == null) throw new ArgumentNullException(nameof(stage));
             currentCharacter = ResolveCharacter(profile.EquippedCharacterId);
-            ConfigureStage(stage, profile.CampaignStage, config.Economy == null ? 0 : 1);
+            ConfigureStage(stage, profile.CampaignStage, config.Economy == null ? 0 : 2);
             enemies.Clear();
             pendingHits.Clear();
+            LastClearSummary = "";
             run = new ActiveRunSnapshot
             {
                 StageId = stage.Id,
                 CharacterId = currentCharacter.Id,
                 CampaignStage = profile.CampaignStage,
-                EncounterVersion = config.Economy == null ? 0 : 1,
+                EncounterVersion = config.Economy == null ? 0 : 2,
+                IsTraining = profile.CampaignStage <= profile.HighestClearedStage,
                 PlayerHealth = PlayerMaximumHealth,
                 AttackTimer = 0f,
                 AttackHitTimer = 0f,
@@ -123,7 +131,7 @@ namespace DigAndWonder
                 RandomState = randomSeed == 0 ? 0x9E3779B9u : randomSeed
             };
             profile.ActiveRun = run;
-            profile.UnlockedStageId = stage.Id;
+            if (!run.IsTraining || run.EncounterVersion < 2) profile.UnlockedStageId = stage.Id;
             Emit(CombatEventType.RunStarted, text: stage.DisplayName);
         }
 
@@ -154,7 +162,7 @@ namespace DigAndWonder
 
         private void SpawnTimedWaves(float step)
         {
-            if (run.EncounterVersion == 1)
+            if (run.EncounterVersion >= 1)
             {
                 SpawnChapterEncounter(step);
                 return;
@@ -211,7 +219,7 @@ namespace DigAndWonder
 
         private void QueueOrSpawnRegularEnemy()
         {
-            if (ActiveEnemyCount() < (run.EncounterVersion == 1 ? Math.Max(5, config.MaximumEnemies) : config.MaximumEnemies))
+            if (ActiveEnemyCount() < (run.EncounterVersion >= 1 ? Math.Max(5, config.MaximumEnemies) : config.MaximumEnemies))
             {
                 SpawnEnemy(regularDefinition, false);
                 return;
@@ -223,7 +231,7 @@ namespace DigAndWonder
 
         private void SpawnPendingEnemies()
         {
-            while (run.PendingSpawns > 0 && ActiveEnemyCount() < (run.EncounterVersion == 1 ? Math.Max(5, config.MaximumEnemies) : config.MaximumEnemies))
+            while (run.PendingSpawns > 0 && ActiveEnemyCount() < (run.EncounterVersion >= 1 ? Math.Max(5, config.MaximumEnemies) : config.MaximumEnemies))
             {
                 run.PendingSpawns--;
                 SpawnEnemy(regularDefinition, false);
@@ -232,12 +240,16 @@ namespace DigAndWonder
 
         private void SpawnEnemy(EnemyCombatData definition, bool isBoss)
         {
+            EnemyArchetype kind = run.EncounterVersion >= 2 && !isBoss
+                ? EnemyArchetypes.ForSpawn(run.CampaignStage, run.NextEntityId) : EnemyArchetype.Regular;
             var enemy = new EnemySnapshot
             {
                 Id = run.NextEntityId++,
-                VisualId = definition.Id,
-                Health = definition.MaxHealth,
-                AttackTimer = definition.FirstAttackDelay,
+                VisualId = run.EncounterVersion >= 2 && isBoss && run.CampaignStage % 10 == 5
+                    ? "mineiro_sonolento" : run.EncounterVersion >= 2 && !isBoss ? EnemyArchetypes.Visual(kind, definition.Id) : definition.Id,
+                Archetype = kind,
+                Health = definition.MaxHealth * EnemyArchetypes.Health(kind),
+                AttackTimer = definition.FirstAttackDelay + (run.EncounterVersion >= 2 ? (run.NextEntityId % 3) * .25f : 0),
                 IsBoss = isBoss,
                 GoldReward = definition.GoldReward
             };
@@ -253,13 +265,16 @@ namespace DigAndWonder
                 EnemyCombatData definition = enemy.IsBoss ? bossDefinition : regularDefinition;
                 enemy.AttackTimer -= step;
                 if (enemy.AttackTimer > 0f) continue;
-                enemy.AttackTimer += definition.AttackInterval;
-                Emit(CombatEventType.EnemyTelegraph, enemy.Id, definition.TelegraphDuration, definition.DisplayName);
+                enemy.AttackTimer += definition.AttackInterval * EnemyArchetypes.Interval(enemy.Archetype);
+                float telegraph = run.EncounterVersion >= 2 && (enemy.IsBoss || enemy.Archetype == EnemyArchetype.Charger)
+                    ? Math.Max(1.2f, definition.TelegraphDuration) : definition.TelegraphDuration;
+                Emit(CombatEventType.EnemyTelegraph, enemy.Id, telegraph, EnemyLabel(enemy));
                 QueueHit(new PendingHitSnapshot
                 {
                     SourceEntityId = enemy.Id,
-                    Damage = definition.Damage,
-                    RemainingTravel = definition.TelegraphDuration + definition.ProjectileFlight,
+                    Damage = definition.Damage * EnemyArchetypes.Damage(enemy.Archetype),
+                    TelegraphRemaining = run.EncounterVersion >= 2 ? telegraph : 0,
+                    RemainingTravel = telegraph + definition.ProjectileFlight,
                     TargetsPlayer = true
                 });
             }
@@ -293,6 +308,11 @@ namespace DigAndWonder
         private void ApplySpecialHit()
         {
             EnemySnapshot target = enemies.FirstOrDefault(e => e.Id == run.SpecialTargetId && e.Health > 0f);
+            if (target == null && run.EncounterVersion >= 2)
+            {
+                target = SelectTarget();
+                if (target != null) run.SpecialTargetId = target.Id;
+            }
             if (target == null) return;
             // Captura os alvos antes dos impactos: uma morte pode liberar inimigos da fila.
             EnemySnapshot[] secondary = currentCharacter.SpecialTargetCount > 1
@@ -362,6 +382,11 @@ namespace DigAndWonder
         private void LaunchBasicHit()
         {
             EnemySnapshot target = enemies.FirstOrDefault(e => e.Id == run.AttackTargetId && e.Health > 0f);
+            if (target == null && run.EncounterVersion >= 2)
+            {
+                target = SelectTarget();
+                if (target != null) run.AttackTargetId = target.Id;
+            }
             if (target == null || pendingHits.Count >= config.MaximumProjectiles) return;
             float damage = config.BasicAttackDamage * GetDamageMultiplier() * currentCharacter.ProjectileDamageMultiplier;
             bool critical = false;
@@ -388,6 +413,7 @@ namespace DigAndWonder
         {
             if (pendingHits.Count >= config.MaximumProjectiles) return;
             pendingHits.Add(hit);
+            if (hit.TelegraphRemaining > 0f) return;
             Emit(CombatEventType.ProjectileLaunched,
                 hit.TargetsPlayer ? hit.SourceEntityId : hit.TargetEntityId,
                 hit.RemainingTravel,
@@ -398,7 +424,17 @@ namespace DigAndWonder
         {
             foreach (PendingHitSnapshot hit in pendingHits.ToArray())
             {
+                if (hit.TelegraphRemaining > 0f && !enemies.Any(enemy => enemy.Id == hit.SourceEntityId && enemy.Health > 0))
+                {
+                    pendingHits.Remove(hit);
+                    Emit(CombatEventType.ProjectileDissipated, hit.SourceEntityId, 0, "Preparação interrompida");
+                    continue;
+                }
+                bool wasPreparing = hit.TelegraphRemaining > 0f;
+                hit.TelegraphRemaining = Math.Max(0, hit.TelegraphRemaining - step);
                 hit.RemainingTravel -= step;
+                if (wasPreparing && hit.TelegraphRemaining <= 0f)
+                    Emit(CombatEventType.ProjectileLaunched, hit.SourceEntityId, Math.Max(.01f, hit.RemainingTravel), "Projétil inimigo");
                 if (hit.RemainingTravel > 0f) continue;
                 pendingHits.Remove(hit);
 
@@ -424,7 +460,7 @@ namespace DigAndWonder
                     continue;
                 }
 
-                float damage = hit.Damage * BossMultiplier(target);
+                float damage = hit.Damage * BossMultiplier(target) * (hit.IsBasic ? EnemyArchetypes.BasicDamageTaken(target.Archetype) : 1f);
                 target.Health = Math.Max(0f, target.Health - damage);
                 Emit(CombatEventType.ProjectileImpact, target.Id, damage,
                     target.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
@@ -453,7 +489,7 @@ namespace DigAndWonder
             int experienceReward = config.Economy != null ? config.Economy.ExperienceReward(run.CampaignStage, enemy.IsBoss, currentCharacter.Experience) :
                 enemy.IsBoss ? currentCharacter.Experience.BossExperience : currentCharacter.Experience.RegularEnemyExperience;
             // Repetir um chefe isolado é muito mais rápido que jogar uma fase com ondas.
-            if (run.EncounterVersion == 1 && enemy.IsBoss && run.CampaignStage % 10 == 0 && run.CampaignStage <= profile.HighestClearedStage)
+            if (run.EncounterVersion >= 1 && enemy.IsBoss && run.CampaignStage % 10 == 0 && run.CampaignStage <= profile.HighestClearedStage)
                 experienceReward = Math.Max(1, (int)Math.Ceiling(experienceReward * 0.15));
             int awardedExperience = CharacterProgression.Award(profile, run.CharacterId, currentCharacter.Experience, experienceReward);
             int newLevel = CharacterProgression.GetLevel(character, currentCharacter.Experience).Level;
@@ -467,6 +503,8 @@ namespace DigAndWonder
                 (phase == 10 ? enemy.IsBoss : run.WavesSpawned >= 3 && (phase != 5 || run.BossSpawned));
             bool chestReward = stageComplete && (run.EncounterVersion == 0 || phase == 5 || phase == 10);
             int clearGold = 0;
+            int clearCrystals = 0;
+            bool discoveryAwarded = false;
             // Observadores recebem a transação completa, inclusive ao salvar no evento.
             if (stageComplete)
             {
@@ -475,7 +513,7 @@ namespace DigAndWonder
                 if (chestReward) profile.Chests = EconomyProgression.Credit(profile.Chests, currentStage.ChestCount);
                 if (config.Economy != null)
                 {
-                    if (run.EncounterVersion == 1 && !chestReward)
+                    if (run.EncounterVersion >= 1 && !chestReward)
                     {
                         int before = profile.Gold;
                         profile.Gold = EconomyProgression.Credit(profile.Gold, (long)config.Economy.NormalGold(run.CampaignStage) * 10);
@@ -486,17 +524,27 @@ namespace DigAndWonder
                     {
                         int crystals = config.Economy.FirstClearCrystals +
                             (run.CampaignStage % config.Economy.MilestoneInterval == 0 ? config.Economy.MilestoneCrystals : 0);
+                        int beforeCrystals = profile.Crystals;
                         profile.Crystals = EconomyProgression.Credit(profile.Crystals, crystals);
+                        clearCrystals = profile.Crystals - beforeCrystals;
                         profile.HighestClearedStage = run.CampaignStage;
                     }
-                    profile.CampaignStage = Math.Min(config.Economy.MaximumStage, run.CampaignStage + 1);
+                    if (run.EncounterVersion >= 2 && chestReward)
+                        discoveryAwarded = DiscoveryCatalog.TryAward(profile, run.CampaignStage);
+                    profile.CampaignStage = Math.Min(config.Economy.MaximumStage,
+                        run.EncounterVersion >= 2 ? profile.HighestClearedStage + 1 : run.CampaignStage + 1);
                     unlockedCharacters = CharacterProgression.GrantStageRewards(profile, config.Characters);
                 }
-                if (run.EncounterVersion == 0 || phase == 10) profile.UnlockedStageId = GetNextStageId(currentStage.Id);
+                if ((run.EncounterVersion == 0 || phase == 10) && !(run.EncounterVersion >= 2 && run.IsTraining))
+                    profile.UnlockedStageId = GetNextStageId(currentStage.Id);
+                LastClearSummary = (chestReward ? currentStage.ChestCount + " BAÚ + " + currentStage.KeyCount + " CHAVE" : clearGold + " OURO DE BÔNUS") +
+                    (clearCrystals > 0 ? " • " + clearCrystals + " CRISTAIS" : "") +
+                    (discoveryAwarded ? "\nDESCOBERTA: " + DiscoveryCatalog.Find(run.CampaignStage).Name : "");
                 run.IsStageCleared = true;
                 profile.ActiveRun = null;
                 ClearCombatActions();
             }
+            if (discoveryAwarded) Emit(CombatEventType.DiscoveryAwarded, 0, run.CampaignStage, DiscoveryCatalog.Find(run.CampaignStage).Name);
             foreach (string id in unlockedCharacters) Emit(CombatEventType.CharacterUnlocked, 0, run.CampaignStage, id);
             Emit(CombatEventType.EnemyDefeated, enemy.Id, enemy.GoldReward, enemy.IsBoss ? bossDefinition.DisplayName : regularDefinition.DisplayName);
             Emit(CombatEventType.GoldAwarded, enemy.Id, enemy.GoldReward, "Ouro por inimigo derrotado");
@@ -646,7 +694,7 @@ namespace DigAndWonder
             if (bonus <= 0f) return;
             EnemySnapshot secondary = enemies.FirstOrDefault(e => e.Id != primaryId && e.Health > 0);
             if (secondary == null) return;
-            float damage = originalDamage * bonus * BossMultiplier(secondary);
+            float damage = originalDamage * bonus * BossMultiplier(secondary) * EnemyArchetypes.BasicDamageTaken(secondary.Archetype);
             secondary.Health = Math.Max(0, secondary.Health - damage);
             Emit(CombatEventType.Hit, secondary.Id, damage, "Estilhaço magnético");
             if (secondary.Health <= 0) DefeatEnemy(secondary);
@@ -663,11 +711,17 @@ namespace DigAndWonder
             regularDefinition = ScaleEnemy(config.RegularEnemy, false, index, rules);
             bossDefinition = ScaleEnemy(stage.Boss, true, index, rules);
             // Ondas de até cinco inimigos substituem os encontros antigos de um ou dois.
-            if (encounterVersion == 1) regularDefinition.Damage *= 0.55f;
-            if (encounterVersion == 1 && campaignStage % 10 == 5)
+            if (encounterVersion >= 1) regularDefinition.Damage *= 0.55f;
+            if (encounterVersion >= 1 && campaignStage % 10 == 5)
             {
                 bossDefinition.MaxHealth = (float)(rules.EnemyHealth(campaignStage) * 3);
                 bossDefinition.Damage = regularDefinition.Damage * 1.2f;
+            }
+            // Suaviza a barreira dos guardiões; versões antigas mantêm seus atributos salvos.
+            if (encounterVersion >= 2 && campaignStage % 10 == 0)
+            {
+                bossDefinition.MaxHealth *= .9f;
+                bossDefinition.Damage *= .85f;
             }
             currentStage = new StageCombatData
             {
@@ -732,6 +786,7 @@ namespace DigAndWonder
         {
             Id = value.Id,
             VisualId = value.VisualId,
+            Archetype = value.Archetype,
             Health = value.Health,
             AttackTimer = value.AttackTimer,
             IsBoss = value.IsBoss,
@@ -744,6 +799,7 @@ namespace DigAndWonder
             CharacterId = value.CharacterId,
             CampaignStage = value.CampaignStage,
             EncounterVersion = value.EncounterVersion,
+            IsTraining = value.IsTraining,
             ElapsedSeconds = value.ElapsedSeconds,
             PlayerHealth = value.PlayerHealth,
             AttackTimer = value.AttackTimer,
@@ -773,6 +829,7 @@ namespace DigAndWonder
             TargetEntityId = value.TargetEntityId,
             Damage = value.Damage,
             RemainingTravel = value.RemainingTravel,
+            TelegraphRemaining = value.TelegraphRemaining,
             TargetsPlayer = value.TargetsPlayer,
             IsSpecial = value.IsSpecial,
             IsBasic = value.IsBasic,

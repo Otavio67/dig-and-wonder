@@ -7,7 +7,7 @@ namespace DigAndWonder
     [Serializable]
     public sealed class GameSaveData
     {
-        public const int CurrentSchemaVersion = 3;
+        public const int CurrentSchemaVersion = 4;
         public int SchemaVersion = CurrentSchemaVersion;
         public int Gold;
         public int Keys;
@@ -32,6 +32,8 @@ namespace DigAndWonder
         {
             new CharacterProgressData { CharacterId = CharacterProgression.StarterCharacterId }
         };
+        [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
+        public List<int> DiscoveryStages = new List<int>();
         public ActiveRunSnapshot ActiveRun;
     }
 
@@ -66,6 +68,7 @@ namespace DigAndWonder
         public int CampaignStage = 1;
         // 0 identifica tentativas gravadas antes da campanha por capítulos.
         public int EncounterVersion;
+        public bool IsTraining;
         public float ElapsedSeconds;
         public float PlayerHealth;
         public float AttackTimer;
@@ -94,6 +97,7 @@ namespace DigAndWonder
     {
         public int Id;
         public string VisualId;
+        public EnemyArchetype Archetype;
         public float Health;
         public float AttackTimer;
         public bool IsBoss;
@@ -107,6 +111,7 @@ namespace DigAndWonder
         public int TargetEntityId;
         public float Damage;
         public float RemainingTravel;
+        public float TelegraphRemaining;
         public bool TargetsPlayer;
         public bool IsSpecial;
         public bool IsBasic;

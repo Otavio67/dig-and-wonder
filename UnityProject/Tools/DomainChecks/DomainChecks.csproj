@@ -14,6 +14,9 @@
     <Compile Include="EconomyChecks.cs" />
     <Compile Include="CharacterCampaignChecks.cs" />
     <Compile Include="GameplayHudChecks.cs" />
+    <Compile Include="DiscoveryCombatChecks.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/DiscoveryCatalog.cs" Link="DiscoveryCatalog.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Runtime/EnemyArchetypes.cs" Link="EnemyArchetypes.cs" />
     <Compile Include="../../Assets/_Game/Scripts/Runtime/GameplayHudModel.cs" Link="GameplayHudModel.cs" />
     <Compile Include="../../Assets/_Game/Scripts/Runtime/EconomyProgression.cs" Link="EconomyProgression.cs" />
     <Compile Include="../../Assets/_Game/Scripts/Runtime/CombatData.cs" Link="CombatData.cs" />

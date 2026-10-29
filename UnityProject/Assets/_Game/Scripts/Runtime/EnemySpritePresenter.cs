@@ -41,6 +41,7 @@ namespace DigAndWonder
         private Sprite currentSprite;
         private string configuredEnemyId;
         private bool configuredBoss;
+        private float configuredScale;
         private Sprite[] idle, attack, hit, death, clip;
         private readonly List<Sprite> ownedSprites = new List<Sprite>();
         private float frameTimer, deathElapsed;
@@ -49,16 +50,17 @@ namespace DigAndWonder
         public bool IsDying { get; private set; }
         public bool DeathFinished => IsDying && deathElapsed >= 0.5f;
 
-        public void Configure(string enemyId, bool boss)
+        public void Configure(string enemyId, bool boss, float bossScale = 1.3f)
         {
             image = image != null ? image : GetComponentInChildren<Image>();
             if (image == null) return;
 
-            if (currentSprite != null && configuredEnemyId == enemyId && configuredBoss == boss)
+            if (currentSprite != null && configuredEnemyId == enemyId && configuredBoss == boss && configuredScale == bossScale)
                 return;
 
             configuredEnemyId = enemyId;
             configuredBoss = boss;
+            configuredScale = bossScale;
 
             string visualName = ResolveVisual(enemyId);
             Texture2D texture = Resources.Load<Texture2D>(EnemyRoot + visualName);
@@ -109,7 +111,7 @@ namespace DigAndWonder
             image.material = CreateCutoutMaterial();
 
             // As unidades chegam pela direita e enfrentam a broca que avança para a direita.
-            image.rectTransform.localScale = new Vector3(boss ? -1.3f : -1f, boss ? 1.3f : 1f, 1f);
+            image.rectTransform.localScale = new Vector3(boss ? -bossScale : -1f, boss ? bossScale : 1f, 1f);
             ResetForSpawn();
         }
 

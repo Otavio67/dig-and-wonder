@@ -304,15 +304,17 @@ namespace DigAndWonder
         /// <summary>Vitória confirmada libera só a próxima fase existente, nunca uma tentativa ativa ou a fase 101.</summary>
         public static bool CanContinueCampaign(GameSaveData save, ActiveRunSnapshot run, EconomyRules rules)
         {
-            return save != null && run != null && rules != null && run.IsStageCleared && !run.IsPlayerDefeated &&
+            return save != null && run != null && rules != null && run.IsStageCleared && !run.IsPlayerDefeated && !run.IsTraining &&
                 run.CampaignStage >= 1 && run.CampaignStage < rules.MaximumStage &&
                 save.CampaignStage == run.CampaignStage + 1 && save.ActiveRun == null;
         }
 
-        public static bool TrySelectTrainingStage(GameSaveData save)
+        public static bool TrySelectTrainingStage(GameSaveData save, int stage = 0)
         {
             if (save.HighestClearedStage < 1 || (save.ActiveRun != null && !save.ActiveRun.IsPlayerDefeated && !save.ActiveRun.IsStageCleared)) return false;
-            save.CampaignStage = save.HighestClearedStage;
+            if (stage == 0) stage = save.HighestClearedStage;
+            if (stage < 1 || stage > save.HighestClearedStage) return false;
+            save.CampaignStage = stage;
             return true;
         }
 
