@@ -118,7 +118,6 @@ namespace DigAndWonder
                 out TextMeshProUGUI ignoredCloseLabel, out Image closeFace);
             Icon(closeFace.transform, "close", 0.2f, 0.15f, 0.8f, 0.85f);
             characterName = Label(root, "BROCA PIONEIRA", 32, Cream, 0.045f, 0.877f, 0.63f, 0.910f, true, TextAlignmentOptions.Left);
-            Icon(root, "gear", 0.69f, 0.877f, 0.75f, 0.909f);
             wallet = Label(root, "0", 23, Gold, 0.76f, 0.877f, 0.96f, 0.915f, true, TextAlignmentOptions.Right);
 
             BuildShowcase();
@@ -290,7 +289,7 @@ namespace DigAndWonder
         {
             RectTransform tread = ArtRegion("Navigation tread", root, "tread", Petroleum, 0.015f, 0.018f, 0.985f, 0.112f);
             string[] names = { "OFICINA", "PODERES", "TESOURO", "BROCAS" };
-            string[] icons = { "repair", "bolt", "gear", "drill" };
+            string[] icons = { "repair", "bolt", "nav_chests", "hud_drill" };
             for (int i = 0; i < names.Length; i++)
             {
                 int index = i;
@@ -498,7 +497,9 @@ namespace DigAndWonder
         {
             if (!sprites.TryGetValue(name, out Sprite sprite))
             {
-                sprite = Resources.Load<Sprite>("Art/Workshop/" + name);
+                string path = name == "nav_chests" ? "Art/UI/Icons/nav_chests" :
+                    name == "hud_drill" ? "Art/UI/Icons/drill" : "Art/Workshop/" + name;
+                sprite = Resources.Load<Sprite>(path);
                 sprites.Add(name, sprite);
             }
             return sprite;

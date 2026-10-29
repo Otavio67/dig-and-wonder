@@ -498,23 +498,30 @@ namespace DigAndWonder
 
         private void BuildAlbum()
         {
-            albumPanel = MakePanel("Discovery album", combatRoot, Ink, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            albumPanel = MakeArtPanel("Discovery album", combatRoot, new Color(.07f, .16f, .21f), "plate", 0, 0, 1, 1);
             albumPanel.GetComponent<Image>().raycastTarget = true;
             albumTitle = MakeLabel("Album title", albumPanel, "ÁLBUM DE DESCOBERTAS", 34, Sand, new Vector2(.06f, .86f), new Vector2(.94f, .95f), TextAlignmentOptions.Center);
             albumCount = MakeLabel("Album progress", albumPanel, "", 24, Cyan, new Vector2(.06f, .77f), new Vector2(.94f, .86f), TextAlignmentOptions.Center);
             for (int i = 0; i < 2; i++)
             {
                 float bottom = i == 0 ? .48f : .22f;
-                RectTransform card = MakePanel("Discovery card " + i, albumPanel, Panel, new Vector2(.08f, bottom), new Vector2(.92f, bottom + .23f), Vector2.zero, Vector2.zero);
-                discoveryCards[i] = MakeLabel("Discovery description", card, "", 27, Cream, new Vector2(.06f, .08f), new Vector2(.94f, .92f), TextAlignmentOptions.Center);
+                RectTransform card = MakeArtPanel("Discovery card " + i, albumPanel, new Color(.15f, .23f, .28f), "plate", .08f, bottom, .92f, bottom + .23f);
+                discoveryCards[i] = MakeLabel("Discovery description", card, "", 28, Cream, new Vector2(.08f, .12f), new Vector2(.92f, .88f), TextAlignmentOptions.Center);
                 if (readingFont != null) discoveryCards[i].font = readingFont;
+                discoveryCards[i].fontStyle = FontStyles.Bold;
             }
-            MakeButton("Previous chapter", albumPanel, "<", 28, .08f, .12f, .25f, .20f, () => { albumChapter = Math.Max(1, albumChapter - 1); RefreshAlbum(); }, Steel);
-            MakeButton("Next chapter", albumPanel, ">", 28, .75f, .12f, .92f, .20f, () => { albumChapter = Math.Min(10, albumChapter + 1); RefreshAlbum(); }, Steel);
-            MakeButton("Close album", albumPanel, "CONTINUAR", 26, .28f, .045f, .72f, .13f, () => {
+            RectTransform previous = MakeButton("Previous chapter", albumPanel, "<", 32, .08f, .12f, .25f, .20f, () => { albumChapter = Math.Max(1, albumChapter - 1); RefreshAlbum(); }, Steel);
+            RectTransform next = MakeButton("Next chapter", albumPanel, ">", 32, .75f, .12f, .92f, .20f, () => { albumChapter = Math.Min(10, albumChapter + 1); RefreshAlbum(); }, Steel);
+            previous.GetComponent<Image>().sprite = next.GetComponent<Image>().sprite = SpriteFor("slot");
+            previous.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
+            next.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
+            RectTransform albumClose = MakeButton("Close album", albumPanel, "CONTINUAR", 26, .28f, .045f, .72f, .13f, () => {
                 albumPanel.gameObject.SetActive(false);
                 SelectTab("MINA");
             }, Mint);
+            albumClose.GetComponent<Image>().sprite = SpriteFor("plain_action");
+            albumClose.GetComponent<Image>().color = Color.white;
+            albumClose.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
             albumPanel.gameObject.SetActive(false);
         }
 
@@ -536,7 +543,7 @@ namespace DigAndWonder
                 int stage = (albumChapter - 1) * 10 + (i == 0 ? 5 : 10);
                 DiscoveryDefinition item = DiscoveryCatalog.Find(stage);
                 bool owned = driver.Profile.DiscoveryStages.Contains(stage);
-                discoveryCards[i].color = owned ? Cream : Dim;
+                discoveryCards[i].color = owned ? Cream : new Color(.83f, .88f, .87f);
                 discoveryCards[i].text = owned ? (item.IsRelic ? "RELÍQUIA" : "FÓSSIL") + " • " + item.Name.ToUpperInvariant() + "\n\n" + item.Description
                     : "DESCOBERTA DESCONHECIDA\n\nVença " + (i == 0 ? "o mini-chefe e a escolta" : "o guardião") + " na fase " + (i == 0 ? "5" : "10") + " deste capítulo.";
             }
@@ -1437,7 +1444,7 @@ namespace DigAndWonder
                 powerIcons[i].gameObject.SetActive(unlocked);
                 powerIcons[i].sprite = SpriteFor(PowerIconNames[i - 1]);
                 powerFaces[i].color = rank > 0 ? Cyan : unlocked ? Steel : new Color(0.25f, 0.29f, 0.34f);
-                powerLabels[i].text = !unlocked ? "NV. " + rule.UnlockLevel : rank > 0 ? "R " + rank + "/" + rule.MaximumRank : "MELHORAR";
+                powerLabels[i].text = !unlocked ? "NV. " + rule.UnlockLevel : rank > 0 ? "R " + rank + "/" + rule.MaximumRank : "ABRIR";
             }
             RefreshAutoToggle();
         }
@@ -1474,7 +1481,7 @@ namespace DigAndWonder
             RectTransform iconFrame = Region("Upgrade icon", rowRect, 0.012f, 0.08f, 0.17f, 0.92f);
             MakeIcon(iconFrame, icon, 0.16f, 0.35f, 0.84f, 0.88f, Color.white);
             TextMeshProUGUI levelLabel = MakeLabel("Upgrade level", iconFrame, "NV. 0", 24, Cream,
-                new Vector2(0.08f, 0.06f), new Vector2(0.92f, 0.32f), TextAlignmentOptions.Center);
+                new Vector2(0.08f, 0.13f), new Vector2(0.92f, 0.35f), TextAlignmentOptions.Center);
             levelLabel.fontStyle = FontStyles.Bold;
             levelLabel.outlineWidth = 0.15f;
             levelLabel.outlineColor = Ink;

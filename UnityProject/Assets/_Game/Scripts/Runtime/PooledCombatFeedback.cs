@@ -139,7 +139,7 @@ namespace DigAndWonder
                 frames[i].name = "drill_projectile_" + i;
             }
 
-            Shader shader = Shader.Find("DigAndWonder/EnemyWhiteCutout");
+            Shader shader = Shader.Find("DigAndWonder/ProjectileWhiteCutout");
             if (shader != null)
             {
                 projectileMaterial = new Material(shader) { name = "Drill Projectile Cutout (Runtime)" };
