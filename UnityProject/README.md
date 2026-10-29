@@ -4,7 +4,7 @@ Projeto ativo em C#, Unity 6, combate automático 2D em retrato e Android como d
 
 ## Estado atual
 
-O checkpoint **0.0.28** integra 20 descobertas, inimigos ágeis/blindados/carregadores, treino por fase, feedback de combate e migração de save. Catálogos, assets e fontes SVG permanecem no projeto. Detalhes em [descobertas e combate](../docs/DESCOBERTAS-E-COMBATE-0.0.28.md).
+O checkpoint **0.0.32** refina HUD, ícones e Oficina sobre a base que integra 20 descobertas, inimigos ágeis/blindados/carregadores, treino por fase, feedback de combate e migração de save. Catálogos, assets e fontes SVG permanecem no projeto. Detalhes em [descobertas e combate](../docs/DESCOBERTAS-E-COMBATE-0.0.28.md).
 
 A campanha vai até a fase 100. Ouro/cristais, onze brocas com XP individual, sete melhorias, quatro poderes por personagem, baús/chaves e save esquema 4 já têm lógica e cobertura de domínio. Pets, Torre/Profundezas, arte exclusiva do elenco e ampliação visual do bestiário continuam futuros.
 

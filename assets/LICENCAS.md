@@ -25,3 +25,5 @@ Recursos usados somente na implementação anterior foram removidos do checkout 
 O ícone `nav_album.svg` (29/10/2026) foi desenhado em código para o álbum: livro com cristal, paleta Toy-Mecha, sem texto embutido. PNG rasterizado com Sharp; fonte vetorial editável preservada.
 
 Em 0.0.29, `hud-approved-v8.png` é uma cópia sem alteração da referência gerada `docs/design/gameplay-toy-mecha-v1/conceito-gameplay-hud-v8.png`. O runtime recorta apenas pictogramas selecionados; textos funcionais são TMP. Origem e limitações da referência permanecem as mesmas.
+
+Em 0.0.32, a pedido do usuário, 18 pictogramas receberam desenho vetorial próprio Toy-Mecha v2. Fontes SVG em `assets/ui/gameplay/`, exportador `scripts/export-mecha-icons.cjs`, PNGs com transparência para Unity. A chapa `hud_panel` é um vetor próprio com bordas para escala em nove partes. Não usam recursos de outros jogos. O exportador anterior executa o novo ao terminar para preservar a direção vigente.

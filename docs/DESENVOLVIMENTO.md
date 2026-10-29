@@ -1,5 +1,9 @@
 # Dig & Wonder — desenvolvimento Unity
 
+## Revisão 0.0.32
+
+Ícones Toy-Mecha v2 e chapas do HUD substituem os pictogramas rejeitados pelo usuário. Oficina, poderes e melhorias compartilham a mesma família; a barra de chefe fica abaixo da fase. [Mudanças e limites da validação](REVISAO-VISUAL-0.0.32.md). Exportar a família vigente com `scripts/export-mecha-icons.cjs`.
+
 ## HUD 0.0.29
 
 O polimento mantém os upgrades na Mina e abre ajuda em modal, sem substituir a lista. Nível/XP ficam no retrato superior, vida acompanha o sprite e os textos de ação/custo têm regiões separadas. Pictogramas selecionados são recortes da referência v8, com prioridade sobre substitutos. Detalhes e evidências em [polimento do HUD](HUD-POLIMENTO-0.0.29.md).

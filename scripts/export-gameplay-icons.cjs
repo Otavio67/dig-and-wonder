@@ -41,5 +41,8 @@ async function main() {
       .composite([{input:fitted,gravity:'centre'}]).png().toFile(path.join(output,path.basename(name,'.svg')+'.png'));
   }
   console.log('Exportados '+fs.readdirSync(source).filter(n=>n.endsWith('.svg')).length+' ícones SVG/PNG.');
+  // The latest approved direction replaces the older flat pictograms.
+  require('node:child_process').execFileSync(process.execPath,
+    [path.join(__dirname, 'export-mecha-icons.cjs'), process.argv[2] || 'sharp'], {stdio:'inherit'});
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

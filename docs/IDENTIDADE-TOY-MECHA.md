@@ -209,3 +209,9 @@ O usuário pediu retirar o nível da broca no cenário, recuperar os ícones def
 Pictogramas de Mina, Modos, Oficina, Baús, Loja, ATQ, VIDA, AUTORREPARO e CADÊNCIA são recortes explícitos da referência v8 existente, sem gerar outra família. `hud-approved-v8.png` preserva o arquivo de referência inteiro; somente as áreas de desenho são renderizadas como sprites. Nenhum texto, preço ou nível do conceito é usado como informação funcional. Álbum e ícones sem equivalente na referência mantêm seus recursos existentes. Essa integração é uma etapa de produção; fontes vetoriais anteriores permanecem disponíveis.
 
 A revisão adicional da navegação mede as seis células internas da moldura para alinhar os botões. Não dividir a largura total do atlas em seis, pois isso inclui as tampas laterais e desloca ícones e textos.
+
+## Revisão solicitada — 0.0.32
+
+O usuário rejeitou os pictogramas planos e o aspecto dos slots na Mina e na Oficina. Esta instrução substitui a preferência anterior pelos recortes v8 nessas funções. A família vetorial Toy-Mecha v2 usa aço azulado, cobre, coração blindado, broca helicoidal, motor com ventilação ciano e núcleo facetado. Transparência real, contorno petróleo e margem óptica uniforme; nenhum valor ou texto embutido. Fontes em `assets/ui/gameplay/`, exportação canônica em `scripts/export-mecha-icons.cjs`. O exportador antigo chama o novo ao terminar, evitando restaurar a família rejeitada.
+
+O HUD mantém AUTO, especial e quatro poderes; os slots passam a chapas limpas sem molduras douradas apertadas. As melhorias separam desenho, faixa de nível, atributo e ação verde. Os pictogramas são compartilhados com a Oficina, inclusive quando muda a página de atributos. A broca e a logo aprovadas permanecem as referências principais. Revisão de margens, transparência, semântica e paleta realizada; a aprovação final de aparência continua com o usuário.
