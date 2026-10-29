@@ -8,7 +8,7 @@ A folha da Pioneira, os inimigos, projéteis, fundos e módulos visuais atuais f
 
 ## Ícones vetoriais atuais
 
-Os catorze SVGs em `assets/ui/gameplay/` são fontes editáveis de pictogramas construídos em código para Dig & Wonder, rasterizados por `scripts/export-gameplay-icons.cjs`. Mina e Baús foram reaproveitados da família vetorial anterior e agora têm fontes canônicas nessa mesma pasta. Não são extrações de interfaces de outros jogos.
+Os SVGs em `assets/ui/gameplay/` são fontes editáveis de pictogramas construídos em código para Dig & Wonder, rasterizados por `scripts/export-gameplay-icons.cjs`. Mina e Baús foram reaproveitados da família vetorial anterior e agora têm fontes canônicas nessa mesma pasta. Não são extrações de interfaces de outros jogos.
 
 ## Fontes
 
@@ -21,3 +21,5 @@ Os catorze SVGs em `assets/ui/gameplay/` são fontes editáveis de pictogramas c
 Licenças das dependências Unity, incluindo DOTween, permanecem nos diretórios correspondentes. O antigo plugin Godot AdMob e seus arquivos foram retirados; ele não é uma dependência do Unity.
 
 Recursos usados somente na implementação anterior foram removidos do checkout em 29/10/2026. A proveniência detalhada daquele material permanece no histórico Git, antes da limpeza. Tornar o repositório público não altera os termos das fontes ou dependências e não cria uma licença de código aberto para todo o projeto.
+
+O ícone `nav_album.svg` (29/10/2026) foi desenhado em código para o álbum: livro com cristal, paleta Toy-Mecha, sem texto embutido. PNG rasterizado com Sharp; fonte vetorial editável preservada.

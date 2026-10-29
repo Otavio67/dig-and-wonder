@@ -4,9 +4,9 @@ Projeto ativo em C#, Unity 6, combate automático 2D em retrato e Android como d
 
 ## Estado atual
 
-O checkpoint **0.0.27** retira a engine e as ferramentas Godot do checkout. Catálogos JSON independentes de engine, assets do Unity e SVGs atuais são preservados. O importador passou a se chamar `ContentCatalogImporter`, mantendo o GUID do script e os números.
+O checkpoint **0.0.28** integra 20 descobertas, inimigos ágeis/blindados/carregadores, treino por fase, feedback de combate e migração de save. Catálogos, assets e fontes SVG permanecem no projeto. Detalhes em [descobertas e combate](../docs/DESCOBERTAS-E-COMBATE-0.0.28.md).
 
-A campanha vai até a fase 100. Ouro/cristais, onze brocas com XP individual, sete melhorias, quatro poderes por personagem, baús/chaves e save esquema 3 já têm lógica e cobertura de domínio. Pets, Torre/Profundezas, arte exclusiva do elenco e ampliação visual do bestiário continuam futuros.
+A campanha vai até a fase 100. Ouro/cristais, onze brocas com XP individual, sete melhorias, quatro poderes por personagem, baús/chaves e save esquema 4 já têm lógica e cobertura de domínio. Pets, Torre/Profundezas, arte exclusiva do elenco e ampliação visual do bestiário continuam futuros.
 
 A 0.0.26 foi executada no Editor após atualizar as licenças no Hub MSIX. Uma captura de 28/10/2026 confirmou frames avançando e inimigo em combate, mas mostrou problemas de posicionamento de barras. Isso não representa aprovação visual final ou validação Android.
 

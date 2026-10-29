@@ -197,3 +197,7 @@ Não gerar imagens automaticamente só porque este guia existe. A geração exig
 Permanecem em discussão: composição final do HUD, primeira região a receber arte final, elenco inicial de inimigos a produzir, intensidade de desgaste dos materiais, ícone definitivo do ouro e eventual continuidade de combate ao abrir menus. Decidir com estudos pequenos e comparáveis.
 
 Sequência recomendada: uma tela conjunta de combate + HUD → uma oficina coerente → uma folha com protagonista/inimigo/ícones → integração e revisão no Unity. Evitar produzir o catálogo completo antes de validar essa pequena amostra.
+
+## Implementação de 29/10/2026 — coleção
+
+O pedido de integrar as sugestões inclui o álbum. A navegação usa ÁLBUM no lugar da aba de Pets ainda não implementada. Ícone vetorial de livro com cristal, contorno petróleo e preenchimentos creme/aço/ciano, 256 × 256 transparente; sem texto embutido. Revisão do ícone realizada, incluindo margens e silhueta. O álbum usa cartões com nomes e descrições; ilustrações exclusivas dos achados não foram produzidas. Brocas reutilizam módulos e cores; inimigos usam folhas existentes com funções distintas. Isso não equivale a aprovação visual no Editor ou aparelho.

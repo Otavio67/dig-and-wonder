@@ -4,13 +4,13 @@ Jogo 2D em retrato de combate automático e exploração subterrânea, desenvolv
 
 ## Projeto atual
 
-O projeto executável fica em `UnityProject/`. A branch ativa é **`prototype/first-playable`**. O checkpoint **0.0.27** remove a implementação antiga em Godot e mantém o projeto Unity, seus catálogos JSON e as fontes vetoriais dos ícones atuais. O histórico anterior permanece nos commits do Git.
+O projeto executável fica em `UnityProject/`. A branch ativa é **`prototype/first-playable`**. O checkpoint **0.0.28** integra o álbum de descobertas, inimigos com comportamentos diferentes, treino por fase e melhorias de combate. O projeto mantém catálogos JSON e fontes vetoriais editáveis.
 
-A campanha vai até a fase 100, com ouro, cristais, XP individual das brocas, sete melhorias, quatro poderes por personagem, baús com chave e save esquema 3. A cada dez fases vencidas é liberada uma nova broca no nível zero. Depois da fase 100 há treino. Pets e Torre/Profundezas continuam como conteúdo futuro.
+A campanha vai até a fase 100, com ouro, cristais, XP individual das brocas, sete melhorias, quatro poderes por personagem, baús com chave e save esquema 4. A cada dez fases vencidas é liberada uma nova broca no nível zero. Depois da fase 100 há treino. Pets e Torre/Profundezas continuam como conteúdo futuro.
 
-Alterações locais em desenvolvimento organizam as 100 fases em dez capítulos: ondas de 3–5 inimigos, mini-chefe acompanhado na fase 5 e chefe sozinho na fase 10. As recompensas e o dano das ondas foram ajustados; [regras e limites](docs/DESENVOLVIMENTO.md). Essa versão passou por testes de lógica, mas ainda exige Play Mode e revisão visual no Editor.
+As 100 fases estão organizadas em dez capítulos: ondas de 3–5 inimigos, mini-chefe acompanhado na fase 5 e chefe sozinho na fase 10. As recompensas e o dano das ondas foram ajustados; [regras e limites](docs/DESENVOLVIMENTO.md). O álbum reúne 20 achados garantidos: um fóssil após o mini-chefe e sua escolta, e uma relíquia após o chefe de cada capítulo. Ágeis, blindados e carregadores têm silhuetas e regras próprias; o treino permite escolher fases vencidas. [Implementação e validação 0.0.28](docs/DESCOBERTAS-E-COMBATE-0.0.28.md).
 
-A tela inicial prepara recursos reais antes de liberar **Iniciar mineração**. A vitória segue para o próximo mapa; a derrota permite melhorar e recomeçar dentro da partida. Oficina, poderes, tesouro e coleção ficam na navegação. A arte exclusiva das onze brocas, o alinhamento visual final e a validação Android ainda precisam de trabalho.
+A tela inicial prepara recursos reais antes de liberar **Iniciar mineração**. A vitória segue para o próximo mapa; a derrota permite melhorar e recomeçar dentro da partida. Oficina, poderes, tesouro e coleção ficam na navegação. As brocas têm cores e módulos por padrão de ataque; a arte exclusiva das onze brocas, o alinhamento visual final e a validação Android ainda precisam de trabalho.
 
 ## Abrir o jogo
 
