@@ -34,6 +34,11 @@ namespace DigAndWonder.Editor
         [MenuItem("Dig & Wonder/Build Android debug APK")]
         public static void BuildAndroidDebugApk()
         {
+            // executeMethod can run before the delayed Editor initializer. Configure before
+            // generating the manifest so Android never launches in reversePortrait.
+            EnsureProjectSetup();
+            EnemyPresentationBaker.Bake();
+            AssetDatabase.SaveAssets();
             string outputPath = GetBuildOutputPath();
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
             string[] scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled)

@@ -10,6 +10,7 @@ const cone = '<rect x="13" y="34" width="23" height="60" rx="10" fill="#B5651D"/
 const heart = '<path d="M64 104L21 65C-1 43 13 17 36 22Q54 23 64 39Q74 23 92 22C115 17 129 43 107 65Z" fill="#FF595E"/><path d="M19 43L14 62 35 81M109 43L114 62 93 81" fill="none" stroke="#B5C6CA" stroke-width="12"/><path d="M30 38Q40 32 49 43" fill="none" stroke="#FFF8E7" stroke-width="5"/><circle cx="22" cy="61" r="3" fill="#1B263B" stroke="none"/><circle cx="106" cy="61" r="3" fill="#1B263B" stroke="none"/>';
 const wrench = '<path d="M83 15Q104 8 114 28L97 26 87 39 94 53 112 54Q101 75 81 65L43 105Q29 119 17 105Q8 95 21 82L61 44Q53 25 70 15L69 33 81 38 91 28Z" fill="#B5C6CA"/><path d="M30 91L77 45" fill="none" stroke="#FFF8E7" stroke-width="4"/><circle cx="28" cy="98" r="6" fill="#1E6F5C"/>';
 const shapes = {
+  mission: '<path d="M30 19H98V114H20V29Z" fill="#FFF8E7"/><path d="M46 9H82V29H46Z" fill="#B5C6CA"/><path d="M33 48L39 54 49 42M33 73L39 79 49 67" fill="none" stroke="#1E6F5C"/><path d="M61 49H85M61 74H85M33 97H85" fill="none" stroke="#4B485C"/>',
   attack: cone,
   drill: cone,
   health: heart,
@@ -31,7 +32,13 @@ async function main() {
   }
   // nav_mine.svg e nav_chests.svg já são fontes canônicas nesta pasta.
   for (const name of fs.readdirSync(source).filter(n=>n.endsWith('.svg'))) {
-    await sharp(path.join(source,name)).resize(256,256).png().toFile(path.join(output,path.basename(name,'.svg')+'.png'));
+    // Equal optical bounds: transparent padding belongs to the export, never a
+    // rectangle copied from the concept screen. Keep vector sources editable.
+    const drawing = await sharp(path.join(source,name)).resize(512,512)
+      .trim({background:'#00000000', threshold:0}).toBuffer();
+    const fitted = await sharp(drawing).resize(216,216,{fit:'inside'}).png().toBuffer();
+    await sharp({create:{width:256,height:256,channels:4,background:'#00000000'}})
+      .composite([{input:fitted,gravity:'centre'}]).png().toFile(path.join(output,path.basename(name,'.svg')+'.png'));
   }
   console.log('Exportados '+fs.readdirSync(source).filter(n=>n.endsWith('.svg')).length+' ícones SVG/PNG.');
 }

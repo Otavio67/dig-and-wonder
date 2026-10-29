@@ -4,7 +4,7 @@ Shader "DigAndWonder/EnemyWhiteCutout"
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
-        _WhiteThreshold ("White Threshold", Range(0.8, 1)) = 0.96
+        _CoverageTex ("Border-connected matte coverage", 2D) = "white" {}
     }
     SubShader
     {
@@ -26,7 +26,7 @@ Shader "DigAndWonder/EnemyWhiteCutout"
             struct v2f { float4 vertex : SV_POSITION; fixed4 color : COLOR; float2 texcoord : TEXCOORD0; float4 worldPosition : TEXCOORD1; };
             sampler2D _MainTex;
             fixed4 _Color;
-            float _WhiteThreshold;
+            sampler2D _CoverageTex;
             float4 _ClipRect;
 
             v2f vert(appdata_t v)
@@ -42,10 +42,11 @@ Shader "DigAndWonder/EnemyWhiteCutout"
             fixed4 frag(v2f i) : SV_Target
             {
                 fixed4 texel = tex2D(_MainTex, i.texcoord);
+                float coverage = tex2D(_CoverageTex, i.texcoord).r;
+                // Undo white-matte contamination only on the silhouette edge.
+                texel.rgb = saturate((texel.rgb - (1 - coverage)) / max(coverage, 0.01));
                 fixed4 c = texel * i.color;
-                float minimum = min(texel.r, min(texel.g, texel.b));
-                float whiteAlpha = 1.0 - smoothstep(_WhiteThreshold, 0.995, minimum);
-                c.a *= whiteAlpha;
+                c.a *= coverage;
                 #ifdef UNITY_UI_CLIP_RECT
                 c.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
                 #endif

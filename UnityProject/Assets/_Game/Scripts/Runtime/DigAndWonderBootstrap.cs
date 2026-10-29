@@ -10,6 +10,12 @@ namespace DigAndWonder
     {
         private static GameObject root;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
+        private static void ConfigureDisplay()
+        {
+            Screen.orientation = ScreenOrientation.Portrait;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreatePrototype()
         {

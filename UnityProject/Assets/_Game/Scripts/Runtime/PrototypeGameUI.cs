@@ -125,7 +125,6 @@ namespace DigAndWonder
         private readonly Dictionary<string, Image> tabButtonImages = new Dictionary<string, Image>();
         private ProgressionDefinition progression;
         private AbilityDefinition[] abilityCatalog;
-        private readonly Dictionary<string, Sprite> approvedIcons = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> uiSprites = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> uiAssetSprites = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> navIconSprites = new Dictionary<string, Sprite>();
@@ -232,7 +231,6 @@ namespace DigAndWonder
                 if (startFont.material != null) Destroy(startFont.material);
                 Destroy(startFont);
             }
-            foreach (Sprite sprite in approvedIcons.Values) if (sprite != null) Destroy(sprite);
             foreach (Sprite sprite in uiAssetSprites.Values)
                 if (sprite != null) Destroy(sprite);
             if (hudFont != null)
@@ -254,7 +252,6 @@ namespace DigAndWonder
         private void BuildInterface()
         {
             BuildUiAssetAtlases();
-            BuildApprovedHudIcons();
             Font body = Resources.Load<Font>("Fonts/Workshop/DWRounded-ExtraBold");
             if (body != null)
             {
@@ -375,6 +372,7 @@ namespace DigAndWonder
                 var visualRootObject = new GameObject("Enemy " + i, typeof(RectTransform));
                 visualRootObject.transform.SetParent(worldPanel, false);
                 var visualRoot = (RectTransform)visualRootObject.transform;
+                visualRoot.pivot = new Vector2(.5f, 0);
                 visualRoot.anchorMin = new Vector2(left, 0.33f);
                 visualRoot.anchorMax = new Vector2(left + 0.095f, 0.54f);
                 visualRoot.offsetMin = Vector2.zero;
@@ -475,29 +473,6 @@ namespace DigAndWonder
         {
             trainingStage = Math.Max(1, Math.Min(driver.Profile.HighestClearedStage, trainingStage + direction));
             UpdateTab();
-        }
-
-        private void BuildApprovedHudIcons()
-        {
-            Texture2D sheet = Resources.Load<Texture2D>("Art/UI/hud-approved-v8");
-            if (sheet == null) throw new InvalidOperationException("Referência de ícones v8 ausente.");
-            // Rectangles use top-left coordinates in the unchanged 841 x 1870 approved reference.
-            AddApprovedIcon(sheet, "mission", 51, 1176, 42, 54);
-            AddApprovedIcon(sheet, "nav_mine", 40, 1750, 78, 60);
-            AddApprovedIcon(sheet, "nav_modes", 177, 1750, 72, 62);
-            AddApprovedIcon(sheet, "nav_workshop", 306, 1747, 65, 66);
-            AddApprovedIcon(sheet, "nav_chests", 587, 1747, 72, 68);
-            AddApprovedIcon(sheet, "nav_shop", 721, 1747, 72, 67);
-            AddApprovedIcon(sheet, "attack", 64, 1386, 66, 43);
-            AddApprovedIcon(sheet, "drill", 64, 1386, 66, 43);
-            AddApprovedIcon(sheet, "health", 64, 1487, 66, 43);
-            AddApprovedIcon(sheet, "repair", 62, 1586, 72, 46);
-            AddApprovedIcon(sheet, "cadence", 65, 1683, 65, 48);
-        }
-
-        private void AddApprovedIcon(Texture2D sheet, string id, int x, int top, int width, int height)
-        {
-            approvedIcons[id] = Sprite.Create(sheet, new Rect(x, sheet.height - top - height, width, height), new Vector2(.5f, .5f), 100);
         }
 
         private void BuildHelp()
@@ -1035,7 +1010,7 @@ namespace DigAndWonder
                 {
                     RectTransform unit = enemyVisualRoots[slot];
                     float width = (unit.anchorMax.x - unit.anchorMin.x) * worldPanel.rect.width;
-                    float barY = unit.anchorMin.y + width * visual.rect.height / visual.rect.width * (enemy.IsBoss ? (mini ? 1.05f : 1.3f) : 1f) / worldPanel.rect.height + 0.008f;
+                    float barY = unit.anchorMin.y + enemySprites[slot].VisualHeight / worldPanel.rect.height + 0.008f;
                     enemyHealthTracks[slot].rectTransform.anchorMin = new Vector2(unit.anchorMin.x, barY);
                     enemyHealthTracks[slot].rectTransform.anchorMax = new Vector2(unit.anchorMax.x, barY + 0.01f);
                     enemyHealth[slot].rectTransform.anchorMin = new Vector2(unit.anchorMin.x - 0.01f, barY + 0.012f);
@@ -1616,7 +1591,7 @@ namespace DigAndWonder
             highlight.GetComponent<Image>().raycastTarget = false;
             navHighlights[text] = highlight.gameObject;
             highlight.gameObject.SetActive(stateColor == Cyan);
-            MakeIcon(rect, icon, .25f, .42f, .75f, .94f, Color.white);
+            MakeIcon(rect, icon, .22f, .43f, .78f, .94f, Color.white);
             TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 22, Cream,
                 new Vector2(.03f, .04f), new Vector2(.97f, .38f), TextAlignmentOptions.Center);
             label.fontStyle = FontStyles.Bold;
@@ -1625,7 +1600,6 @@ namespace DigAndWonder
 
         private Sprite SpriteFor(string name)
         {
-            if (approvedIcons.TryGetValue(name, out Sprite approved)) return approved;
             if (uiSprites.TryGetValue(name, out Sprite cachedIcon)) return cachedIcon;
             Sprite dedicatedIcon = Resources.Load<Sprite>("Art/UI/Icons/" + name);
             if (dedicatedIcon != null)

@@ -1,0 +1,104 @@
+{
+  "Revision": 1,
+  "SourceHash": "1C7BE70E6D14AB8AA582B6418C8D82E0B71AE2DAEE6E26C652B9C24CC04F40E4",
+  "ReferenceWidth": 203.0,
+  "ReferenceHeight": 223.0,
+  "Frames": [
+    {
+      "Row": 0,
+      "Column": 0,
+      "X": 111,
+      "Y": 519,
+      "Width": 178,
+      "Height": 223
+    },
+    {
+      "Row": 0,
+      "Column": 1,
+      "X": 429,
+      "Y": 519,
+      "Width": 198,
+      "Height": 200
+    },
+    {
+      "Row": 0,
+      "Column": 2,
+      "X": 755,
+      "Y": 519,
+      "Width": 198,
+      "Height": 199
+    },
+    {
+      "Row": 0,
+      "Column": 3,
+      "X": 1083,
+      "Y": 519,
+      "Width": 203,
+      "Height": 223
+    },
+    {
+      "Row": 1,
+      "Column": 0,
+      "X": 89,
+      "Y": 273,
+      "Width": 226,
+      "Height": 229
+    },
+    {
+      "Row": 1,
+      "Column": 1,
+      "X": 410,
+      "Y": 264,
+      "Width": 255,
+      "Height": 238
+    },
+    {
+      "Row": 1,
+      "Column": 2,
+      "X": 735,
+      "Y": 264,
+      "Width": 255,
+      "Height": 238
+    },
+    {
+      "Row": 1,
+      "Column": 3,
+      "X": 1060,
+      "Y": 264,
+      "Width": 255,
+      "Height": 239
+    },
+    {
+      "Row": 2,
+      "Column": 0,
+      "X": 83,
+      "Y": 23,
+      "Width": 261,
+      "Height": 221
+    },
+    {
+      "Row": 2,
+      "Column": 1,
+      "X": 406,
+      "Y": 23,
+      "Width": 277,
+      "Height": 221
+    },
+    {
+      "Row": 2,
+      "Column": 2,
+      "X": 716,
+      "Y": 21,
+      "Width": 294,
+      "Height": 223
+    },
+    {
+      "Row": 2,
+      "Column": 3,
+      "X": 1034,
+      "Y": 13,
+      "Width": 239,
+      "Height": 204
+    }
+  ]
+}

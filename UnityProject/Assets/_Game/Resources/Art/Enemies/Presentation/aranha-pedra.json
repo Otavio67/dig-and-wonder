@@ -1,0 +1,136 @@
+{
+  "Revision": 1,
+  "SourceHash": "C5F9EE0F0DD7CE0C181478C56B14D3C8C4F8330C33B5E252B92B8D666FCAB63B",
+  "ReferenceWidth": 203.0,
+  "ReferenceHeight": 169.0,
+  "Frames": [
+    {
+      "Row": 0,
+      "Column": 0,
+      "X": 43,
+      "Y": 584,
+      "Width": 184,
+      "Height": 135
+    },
+    {
+      "Row": 0,
+      "Column": 1,
+      "X": 266,
+      "Y": 584,
+      "Width": 177,
+      "Height": 142
+    },
+    {
+      "Row": 0,
+      "Column": 2,
+      "X": 490,
+      "Y": 584,
+      "Width": 177,
+      "Height": 142
+    },
+    {
+      "Row": 0,
+      "Column": 3,
+      "X": 715,
+      "Y": 583,
+      "Width": 183,
+      "Height": 130
+    },
+    {
+      "Row": 0,
+      "Column": 4,
+      "X": 936,
+      "Y": 583,
+      "Width": 181,
+      "Height": 130
+    },
+    {
+      "Row": 0,
+      "Column": 5,
+      "X": 1146,
+      "Y": 564,
+      "Width": 203,
+      "Height": 169
+    },
+    {
+      "Row": 1,
+      "Column": 0,
+      "X": 45,
+      "Y": 369,
+      "Width": 184,
+      "Height": 131
+    },
+    {
+      "Row": 1,
+      "Column": 1,
+      "X": 266,
+      "Y": 369,
+      "Width": 177,
+      "Height": 141
+    },
+    {
+      "Row": 1,
+      "Column": 2,
+      "X": 486,
+      "Y": 373,
+      "Width": 188,
+      "Height": 139
+    },
+    {
+      "Row": 1,
+      "Column": 3,
+      "X": 695,
+      "Y": 357,
+      "Width": 215,
+      "Height": 155
+    },
+    {
+      "Row": 1,
+      "Column": 4,
+      "X": 918,
+      "Y": 363,
+      "Width": 210,
+      "Height": 149
+    },
+    {
+      "Row": 1,
+      "Column": 5,
+      "X": 1146,
+      "Y": 363,
+      "Width": 202,
+      "Height": 149
+    },
+    {
+      "Row": 2,
+      "Column": 0,
+      "X": 21,
+      "Y": 36,
+      "Width": 323,
+      "Height": 163
+    },
+    {
+      "Row": 2,
+      "Column": 1,
+      "X": 411,
+      "Y": 35,
+      "Width": 271,
+      "Height": 186
+    },
+    {
+      "Row": 2,
+      "Column": 2,
+      "X": 736,
+      "Y": 35,
+      "Width": 286,
+      "Height": 208
+    },
+    {
+      "Row": 2,
+      "Column": 3,
+      "X": 1094,
+      "Y": 31,
+      "Width": 243,
+      "Height": 142
+    }
+  ]
+}

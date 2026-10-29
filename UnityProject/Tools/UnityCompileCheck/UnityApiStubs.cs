@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace UnityEngine
 {
     public class TextAsset : Object { public string text; }
-    public class Object { public static void DontDestroyOnLoad(Object target) { } public static void Destroy(Object target) { } public static T FindFirstObjectByType<T>() where T : Object => null; }
+    public class Object { public static void DontDestroyOnLoad(Object target) { } public static void Destroy(Object target) { } public static void DestroyImmediate(Object target) { } public static T FindFirstObjectByType<T>() where T : Object => null; }
     public class ScriptableObject : Object
     {
         public static T CreateInstance<T>() where T : ScriptableObject => (T)Activator.CreateInstance(typeof(T));
@@ -48,13 +48,18 @@ namespace UnityEngine
         public static Sprite Create(Texture2D texture, Rect rect, Vector2 pivot, float pixelsPerUnit) => new Sprite();
     }
     public class Font : Object { }
-    public class Texture2D : Object { public int width = 1, height = 1; }
+    public enum TextureFormat { RGBA32 }
+    public enum TextureWrapMode { Clamp }
+    public struct Color32 { public byte r,g,b,a; public Color32(byte r,byte g,byte b,byte a) { this.r=r;this.g=g;this.b=b;this.a=a; } }
+    public class Texture2D : Object { public int width = 1, height = 1; public Texture2D(int w,int h,TextureFormat f,bool mip) {} public Color32[] GetPixels32()=>null; public void SetPixels32(Color32[] p) {} public void Apply() {} public bool Reinitialize(int w,int h)=>true; public byte[] EncodeToPNG()=>null; }
+    public static class ImageConversion { public static bool LoadImage(Texture2D t,byte[] b)=>true; }
     public class Material : Object
     {
         public Material() { }
         public Material(Shader shader) { }
         public string name;
         public void SetFloat(string name, float value) { }
+        public void SetTexture(string name, Texture2D value) { }
         public void SetColor(string name, Color value) { }
         public void EnableKeyword(string name) { }
     }
@@ -86,7 +91,7 @@ namespace UnityEngine
     public enum TextAnchor { UpperCenter }
     public static class Screen { public static ScreenOrientation orientation; public static int width = 1080, height = 1920; public static Rect safeArea; }
     [AttributeUsage(AttributeTargets.Method)] public sealed class RuntimeInitializeOnLoadMethodAttribute : Attribute { public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType type) { } }
-    public enum RuntimeInitializeLoadType { AfterSceneLoad }
+    public enum RuntimeInitializeLoadType { AfterSceneLoad, BeforeSplashScreen }
     [AttributeUsage(AttributeTargets.Field)] public sealed class SerializeField : Attribute { }
     [AttributeUsage(AttributeTargets.Class)] public sealed class CreateAssetMenuAttribute : Attribute
     {
@@ -269,6 +274,10 @@ namespace UnityEngine.Pool
 
 namespace UnityEditor
 {
+    public enum TextureImporterCompression { Uncompressed }
+    public enum TextureImporterNPOTScale { None }
+    public class AssetImporter { public static AssetImporter GetAtPath(string path)=>null; }
+    public class TextureImporter : AssetImporter { public bool sRGBTexture,mipmapEnabled; public TextureImporterCompression textureCompression; public TextureImporterNPOTScale npotScale; public UnityEngine.TextureWrapMode wrapMode; public void SaveAndReimport() {} }
     [AttributeUsage(AttributeTargets.Class)] public sealed class InitializeOnLoadAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.Method)] public sealed class MenuItemAttribute : Attribute
     {
