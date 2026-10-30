@@ -13,7 +13,7 @@ namespace DigAndWonder
     /// Apresentação da personagem na oficina. Consulta dados e encaminha compras ao driver;
     /// não controla o combate nem cria atributos, XP ou equipamentos no perfil.
     /// </summary>
-    public sealed class CharacterWorkshopView : MonoBehaviour
+    public sealed partial class CharacterWorkshopView : MonoBehaviour
     {
         private static readonly Color Petroleum = new Color(27f / 255, 38f / 255, 59f / 255);
         private static readonly Color Teal = new Color(30f / 255, 111f / 255, 92f / 255);
@@ -27,9 +27,9 @@ namespace DigAndWonder
 
         private readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
         private readonly List<TMP_FontAsset> ownedFonts = new List<TMP_FontAsset>();
-        private readonly RectTransform[] panes = new RectTransform[4];
-        private readonly Image[] tabFaces = new Image[4];
-        private readonly RectTransform[] tabVisuals = new RectTransform[4];
+        private readonly RectTransform[] panes = new RectTransform[5];
+        private readonly Image[] tabFaces = new Image[5];
+        private readonly RectTransform[] tabVisuals = new RectTransform[5];
         private AutoBattleDriver driver;
         private CombatBalanceDefinition balance;
         private RectTransform root;
@@ -136,6 +136,7 @@ namespace DigAndWonder
             BuildPowerRows();
             BuildTreasury();
             BuildGarage();
+            BuildArsenalGrid();
             lockSummary = Label(root, "Novas melhorias em preparação", 22, Dim, 0.05f, 0.193f, 0.95f, 0.217f, false);
             status = Label(root, "Escolha uma melhoria para turbinar a broca.", 26, Cream,
                 0.055f, 0.12f, 0.61f, 0.19f, false, TextAlignmentOptions.Left);
@@ -206,14 +207,14 @@ namespace DigAndWonder
 
         private void BuildUpgradeRows()
         {
-            BuildPager(panes[0], () => { upgradePage = (upgradePage + 3) % 4; Refresh(); },
+            BuildPager(panes[4], () => { upgradePage = (upgradePage + 3) % 4; Refresh(); },
                 () => { upgradePage = (upgradePage + 1) % 4; Refresh(); }, out upgradePageLabel);
-            RectTransform attack = Plate("Attack row", panes[0], Steel, 0f, 0.37f, 1f, 0.73f);
+            RectTransform attack = Plate("Attack row", panes[4], Steel, 0f, 0.37f, 1f, 0.73f);
             attackIcon = Icon(attack, "attack", 0.025f, 0.13f, 0.17f, 0.87f);
             attackValue = Label(attack, "ATQ", 27, Cream, 0.19f, 0.04f, 0.57f, 0.96f, false, TextAlignmentOptions.Left);
             attackButton = ButtonAt(attack, "Upgrade attack", "TURBINAR", Gold, 0.59f, 0.16f, 0.97f, 0.87f,
                 () => Purchase(VisibleUpgrade(0).Kind), out attackPrice, out attackFace);
-            RectTransform health = Plate("Health row", panes[0], Steel, 0f, 0.005f, 1f, 0.365f);
+            RectTransform health = Plate("Health row", panes[4], Steel, 0f, 0.005f, 1f, 0.365f);
             healthIcon = Icon(health, "health", 0.025f, 0.13f, 0.17f, 0.87f);
             healthValue = Label(health, "VIDA", 27, Cream, 0.19f, 0.04f, 0.57f, 0.96f, false, TextAlignmentOptions.Left);
             healthButton = ButtonAt(health, "Upgrade health", "TURBINAR", Gold, 0.59f, 0.16f, 0.97f, 0.87f,
@@ -294,16 +295,16 @@ namespace DigAndWonder
         private void BuildNavigation()
         {
             RectTransform tread = ArtRegion("Navigation tread", root, "tread", Petroleum, 0.015f, 0.018f, 0.985f, 0.112f);
-            string[] names = { "OFICINA", "PODERES", "TESOURO", "BROCAS" };
-            string[] icons = { "repair", "bolt", "nav_chests", "hud_drill" };
+            string[] names = { "OFICINA", "PODERES", "MELHORIAS", "BROCAS" };
+            string[] icons = { "repair", "bolt", "attack", "hud_drill" };
             for (int i = 0; i < names.Length; i++)
             {
-                int index = i;
-                float left = 0.045f + i * 0.23f;
-                Button button = ButtonAt(tread, "Tab " + names[i], "", Teal, left, 0.10f, left + 0.22f, 0.96f,
+                int index = i == 2 ? 4 : i;
+                float left = 0.025f + i * 0.245f;
+                Button button = ButtonAt(tread, "Tab " + names[i], "", Teal, left, 0.10f, left + 0.235f, 0.96f,
                     () => SelectTab(index), out TextMeshProUGUI ignoredLabel, out Image face);
-                tabFaces[i] = face;
-                tabVisuals[i] = (RectTransform)button.transform;
+                tabFaces[index] = face;
+                tabVisuals[index] = (RectTransform)button.transform;
                 Icon(face.transform, icons[i], 0.25f, 0.38f, 0.75f, 0.96f);
                 Label(face.transform, names[i], 24, Cream, 0.04f, 0.06f, 0.96f, 0.43f, true);
             }
@@ -314,7 +315,7 @@ namespace DigAndWonder
         {
             RectTransform pane = panes[3];
             BuildPager(pane, () => BrowseGarage(-1), () => BrowseGarage(1), out garagePage);
-            RectTransform body = Plate("Drill catalog", pane, Steel, 0, 0.01f, 1, 0.73f);
+            RectTransform body = Plate("Drill catalog", pane, Steel, 0, 0.60f, 1, 0.73f);
             RectTransform art = Region("Catalog Visual", body, 0.015f, 0.46f, 0.29f, 0.94f);
             garageImage = art.gameObject.AddComponent<Image>();
             art.gameObject.AddComponent<DrillSpriteSheetPlayer2D>();
@@ -344,7 +345,8 @@ namespace DigAndWonder
         private void SelectTab(int index)
         {
             selectedTab = index;
-            sectionTitle.text = new[] { "OFICINA", "PODERES", "TESOURO", "BROCAS" }[index];
+            ApplyPageLayout(index);
+            sectionTitle.text = new[] { "OFICINA", "PODERES", "TESOURO", "BROCAS", "MELHORIAS" }[index];
             for (int i = 0; i < panes.Length; i++)
             {
                 panes[i].gameObject.SetActive(i == index);

@@ -313,6 +313,23 @@ namespace DigAndWonder
             CommitEconomyChange("Baú aberto"); return true;
         }
 
+        public bool TryPurchaseCrystalChest(out ChestOpening opening)
+        {
+            opening = default;
+            if (!IsReady || applicationPaused || Profile == null) return false;
+            int cost = Economy.GoldPackCrystalCost;
+            if (Profile.Crystals < cost) return false;
+            var rewardProfile = new GameSaveData { Chests=1, Keys=1, LootRandomState=Profile.LootRandomState };
+            EconomyProgression.RecordChestStage(rewardProfile, Math.Max(1,Profile.HighestClearedStage),1);
+            if (!EconomyProgression.TryOpenChest(rewardProfile,Economy,out opening)) return false;
+            if (opening.Gold > int.MaxValue-Profile.Gold || opening.Crystals > int.MaxValue-(Profile.Crystals-cost)) return false;
+            Profile.Crystals = Profile.Crystals-cost+opening.Crystals;
+            Profile.Gold += opening.Gold;
+            Profile.LootRandomState = rewardProfile.LootRandomState;
+            CommitEconomyChange("Caixa de suprimentos aberta");
+            return true;
+        }
+
         public bool TryPurchaseKey()
         {
             if (!IsReady || applicationPaused || Profile == null || !EconomyProgression.TryBuyKey(Profile, Economy)) return false;

@@ -38,7 +38,7 @@ namespace UnityEngine
         public T GetComponentInChildren<T>() where T : class => null;
         public void SetActive(bool active) { }
     }
-    public class Transform : Component { public Transform parent; public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } public Transform Find(string path) => null; public void SetAsFirstSibling() { } }
+    public class Transform : Component { public Transform parent; public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } public Transform Find(string path) => null; public void SetAsFirstSibling() { } public void SetAsLastSibling() { } public int childCount; public Transform GetChild(int index) => null; }
     public class RectTransform : Transform { public Rect rect; public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta, pivot; }
     public struct Quaternion { public static Quaternion identity => new Quaternion(); }
     public class Sprite : Object
@@ -132,17 +132,21 @@ namespace UnityEngine
         public static string persistentDataPath => "/tmp";
         public static string dataPath => "/tmp/UnityProject/Assets";
     }
+    public sealed class WaitForSecondsRealtime { public WaitForSecondsRealtime(float seconds) { } }
     public static class Time { public static float deltaTime; public static float unscaledDeltaTime; }
     public static class Mathf
     {
         public static float Sin(float value) => (float)Math.Sin(value);
-        public static int CeilToInt(float value) => (int)Math.Ceiling(value);
+        public static int RoundToInt(float value) => (int)Math.Round(value); public static int CeilToInt(float value) => (int)Math.Ceiling(value);
         public static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));
         public static float Clamp01(float value) => Clamp(value, 0f, 1f);
         public static float Max(float left, float right) => Math.Max(left, right);
         public static int Max(int left, int right) => Math.Max(left, right);
         public static int Abs(int value) => Math.Abs(value);
     }
+    public static class AudioListener { public static float volume; }
+    public static class GUIUtility { public static string systemCopyBuffer; }
+    public static class PlayerPrefs { public static float GetFloat(string key, float fallback) => fallback; public static string GetString(string key, string fallback) => fallback; public static void SetString(string key, string value) { } public static void SetFloat(string key, float value) { } public static void Save() { } }
     public class Shader : Object { public static Shader Find(string name) => new Shader(); }
     public static class Debug
     {
@@ -229,6 +233,7 @@ namespace TMPro
         public bool TryAddCharacters(string characters) => true;
         public static TMP_FontAsset CreateFontAsset(UnityEngine.Font font, int size, int padding, UnityEngine.TextCore.LowLevel.GlyphRenderMode renderMode, int atlasWidth, int atlasHeight) => null;
     }
+    public class TMP_InputField : UnityEngine.Component { public UnityEngine.RectTransform textViewport; public TextMeshProUGUI textComponent; public int characterLimit; public string text; public EndEditEvent onEndEdit = new EndEditEvent(); public class EndEditEvent { public void AddListener(System.Action<string> action) { } } }
     public class TextMeshProUGUI : Graphic
     {
         public TMP_FontAsset font;
