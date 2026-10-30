@@ -31,6 +31,7 @@ namespace DigAndWonder
         private TextMeshProUGUI walletLabel;
         private TextMeshProUGUI crystalLabel;
         private TextMeshProUGUI missionLabel;
+        private TextMeshProUGUI helpTitle, helpText;
         private TextMeshProUGUI statusLabel;
         private TextMeshProUGUI healthLabel, characterLevelLabel;
         private RectTransform helpPanel;
@@ -488,20 +489,45 @@ namespace DigAndWonder
         {
             helpPanel = MakePanel("Combat help", combatRoot, new Color(.02f, .05f, .08f, .96f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             RectTransform card = MakeArtPanel("Help card", helpPanel, Panel, "hud_panel", .06f, .22f, .94f, .78f);
-            MakeLabel("Help title", card, "COMO JOGAR", 36, Sand, new Vector2(.08f, .84f), new Vector2(.92f, .95f), TextAlignmentOptions.Center);
-            MakeLabel("Help text", card, "Use o ouro dos inimigos para melhorar a broca.\n\nAUTO liga os disparos básicos. Com AUTO desligado, toque na broca para atacar.\n\nO especial atravessa a armadura. Evite golpes fortes derrotando o inimigo durante a preparação.\n\nSeu progresso é salvo automaticamente.", 27, Cream, new Vector2(.09f, .24f), new Vector2(.91f, .81f), TextAlignmentOptions.Center);
+            helpTitle = MakeLabel("Help title", card, "COMO JOGAR", 36, Sand, new Vector2(.08f, .86f), new Vector2(.92f, .96f), TextAlignmentOptions.Center);
+            helpText = MakeLabel("Help text", card, "", 27, Cream, new Vector2(.09f, .34f), new Vector2(.91f, .82f), TextAlignmentOptions.Center);
+            RectTransform basics = MakeButton("Guide basics", card, "COMBATE", 22, .08f, .22f, .49f, .31f, () => ShowHelpPage(false), Steel);
+            RectTransform progress = MakeButton("Guide progress", card, "PROGRESSO", 22, .51f, .22f, .92f, .31f, () => ShowHelpPage(true), Steel);
+            basics.GetComponent<Image>().sprite = progress.GetComponent<Image>().sprite = SpriteFor("plain_action");
+            basics.GetComponentInChildren<TextMeshProUGUI>().color = progress.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
             RectTransform close = MakeButton("Close help", card, "VOLTAR AO JOGO", 27, .16f, .07f, .84f, .19f, () => {
                 helpPanel.gameObject.SetActive(false);
-                driver.SetMenuPaused(currentTab != "MINA");
+                bool resumeCombat = currentTab == "MINA" || currentTab == "MELHORIAS";
+                driver.SetMenuPaused(!resumeCombat);
+                if (resumeCombat && driver.Simulation != null && driver.Simulation.IsActive && !driver.IsSaveBlocked) StartCaveMotion();
             }, Mint);
             close.GetComponent<Image>().sprite = SpriteFor("plain_action");
             close.GetComponent<Image>().color = Color.white;
             helpPanel.gameObject.SetActive(false);
         }
 
+        private void ShowHelpPage(bool progress)
+        {
+            helpTitle.text = progress ? "DIÁRIO DE EXPEDIÇÃO" : "COMO JOGAR";
+            if (!progress)
+            {
+                helpText.text = "Use o ouro para melhorar a broca.\n\nAUTO controla os disparos básicos. Com AUTO desligado, toque na broca para atacar.\n\nO especial atravessa armadura. Interrompa ataques derrotando inimigos durante a preparação.";
+                return;
+            }
+            var sim = driver.Simulation;
+            if (sim == null) { helpText.text = "Comece uma expedição para acompanhar seu progresso."; return; }
+            CharacterLevelState level = driver.CurrentCharacterLevel;
+            string xp = level.IsMaximum ? "NÍVEL MÁXIMO" : "XP " + level.ExperienceInLevel + " / " + level.ExperienceToNextLevel;
+            helpText.text = GameplayHudModel.CampaignPosition(sim.Run.CampaignStage) + "\nBROCA NV. " + level.Level + " • " + xp +
+                "\n\nÁLBUM: " + sim.Profile.DiscoveryStages.Count + " / " + DiscoveryCatalog.Entries.Count + " descobertas" +
+                "\n\nFases vencidas podem ser revisitadas em MODOS. Ouro e XP são preservados.";
+        }
+
         private void OpenHelp()
         {
+            ShowHelpPage(false);
             driver.SetMenuPaused(true);
+            StopCaveMotion();
             helpPanel.gameObject.SetActive(true);
         }
 
@@ -1058,6 +1084,7 @@ namespace DigAndWonder
             {
                 if (enemyIds[i] == 0) continue;
                 float x = enemyVisualRoots[i].anchoredPosition.x;
+                enemySprites[i].SetApproaching(x > 1f && currentTab == "MINA" && !helpPanel.gameObject.activeSelf);
                 enemyHealth[i].rectTransform.anchoredPosition = new Vector2(x, 0);
                 enemyHealthTracks[i].rectTransform.anchoredPosition = new Vector2(x, 0);
                 enemyHealthFills[i].rectTransform.anchoredPosition = new Vector2(x, 0);

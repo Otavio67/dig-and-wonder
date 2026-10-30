@@ -48,6 +48,7 @@ namespace DigAndWonder
         private EnemySheetPresentation presentation;
         private RectTransform body, shadow;
         private bool floating;
+        private bool approaching;
         private float phase, motionTime, actionTime, impactTime;
         private float visualScale = 1;
         public float VisualHeight => presentation == null ? 0 :
@@ -197,7 +198,7 @@ namespace DigAndWonder
 
         public void ResetForSpawn()
         {
-            IsDying = false; deathElapsed = actionTime = impactTime = 0;
+            IsDying = false; approaching = false; deathElapsed = actionTime = impactTime = 0;
             phase = ((RectTransform)transform).anchorMin.x * 17;
             Play(idle, false);
             // Offset creatures so a wave does not breathe on the same frame.
@@ -205,6 +206,7 @@ namespace DigAndWonder
             image.sprite = idle[frame];
             ApplyMotion();
         }
+        public void SetApproaching(bool value) { approaching = value && !IsDying; }
         public void PlayAttack() { if (!IsDying) { actionTime = .38f; Play(attack, true); } }
         public void PlayImpact() { if (!IsDying) { impactTime = .18f; Play(hit, true); } }
         public void PlayDeath() { IsDying = true; deathElapsed = 0; Play(death, false); }
@@ -242,11 +244,11 @@ namespace DigAndWonder
             float unit = ((RectTransform)transform).rect.width / presentation.ReferenceWidth;
             body.sizeDelta = new Vector2(image.sprite.rect.width * unit, image.sprite.rect.height * unit);
             float breath = Mathf.Sin(motionTime * (floating ? 5 : 3.3f) + phase);
-            float lift = floating ? 13 + breath * 4 : 0;
+            float lift = floating ? 13 + breath * 4 : approaching && !IsDying ? System.Math.Abs(Mathf.Sin(motionTime * 9 + phase)) * 3 : 0;
             float strike = actionTime > 0 ? Mathf.Sin((.38f - actionTime) / .38f * 3.14159f) * -12 : 0;
             float recoil = impactTime / .18f * 5;
             body.anchoredPosition = new Vector2(strike + recoil, lift - (IsDying ? deathElapsed * 10 : 0));
-            float squash = IsDying ? 1 - Mathf.Clamp01(deathElapsed / .5f) * .22f : 1 + breath * .015f;
+            float squash = IsDying ? 1 - Mathf.Clamp01(deathElapsed / .5f) * .22f : 1 + breath * (approaching ? .04f : .015f);
             body.localScale = new Vector3(-visualScale / squash, visualScale * squash, 1);
             image.color = impactTime > .1f ? new Color(1, .76f, .62f) :
                 new Color(.96f, .96f, .94f, IsDying ? 1 - Mathf.Clamp01(deathElapsed / .5f) : 1);
