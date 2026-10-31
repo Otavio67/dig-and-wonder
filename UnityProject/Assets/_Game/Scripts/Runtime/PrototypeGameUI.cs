@@ -225,6 +225,7 @@ namespace DigAndWonder
             if (driver != null) driver.CombatEventRaised -= OnCombatEvent;
             StopCaveMotion();
             foreach (Sprite sprite in mapBackgroundSprites.Values) Destroy(sprite);
+            if (roundPowerTexture != null) Destroy(roundPowerTexture);
             if (startPanel != null) Destroy(startPanel.gameObject);
             if (startFont != null)
             {
@@ -253,6 +254,8 @@ namespace DigAndWonder
         private void BuildInterface()
         {
             BuildUiAssetAtlases();
+            BuildRoundPowerSkin();
+            BuildIllustratedMenuArt();
             Font body = Resources.Load<Font>("Fonts/Workshop/DWRounded-ExtraBold");
             if (body != null)
             {
@@ -288,7 +291,8 @@ namespace DigAndWonder
             stageProgress = MakeLabel("Stage progress", stagePlate, "", 20, Cyan,
                 new Vector2(0.15f, 0.16f), new Vector2(0.85f, 0.40f), TextAlignmentOptions.Center);
 
-            var missionPanel = MakeArtPanel("Mission banner", combatRoot, new Color(.10f, .22f, .28f), "hud_panel", 0.025f, 0.425f, 0.975f, 0.478f);
+            var missionPanel = MakePanel("Mission banner", combatRoot, Color.clear, new Vector2(.025f,.425f), new Vector2(.975f,.478f), Vector2.zero, Vector2.zero);
+            missionPanel.GetComponent<Image>().raycastTarget=false;
             MakeIcon(missionPanel, "mission", .025f, .16f, .12f, .84f, Color.white);
             missionLabel = MakeLabel("Mission", missionPanel, "MISSÃO 01   DERROTE 10 INIMIGOS", 24, Cream,
                 new Vector2(0.15f, 0.22f), new Vector2(0.67f, 0.78f), TextAlignmentOptions.Left);
@@ -453,16 +457,16 @@ namespace DigAndWonder
             trainingSelection = MakeLabel("Selected training stage", trainingPicker, "", 20, Cream, new Vector2(.23f, 0), new Vector2(.77f, 1), TextAlignmentOptions.Center);
             trainingPicker.gameObject.SetActive(false);
 
-            bottomBar = MakeArtPanel("Bottom navigation", combatRoot, Color.white, "bottom_nav_structure", 0, 0, 1, 0.088f);
+            bottomBar = MakePanel("Bottom navigation", combatRoot, Ink, Vector2.zero, new Vector2(1,.088f),Vector2.zero,Vector2.zero);
             string[] tabs = { "MINA", "MODOS", "OFICINA", "EQUIP.", "LOJA" };
-            string[] icons = { "nav_mine", "nav_modes", "nav_workshop", "nav_workshop", "nav_shop" };
+            string[] icons = { "nav_mine", "nav_modes", "nav_workshop", "shield", "nav_shop" };
             // Inner cells in bottom_nav_structure (1484 px), excluding side endcaps and separators.
             float[] cellLeft = { 80f, 318f, 539f, 751f, 966f, 1179f };
             float[] cellRight = { 300f, 518f, 731f, 944f, 1156f, 1402f };
             for (int i = 0; i < tabs.Length; i++)
             {
                 string tab = tabs[i];
-                RectTransform tabButton = MakeNavButton("Tab " + tab, bottomBar, tab, icons[i], (0.03f + i * .188f), .10f, (0.21f + i * .188f), .94f,
+                RectTransform tabButton = MakeNavButton("Tab " + tab, bottomBar, tab, icons[i], (.008f + i * .20f), .08f, (.192f + i * .20f), .94f,
                     () => { if (tab == "OFICINA") OpenProgression(); else if (tab == "EQUIP.") OpenEquipmentPage(); else if (tab == "LOJA") OpenTopMenu("loja-suprimentos"); else if (tab == "ÁLBUM") OpenAlbum(); else SelectTab(tab); }, tab == currentTab ? Cyan : Steel);
                 tabButtonImages.Add(tab, tabButton.GetComponent<Image>());
             }
@@ -808,6 +812,7 @@ namespace DigAndWonder
                 return;
             }
             if (driver.Simulation == null) return;
+            UpdateDefeatPopup();
             // Avanço fora do evento de vitória: o driver já terminou o passo e salvou as recompensas.
             if (pendingDiscovery > 0)
             {
@@ -1181,7 +1186,7 @@ namespace DigAndWonder
                 view.Button.GetComponent<Image>().color = view.Button.interactable ? new Color(.10f, .72f, .50f) : new Color(.12f, .17f, .23f);
             }
             if (scrollThumb != null) scrollThumb.parent.gameObject.SetActive(upgradesVisible);
-            restartButton.gameObject.SetActive(defeated && !driver.IsSaveBlocked);
+            restartButton.gameObject.SetActive(false);
             continueButton.gameObject.SetActive((cleared && !driver.CanContinueCampaign || defeated && sim.Run.IsTraining) && !driver.IsSaveBlocked);
             continueButton.anchorMin = new Vector2(defeated && sim.Run.IsTraining ? .40f : .70f, .13f);
             continueButton.anchorMax = new Vector2(defeated && sim.Run.IsTraining ? .68f : .97f, .87f);
@@ -1309,7 +1314,7 @@ namespace DigAndWonder
                 case CombatEventType.CharacterLeveledUp: statusLabel.text = "SUA BROCA SUBIU PARA O NÍVEL " + Mathf.CeilToInt(e.Amount) + "!"; break;
                 case CombatEventType.UpgradePurchased: statusLabel.text = "MELHORIA COMPRADA — PROGRESSO SALVO"; break;
                 case CombatEventType.ChestAwarded: combatLog.text = "BAÚ DE FASE ENCONTRADO!"; break;
-                case CombatEventType.PlayerDefeated: currentTab = "MINA"; statusLabel.text = "DERROTA — OURO E MELHORIAS PRESERVADOS"; break;
+                case CombatEventType.PlayerDefeated: currentTab = "MINA"; statusLabel.text = ""; OpenDefeatPopup(); break;
                 case CombatEventType.StageCleared: statusLabel.text = "FASE CONCLUÍDA! PRÓXIMA: " + e.Text; break;
             }
             if (e.Type == CombatEventType.DrillAttack)
@@ -1369,7 +1374,7 @@ namespace DigAndWonder
         private void BuildPowerBar(RectTransform parent)
         {
 
-            RectTransform auto = MakeArtPanel("Auto attack", parent, Color.white, "hud_panel", 0.024f, 0.359f, 0.17f, 0.415f);
+            RectTransform auto = MakeArtPanel("Auto attack", parent, Color.white, "power_round", 0.024f, 0.359f, 0.17f, 0.415f);
             autoToggleButton = auto.gameObject.AddComponent<Button>();
             autoToggleButton.targetGraphic = auto.GetComponent<Image>();
             auto.GetComponent<Image>().raycastTarget = true;
@@ -1381,7 +1386,7 @@ namespace DigAndWonder
             for (int i = 0; i < powers.Length; i++)
             {
                 float left = 0.19f + i * 0.155f;
-                RectTransform slot = MakeArtPanel("Power slot " + i, parent, Color.white, "hud_panel",
+                RectTransform slot = MakeArtPanel("Power slot " + i, parent, Color.white, "power_round",
                     left, 0.359f, left + 0.135f, 0.415f);
                 powerFaces[i] = slot.GetComponent<Image>();
                 powerIcons[i] = MakeIcon(slot, powers[i], 0.12f, 0.30f, 0.88f, 0.94f, Color.white);
@@ -1389,7 +1394,7 @@ namespace DigAndWonder
                 int powerIndex = i;
                 MakeOverlayButton("Inspect power " + i, slot, "", 15, 0, 0, 1, 1, () => OpenPower(powerIndex));
             }
-            RectTransform force = MakeArtPanel("Force badge", parent, new Color(.15f, .25f, .31f), "hud_panel", 0.34f, 0.316f, 0.66f, 0.355f);
+            RectTransform force = MakePanel("Force badge",parent,Color.clear,new Vector2(.30f,.316f),new Vector2(.70f,.355f),Vector2.zero,Vector2.zero);
             MakeLabel("Force title", force, "FORÇA", 19, Cream, new Vector2(0.08f, 0.56f), new Vector2(0.92f, 0.90f), TextAlignmentOptions.Center);
             forceValue = MakeLabel("Force value", force, "", 30, Gold, new Vector2(0.08f, 0.10f), new Vector2(0.92f, 0.56f), TextAlignmentOptions.Center);
             RefreshAutoToggle();
@@ -1483,14 +1488,14 @@ namespace DigAndWonder
         {
             IdleCombatSimulation sim = driver.Simulation;
             powerLabels[0].text = sim.Run.SpecialHitsRemaining > 0 ? "ATIVO" : sim.Run.SpecialCooldown > 0 ? GameplayHudModel.Number(Math.Ceiling(sim.Run.SpecialCooldown)) + "s" : "PRONTO";
-            powerFaces[0].sprite = SpriteFor("hud_panel");
+            powerFaces[0].sprite = SpriteFor("power_round");
             powerFaces[0].color = sim.Run.SpecialCooldown <= 0 || sim.Run.SpecialHitsRemaining > 0 ? new Color(.12f, .48f, .43f) : new Color(.16f, .27f, .34f);
             for (int i = 1; i < powerFaces.Length; i++)
             {
                 AttackPowerRule rule = driver.Economy.Powers[i - 1];
                 int rank = EconomyProgression.PowerRank(sim.Profile, sim.ActiveCharacterId, rule.Id);
                 bool unlocked = driver.CurrentCharacterLevel.Level >= rule.UnlockLevel;
-                powerFaces[i].sprite = SpriteFor("hud_panel");
+                powerFaces[i].sprite = SpriteFor("power_round");
                 powerIcons[i].gameObject.SetActive(true);
                 powerIcons[i].sprite = SpriteFor(unlocked ? PowerIconNames[i - 1] : "lock");
                 powerFaces[i].color = rank > 0 ? new Color(.12f, .37f, .35f) : new Color(.16f, .25f, .31f);
@@ -1584,6 +1589,8 @@ namespace DigAndWonder
             RectTransform rect = MakePanel(name, parent, color, new Vector2(x0, y0), new Vector2(x1, y1), Vector2.zero, Vector2.zero);
             Image image = rect.GetComponent<Image>();
             image.sprite = SpriteFor(art);
+            if (art=="hud_panel" && color==Color.white) image.color=new Color(.10f,.18f,.27f);
+            if (art=="power_round") image.preserveAspect=true;
             image.type = uiAssetSprites.ContainsKey(art) ? Image.Type.Simple : Image.Type.Sliced;
             image.raycastTarget = false;
             return rect;
@@ -1637,8 +1644,7 @@ namespace DigAndWonder
         private RectTransform MakeNavButton(string name, Transform parent, string text, string icon, float left, float bottom,
             float right, float top, UnityEngine.Events.UnityAction action, Color stateColor)
         {
-            RectTransform rect = MakePanel(name, parent, new Color(1f, 1f, 1f, 0f),
-                new Vector2(left, bottom), new Vector2(right, top), Vector2.zero, Vector2.zero);
+            RectTransform rect = MakeArtPanel(name,parent,new Color(.11f,.20f,.29f),"hud_panel",left,bottom,right,top);
             Button button = rect.gameObject.AddComponent<Button>();
             Image image = rect.GetComponent<Image>();
             image.raycastTarget = true;
@@ -1648,7 +1654,7 @@ namespace DigAndWonder
             highlight.GetComponent<Image>().raycastTarget = false;
             navHighlights[text] = highlight.gameObject;
             highlight.gameObject.SetActive(stateColor == Cyan);
-            MakeIcon(rect, icon, .14f, .38f, .86f, .96f, Color.white);
+            MakeIcon(rect, icon, .23f, .40f, .77f, .90f, Color.white);
             TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 22, Cream,
                 new Vector2(.03f, .04f), new Vector2(.97f, .38f), TextAlignmentOptions.Center);
             label.fontStyle = FontStyles.Bold;
@@ -1852,7 +1858,8 @@ namespace DigAndWonder
         private RectTransform MakeArtActionButton(string name, Transform parent, string text, int size, float left, float bottom,
             float right, float top, UnityEngine.Events.UnityAction action, string art)
         {
-            RectTransform rect = MakeArtPanel(name, parent, Color.white, art, left, bottom, right, top);
+            if (art=="slot") art="hud_panel";
+            RectTransform rect = MakeArtPanel(name, parent, new Color(.12f,.36f,.37f), art, left, bottom, right, top);
             Button button = rect.gameObject.AddComponent<Button>();
             Image image = rect.GetComponent<Image>();
             image.raycastTarget = true;

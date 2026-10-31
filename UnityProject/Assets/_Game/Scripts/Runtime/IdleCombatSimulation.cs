@@ -483,6 +483,8 @@ namespace DigAndWonder
         private void DefeatEnemy(EnemySnapshot enemy)
         {
             if (!enemies.Remove(enemy)) return;
+            run.EnemiesDefeated++;
+            if (enemies.Count==0 && run.PendingSpawns==0 && run.WavesSpawned>run.WavesCleared) run.WavesCleared=run.WavesSpawned;
             CharacterProgressData character = CharacterProgression.Find(profile, run.CharacterId);
             int previousLevel = CharacterProgression.GetLevel(character, currentCharacter.Experience).Level;
             float previousMaximumHealth = PlayerMaximumHealth;
@@ -777,6 +779,7 @@ namespace DigAndWonder
 
         private void Emit(CombatEventType type, int entityId = 0, float amount = 0f, string text = "")
         {
+            if (type==CombatEventType.ProjectileLaunched && text=="Projétil da broca") run.ShotsFired++;
             EventRaised?.Invoke(new CombatEvent(type, entityId, amount, text));
         }
 
@@ -801,6 +804,7 @@ namespace DigAndWonder
             EncounterVersion = value.EncounterVersion,
             IsTraining = value.IsTraining,
             ElapsedSeconds = value.ElapsedSeconds,
+            ShotsFired=value.ShotsFired, EnemiesDefeated=value.EnemiesDefeated, WavesCleared=value.WavesCleared,
             PlayerHealth = value.PlayerHealth,
             AttackTimer = value.AttackTimer,
             AttackHitTimer = value.AttackHitTimer,

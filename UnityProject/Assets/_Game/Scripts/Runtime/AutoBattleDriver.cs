@@ -81,7 +81,12 @@ namespace DigAndWonder
                 return;
             }
 
-            saveRepository = new AtomicSaveRepository(Application.persistentDataPath);
+            string saveDirectory=Application.persistentDataPath;
+#if UNITY_EDITOR
+            string reviewDirectory=Environment.GetEnvironmentVariable("DW_UI_REVIEW_SAVE");
+            if(!string.IsNullOrWhiteSpace(reviewDirectory))saveDirectory=reviewDirectory;
+#endif
+            saveRepository = new AtomicSaveRepository(saveDirectory);
             bool recovered;
             bool hasValidSave = saveRepository.TryLoad(out GameSaveData profile, out recovered);
             if (!hasValidSave && saveRepository.HasAnySaveFile)

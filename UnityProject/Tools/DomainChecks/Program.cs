@@ -7,6 +7,7 @@ using System.Text;
 var checks = new (string Name, Action Test)[]
 {
     ("abertura: recursos carregáveis existem sem caminhos ambíguos", StartupAssetsExist),
+    ("estatísticas: tiros, mortes e retomada", RunStatisticsPersist),
     ("economia insuficiente não compra upgrade", InsufficientGoldDoesNotPurchase),
     ("preço e aumento de dano do upgrade", AttackUpgradeUsesCatalogFormula),
     ("upgrade de vida aplica valor e custo do catálogo", HealthUpgradeUsesCatalogFormula),
@@ -789,3 +790,19 @@ static void InvalidSchemaValueRecoversBackup() => WithSaveDirectory(directory =>
     Assert(repository.TryLoad(out GameSaveData restored, out bool recovered) && recovered && restored.Gold == 23 &&
         CharacterProgression.Find(restored, "pioneer").TotalExperience == 35, "tipo inválido de versão quebrou recuperação de XP");
 });
+
+static void RunStatisticsPersist()
+{
+    var save=new GameSaveData();
+    var sim=NewSimulation(save,100,waveInterval:1f,regularEnemyHealth:1f);
+    int shots=0,kills=0;
+    sim.EventRaised+=e=>{if(e.Type==CombatEventType.ProjectileLaunched && e.Text=="Projétil da broca")shots++;if(e.Type==CombatEventType.EnemyDefeated)kills++;};
+    StepFor(sim,4f);
+    Assert(shots>0 && kills>0,"ensaio não produziu combate");
+    Assert(sim.Run.ShotsFired==shots && sim.Run.EnemiesDefeated==kills,"resumo não corresponde aos eventos reais");
+    save.ActiveRun=sim.CaptureRun();
+    var restored=JsonConvert.DeserializeObject<GameSaveData>(JsonConvert.SerializeObject(save));
+    var resumed=NewSimulation(restored,100,waveInterval:1f,regularEnemyHealth:1f);
+    Assert(resumed.Run.ShotsFired==shots && resumed.Run.EnemiesDefeated==kills,"retomada perdeu estatísticas");
+    Assert(resumed.Run.WavesCleared==sim.Run.WavesCleared,"retomada perdeu ondas concluídas");
+}

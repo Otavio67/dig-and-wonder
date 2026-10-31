@@ -11,11 +11,14 @@ namespace DigAndWonder
         private bool openingStoreChest;
         private void StoreCard(string title,string detail,string icon,string price,float x0,float y0,float x1,float y1,UnityEngine.Events.UnityAction action)
         {
-            RectTransform card=MakeArtPanel(title,topContent,new Color(.22f,.31f,.42f),"hud_panel",x0,y0,x1,y1);
-            MakeLabel("Offer title",card,title,26,Gold,new Vector2(.06f,.81f),new Vector2(.94f,.97f),TextAlignmentOptions.Center);
-            MakeIcon(card,icon,.24f,.34f,.76f,.79f,Color.white);
-            MakeLabel("Offer detail",card,detail,21,Cream,new Vector2(.07f,.23f),new Vector2(.93f,.35f),TextAlignmentOptions.Center);
-            MakeArtActionButton("Offer action",card,price,25,.07f,.04f,.93f,.22f,action,"slot");
+            RectTransform card=MakeArtPanel(title,topContent,Color.white,"offer_frame",x0,y0,x1,y1);
+            TextMeshProUGUI heading=MakeLabel("Offer title",card,title,28,Gold,new Vector2(.12f,.70f),new Vector2(.88f,.83f),TextAlignmentOptions.Center);
+            if(startFont!=null)heading.font=startFont;heading.outlineWidth=.07f;heading.outlineColor=Ink;
+
+            Image product=MakeIcon(card,ProductArtFor(title,icon),.14f,.32f,.86f,.72f,Color.white);
+            product.transform.DOScale(1.035f,1.8f).SetLoops(-1,LoopType.Yoyo).SetEase(Ease.InOutSine);
+            MakeLabel("Offer detail",card,detail,22,Cream,new Vector2(.12f,.27f),new Vector2(.88f,.34f),TextAlignmentOptions.Center);
+            MakeArtActionButton("Offer action",card,price,25,.14f,.14f,.86f,.26f,action,"hud_panel");
         }
         private void StoreMessage(string message)
         {
@@ -43,7 +46,7 @@ namespace DigAndWonder
         {
             openingStoreChest=true;
             ClearTopContent();
-            Image chest=MakeIcon(topContent,"nav_chests",.20f,.30f,.80f,.76f,Color.white);
+            Image chest=MakeIcon(topContent,"product_chest",.20f,.30f,.80f,.76f,Color.white);
             TopText("ABRINDO SUPRIMENTOS...",.12f,.15f,.88f,.25f,30);
             chest.transform.DOPunchScale(new Vector3(.22f,.22f,0),.65f,7,.6f);
             yield return new WaitForSecondsRealtime(.7f);

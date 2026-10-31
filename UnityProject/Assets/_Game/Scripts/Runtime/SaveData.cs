@@ -70,6 +70,9 @@ namespace DigAndWonder
         public int EncounterVersion;
         public bool IsTraining;
         public float ElapsedSeconds;
+        public int ShotsFired;
+        public int EnemiesDefeated;
+        public int WavesCleared;
         public float PlayerHealth;
         public float AttackTimer;
         public float AttackHitTimer;
