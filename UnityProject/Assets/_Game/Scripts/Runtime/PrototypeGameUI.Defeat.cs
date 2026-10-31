@@ -35,29 +35,30 @@ namespace DigAndWonder
             if(defeatPopup!=null)Destroy(defeatPopup.gameObject);
             defeatRemaining=10;
             defeatPopup=MakePanel("Defeat popup",combatRoot,new Color(.015f,.025f,.05f,.90f),Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
-            RectTransform card=MakeArtPanel("Defeat summary",defeatPopup,Color.white,"menu_background",.055f,.20f,.945f,.80f);
-            TextMeshProUGUI title=MakeLabel("Defeat title",card,"BROCA AVARIADA!",42,Gold,new Vector2(.09f,.83f),new Vector2(.91f,.94f),TextAlignmentOptions.Center);
+            RectTransform card=MakeArtPanel("Defeat summary",defeatPopup,Color.white,"menu_background",.055f,.18f,.945f,.82f);
+            TextMeshProUGUI title=MakeLabel("Defeat title",card,"BROCA AVARIADA!",48,Gold,new Vector2(.09f,.83f),new Vector2(.91f,.94f),TextAlignmentOptions.Center);
             if(startFont!=null)title.font=startFont;title.outlineWidth=.10f;title.outlineColor=Ink;
-            MakeIcon(card,"repair",.40f,.71f,.60f,.85f,Color.white);
+            MakeIconSprite(card,FindResourceSprite("Art/Drill/drill_pioneira","hurt_00"),.33f,.70f,.67f,.83f,Color.white);
             var run=driver.Simulation.Run;
             int seconds=(int)run.ElapsedSeconds;
             string[] names={"TEMPO","TIROS","INIMIGOS","ONDAS"};
             string[] values={(seconds/60).ToString("00")+":"+(seconds%60).ToString("00"),run.ShotsFired.ToString(),run.EnemiesDefeated.ToString(),run.WavesCleared.ToString()};
-            string[] icons={"cadence","attack","nav_mine","nav_modes"};
+            string[] icons={"stat_time","stat_projectile","stat_enemy","stat_waves"};
             for(int i=0;i<4;i++)
             {
-                float x=.09f+(i%2)*.42f,y=i<2?.56f:.43f;
-                RectTransform stat=MakeArtPanel("Statistic "+names[i],card,new Color(.11f,.22f,.31f),"hud_panel",x,y,x+.40f,y+.12f);
-                MakeIcon(stat,icons[i],.04f,.18f,.25f,.82f,Color.white);
-                MakeLabel("Stat name",stat,names[i],20,Gold,new Vector2(.29f,.54f),new Vector2(.95f,.90f),TextAlignmentOptions.Left);
-                MakeLabel("Stat value",stat,values[i],36,Cream,new Vector2(.29f,.08f),new Vector2(.95f,.59f),TextAlignmentOptions.Left);
+                float x=.075f+(i%2)*.435f,y=i<2?.54f:.38f;
+                RectTransform stat=MakeArtPanel("Statistic "+names[i],card,Color.white,"defeat_stat_card_v3",x,y,x+.415f,y+.14f);
+                stat.GetComponent<Image>().preserveAspect=true;
+                MakeIcon(stat,icons[i],.085f,.12f,.405f,.88f,Color.white);
+                MakeLabel("Stat name",stat,names[i],22,Gold,new Vector2(.45f,.58f),new Vector2(.94f,.82f),TextAlignmentOptions.Left);
+                MakeLabel("Stat value",stat,values[i],46,Cream,new Vector2(.45f,.18f),new Vector2(.94f,.57f),TextAlignmentOptions.Left);
             }
-            MakeLabel("Revive question",card,"Deseja voltar de onde parou?",29,Cream,new Vector2(.07f,.32f),new Vector2(.93f,.41f),TextAlignmentOptions.Center);
-            RectTransform revive=MakeArtActionButton("Continue with ad",card,"CONTINUAR\nAnúncio em breve",25,.07f,.17f,.49f,.30f,()=>{},"hud_panel");
+            MakeLabel("Revive question",card,"Deseja voltar de onde parou?",29,Cream,new Vector2(.07f,.28f),new Vector2(.93f,.36f),TextAlignmentOptions.Center);
+            RectTransform revive=MakeArtActionButton("Continue with ad",card,"CONTINUAR\nAnúncio em breve",25,.07f,.14f,.49f,.27f,()=>{},"hud_panel");
             revive.GetComponent<Button>().interactable=false;
             revive.GetComponent<Image>().color=new Color(.18f,.23f,.29f);
-            MakeArtActionButton("Accept defeat",card,"MORRER\nReiniciar fase",25,.51f,.17f,.93f,.30f,RestartAfterDefeat,"hud_panel");
-            defeatCountdown=MakeLabel("Defeat timer",card,"",24,Gold,new Vector2(.08f,.05f),new Vector2(.92f,.15f),TextAlignmentOptions.Center);
+            MakeArtActionButton("Accept defeat",card,"MORRER\nReiniciar fase",25,.51f,.14f,.93f,.27f,RestartAfterDefeat,"hud_panel");
+            defeatCountdown=MakeLabel("Defeat timer",card,"",24,Gold,new Vector2(.08f,.025f),new Vector2(.92f,.115f),TextAlignmentOptions.Center);
             defeatPopup.SetAsLastSibling();
             card.localScale=new Vector3(.90f,.90f,1);
             card.DOScale(1,.22f).SetEase(Ease.OutBack);
