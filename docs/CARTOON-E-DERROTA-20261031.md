@@ -18,3 +18,12 @@ Popup modal com tempo real da tentativa, projéteis da broca lançados, inimigos
 
 ## Verificação
 108 checks de domínio passaram, incluindo teste novo que compara estatísticas com eventos reais e testa persistência/retomada. Compilação com stubs e bibliotecas Unity passou. UiVisualReview entrou em Play Mode com perfil separado, capturou perfil, loja, configurações, HUD e derrota, e confirmou o reinício automático após 10 segundos. Os testes usam DW_UI_REVIEW_SAVE apenas no Editor; não substituem o save do usuário. Build Android executado depois desse ensaio. Desempenho e interação em aparelho não medidos.
+## Botões e campos ilustrados
+Após as capturas iniciais, o usuário pediu botões com acabamento próprio e campos de perfil que não fossem caixas pretas. Foram gerados buttons.png e profile_fields.png com a ferramenta image_gen integrada. Os textos são renderizados no Unity, sem rótulos embutidos.
+
+Prompt de botões: production UI button skin atlas, wide 2:1, two columns and two rows; normal blue-steel tab, selected emerald/cyan tab, available workshop-green action button, and round coral close disk. Transparent background, no text or symbols, chamfered rounded forms, dark navy outline, brass corner plates and rivets, handpainted metal bevels, cream top highlights and short hard lower shadow. Reference: offer_frame.png, same cartoon material quality.
+
+Prompt de campos: profile UI atlas, wide 2:1, four separate assets; square portrait frame with truly transparent center and a cyan top diamond, sculpted steel/brass name input field, teal stat information plate with asymmetric copper/gold cap, and recessed account ID screen. Dark clean interiors, details only around edges, transparent exterior, no words or icons, no gears, matching offer_frame.png materials.
+
+Recortes foram ajustados à posição real dos desenhos. Abas, ações e fechamento têm recursos distintos. Campos usam bordas de nove partes; retrato e botão redondo mantêm a proporção. Capturas reais do Unity foram usadas para revisar margens, bordas e leitura.
+A loja distribui suas cinco abas em duas linhas (3+2), preservando a largura visual dos botões e seus alvos de toque. O ID e as estatísticas receberam padding para não atravessar ferragens.

@@ -215,3 +215,13 @@ A revisão adicional da navegação mede as seis células internas da moldura pa
 O usuário rejeitou os pictogramas planos e o aspecto dos slots na Mina e na Oficina. Esta instrução substitui a preferência anterior pelos recortes v8 nessas funções. A família vetorial Toy-Mecha v2 usa aço azulado, cobre, coração blindado, broca helicoidal, motor com ventilação ciano e núcleo facetado. Transparência real, contorno petróleo e margem óptica uniforme; nenhum valor ou texto embutido. Fontes em `assets/ui/gameplay/`, exportação canônica em `scripts/export-mecha-icons.cjs`. O exportador antigo chama o novo ao terminar, evitando restaurar a família rejeitada.
 
 O HUD mantém AUTO, especial e quatro poderes; os slots passam a chapas limpas sem molduras douradas apertadas. As melhorias separam desenho, faixa de nível, atributo e ação verde. Os pictogramas são compartilhados com a Oficina, inclusive quando muda a página de atributos. A broca e a logo aprovadas permanecem as referências principais. Revisão de margens, transparência, semântica e paleta realizada; a aprovação final de aparência continua com o usuário.
+
+## Preferência visual confirmada em 31/10/2026
+
+O usuário rejeitou os painéis brancos, a aparência de caixas simples e o uso de pictogramas planos como arte principal da loja. Quer acabamento cartoon ilustrado com volume, detalhes de materiais, títulos grandes em Titan One, brilho localizado, produtos grandes e animação discreta. O ícone ilustrado da Pioneira e o baú do projeto são referências de acabamento.
+
+Botões devem ter arte própria, bordas chanfradas, face pintada, reflexos curtos, sombra/base e estados visíveis. Aba ativa usa ciano/teal; ação disponível usa verde; fechar usa coral. Preservar a proporção dos detalhes e o centro legível. A loja pode usar duas linhas de abas para evitar botões espremidos.
+
+O retrato do perfil recebe moldura metálica com cristal; nome, ID e estatísticas usam campos personalizados ilustrados. O centro permanece escuro e limpo para o texto. Detalhe visual deve ficar nas bordas, sem ferragens sob rótulos. O usuário pediu caixa de derrota cartoon com resumo da tentativa, opção Morrer/reiniciar e escolha por 10 segundos. Continuação por anúncio continua futura e deve estar identificada como indisponível até integração real.
+
+Referências de produção e prompts: CARTOON-E-DERROTA-20261031.md. Aprovação artística final continua com o usuário; captura de Play Mode é a evidência de integração.

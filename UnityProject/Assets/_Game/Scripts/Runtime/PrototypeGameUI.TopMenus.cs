@@ -71,8 +71,8 @@ namespace DigAndWonder
 
         private void TopButton(string label, float x0, float y0, float x1, float y1, UnityEngine.Events.UnityAction action, bool selected = false)
         {
-            RectTransform button = MakeArtActionButton(label, topContent, label, 25, x0, y0, x1, y1, action, "hud_panel");
-            button.GetComponent<Image>().color = selected ? new Color(.13f, .44f, .43f) : new Color(.12f,.22f,.32f);
+            RectTransform button = MakeArtActionButton(label, topContent, label, 25, x0, y0, x1, y1, action, selected?"skin_tab_active":"skin_tab");
+            button.GetComponent<Image>().color = Color.white;
         }
 
         private TextMeshProUGUI TopText(string text, float x0, float y0, float x1, float y1, int size = 25)
@@ -104,29 +104,31 @@ namespace DigAndWonder
             string name = PlayerPrefs.GetString("dw.playerName", "Explorador");
             if (page == "perfil-info")
             {
-                MakeIconSprite(topContent, SpriteFor("menu_avatar"), .03f, .62f, .29f, .84f, Color.white);
+                MakeIconSprite(topContent, SpriteFor("menu_avatar"), .055f, .635f, .265f, .825f, Color.white);
+                MakeIcon(topContent,"skin_avatar",.005f,.59f,.315f,.87f,Color.white);
                 TopText("NOME DO EXPLORADOR", .34f, .78f, .96f, .84f, 21);
-                RectTransform inputPanel = MakeArtPanel("Name input", topContent, new Color(.08f,.18f,.26f), "hud_panel", .34f, .68f, .96f, .78f);
+                RectTransform inputPanel = MakeArtPanel("Name input", topContent, Color.white, "skin_field", .34f, .68f, .96f, .78f);
                 inputPanel.GetComponent<Image>().raycastTarget = true;
                 TMP_InputField input = inputPanel.gameObject.AddComponent<TMP_InputField>();
-                TextMeshProUGUI inputText = MakeLabel("Name text", inputPanel, name, 28, Cream, new Vector2(.06f, .08f), new Vector2(.94f, .92f), TextAlignmentOptions.Left);
+                TextMeshProUGUI inputText = MakeLabel("Name text", inputPanel, name, 28, Cream, new Vector2(.14f, .18f), new Vector2(.86f, .82f), TextAlignmentOptions.Left);
                 input.textViewport = inputPanel; input.textComponent = inputText; input.characterLimit = 20; input.text = name;
                 input.onEndEdit.AddListener(value => { string clean = value.Trim(); if (clean.Length == 0) clean = "Explorador"; PlayerPrefs.SetString("dw.playerName", clean); PlayerPrefs.Save(); input.text = clean; });
-                TopText("ID LOCAL  " + localPlayerId + "\nEste identificador pertence a este aparelho.", .05f, .51f, .95f, .64f, 21);
+                MakeArtPanel("Account ID plate",topContent,Color.white,"skin_id",.025f,.51f,.975f,.64f);
+                TopText("ID LOCAL  " + localPlayerId + "\nEste identificador pertence a este aparelho.", .18f, .53f, .93f, .62f, 21);
                 TopButton("COPIAR ID", .58f, .43f, .96f, .51f, () => GUIUtility.systemCopyBuffer = localPlayerId);
                 var profile = driver.Profile;
                 CharacterLevelState level = driver.CurrentCharacterLevel;
                 string xp = level.IsMaximum ? "Nível máximo" : level.ExperienceInLevel + " / " + level.ExperienceToNextLevel + " XP";
                 string[] names={"EXPEDIÇÃO","BROCA","DESCOBERTAS","FROTA"};
-                string[] values={GameplayHudModel.CampaignPosition(profile.CampaignStage),"Nv. "+level.Level+" • "+xp,profile.DiscoveryStages.Count+" / "+DiscoveryCatalog.Entries.Count,profile.Characters.Count+" brocas conquistadas"};
+                string[] values={GameplayHudModel.CampaignPosition(profile.CampaignStage),"Nv. "+level.Level+" • "+xp,profile.DiscoveryStages.Count+" / "+DiscoveryCatalog.Entries.Count,profile.Characters.Count+(profile.Characters.Count==1?" broca conquistada":" brocas conquistadas")};
                 string[] icons={"nav_modes","attack","nav_album","nav_workshop"};
                 for(int i=0;i<4;i++)
                 {
-                    float y=.33f-i*.09f;
-                    RectTransform row=MakeArtPanel("Profile stat "+i,topContent,new Color(.08f,.16f,.24f),"hud_panel",.04f,y,.96f,y+.08f);
+                    float y=.335f-i*.097f;
+                    RectTransform row=MakeArtPanel("Profile stat "+i,topContent,Color.white,"skin_stat",.04f,y,.96f,y+.09f);
                     MakeIcon(row,icons[i],.025f,.16f,.15f,.84f,Color.white);
-                    MakeLabel("Profile stat name",row,names[i],19,Gold,new Vector2(.19f,.52f),new Vector2(.96f,.92f),TextAlignmentOptions.Left);
-                    MakeLabel("Profile stat value",row,values[i],26,Cream,new Vector2(.19f,.08f),new Vector2(.96f,.54f),TextAlignmentOptions.Left);
+                    MakeLabel("Profile stat name",row,names[i],19,Gold,new Vector2(.23f,.54f),new Vector2(.94f,.84f),TextAlignmentOptions.Left);
+                    MakeLabel("Profile stat value",row,values[i],26,Cream,new Vector2(.23f,.18f),new Vector2(.94f,.54f),TextAlignmentOptions.Left);
                 }
             }
             else if (page == "perfil-equip")
@@ -154,8 +156,8 @@ namespace DigAndWonder
             topTitle.text = "EMPÓRIO CRISTALINO";
             string[] tabs = { "OFERTAS", "CRISTAIS", "PACOTES", "BAÚS", "CAIXAS" };
             string[] pages = { "loja-suprimentos", "loja-cristais", "loja-pacotes", "loja-baus", "loja-loot" };
-            for(int i=0;i<tabs.Length;i++){ string target=pages[i]; TopButton(tabs[i], .01f+i*.198f,.89f,.197f+i*.198f,.99f,()=>ShowTopPage(target),page==target); }
-            TopText("CARTEIRA  " + driver.Profile.Crystals + " cristais  •  " + driver.Profile.Gold + " ouro", .05f,.81f,.95f,.88f,26);
+            for(int i=0;i<tabs.Length;i++){ string target=pages[i]; float x=i<3?.015f+i*.325f:.18f+(i-3)*.325f; float y=i<3?.92f:.83f; TopButton(tabs[i],x,y,x+.31f,y+.07f,()=>ShowTopPage(target),page==target); }
+            TopText("CARTEIRA  " + driver.Profile.Crystals + " cristais  •  " + driver.Profile.Gold + " ouro", .05f,.75f,.95f,.81f,26);
             if(page=="loja-baus" || page=="loja-loot")
             {
                 Image chest=MakeIcon(topContent,"product_chest",.18f,.43f,.82f,.79f,Color.white);
@@ -168,13 +170,13 @@ namespace DigAndWonder
             }
             if(page=="loja-suprimentos")
             {
-                StoreCard("CHAVE DE BAÚ","Uma chave para seus baús", "nav_chests",driver.Economy.KeyCrystalCost+" cristais",.05f,.41f,.49f,.78f,()=>{bool ok=driver.TryPurchaseKey(); StoreMessage(ok?"Chave recebida!":"Cristais insuficientes ou compra indisponível.");});
-                StoreCard("RESERVA DE OURO","Melhore sua expedição", "gold_coin",driver.Economy.GoldPackCrystalCost+" cristais",.51f,.41f,.95f,.78f,()=>{bool ok=driver.TryPurchaseGoldPack();StoreMessage(ok?"Ouro recebido!":"Cristais insuficientes ou compra indisponível.");});
+                StoreCard("CHAVE DE BAÚ","Uma chave para seus baús", "nav_chests",driver.Economy.KeyCrystalCost+" cristais",.05f,.41f,.49f,.74f,()=>{bool ok=driver.TryPurchaseKey(); StoreMessage(ok?"Chave recebida!":"Cristais insuficientes ou compra indisponível.");});
+                StoreCard("RESERVA DE OURO","Melhore sua expedição", "gold_coin",driver.Economy.GoldPackCrystalCost+" cristais",.51f,.41f,.95f,.74f,()=>{bool ok=driver.TryPurchaseGoldPack();StoreMessage(ok?"Ouro recebido!":"Cristais insuficientes ou compra indisponível.");});
                 TopText("Cristais são conquistados nas fases. As trocas usam o saldo da sua expedição.",.08f,.14f,.92f,.34f,25);
                 return;
             }
             string[] labels=page=="loja-cristais"?new[]{"BOLSA DE CRISTAIS","CAIXA DE CRISTAIS","COFRE DE CRISTAIS","RESERVA CRISTALINA"}:new[]{"KIT EXPLORADOR","KIT OFICINA","KIT DESCOBERTA","KIT EXPEDIÇÃO"};
-            for(int i=0;i<4;i++){float x=.05f+(i%2)*.46f;float y=i<2?.43f:.05f;StoreCard(labels[i],"Prévia de oferta",page=="loja-cristais"?"core":"nav_chests","EM BREVE",x,y,x+.44f,y+.35f,()=>StoreMessage("Esta oferta ainda não está disponível nesta versão."));}
+            for(int i=0;i<4;i++){float x=.05f+(i%2)*.46f;float y=i<2?.41f:.05f;StoreCard(labels[i],"Prévia de oferta",page=="loja-cristais"?"core":"nav_chests","EM BREVE",x,y,x+.44f,y+.33f,()=>StoreMessage("Esta oferta ainda não está disponível nesta versão."));}
         }
 
         private void ShowSettingsPage()

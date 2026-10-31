@@ -41,11 +41,14 @@ namespace UnityEngine
     public class Transform : Component { public Transform parent; public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } public Transform Find(string path) => null; public void SetAsFirstSibling() { } public void SetAsLastSibling() { } public int childCount; public Transform GetChild(int index) => null; }
     public class RectTransform : Transform { public Rect rect; public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta, pivot; }
     public struct Quaternion { public static Quaternion identity => new Quaternion(); }
+    public enum SpriteMeshType { FullRect }
+    public struct Vector4 { public Vector4(float x,float y,float z,float w) { } }
     public class Sprite : Object
     {
         public string name;
         public Rect rect;
         public static Sprite Create(Texture2D texture, Rect rect, Vector2 pivot, float pixelsPerUnit) => new Sprite();
+        public static Sprite Create(Texture2D texture, Rect rect, Vector2 pivot, float pixelsPerUnit, uint extrude, SpriteMeshType mesh, Vector4 border) => new Sprite();
     }
     public class Font : Object { }
     public enum TextureFormat { RGBA32 }

@@ -1183,7 +1183,7 @@ namespace DigAndWonder
                 view.Button.interactable = driver.IsReady && GameplayHudModel.CanBuyUpgrade(sim.Profile, driver.Economy, entry.Key);
                 view.Price.color = unlocked && !maxed && sim.Profile.Gold < rule.Cost(level) ? Coral : Cream;
                 view.Face.color = unlocked ? new Color(.15f, .25f, .31f) : new Color(.035f, .06f, .08f);
-                view.Button.GetComponent<Image>().color = view.Button.interactable ? new Color(.10f, .72f, .50f) : new Color(.12f, .17f, .23f);
+                view.Button.GetComponent<Image>().color = view.Button.interactable ? Color.white : new Color(.30f, .37f, .41f);
             }
             if (scrollThumb != null) scrollThumb.parent.gameObject.SetActive(upgradesVisible);
             restartButton.gameObject.SetActive(false);
@@ -1591,7 +1591,8 @@ namespace DigAndWonder
             image.sprite = SpriteFor(art);
             if (art=="hud_panel" && color==Color.white) image.color=new Color(.10f,.18f,.27f);
             if (art=="power_round") image.preserveAspect=true;
-            image.type = uiAssetSprites.ContainsKey(art) ? Image.Type.Simple : Image.Type.Sliced;
+            image.type = art.StartsWith("skin_") && art!="skin_close" && art!="skin_avatar" ? Image.Type.Sliced : uiAssetSprites.ContainsKey(art) ? Image.Type.Simple : Image.Type.Sliced;
+            if(art=="skin_close" || art=="skin_avatar" || art=="skin_tab" || art=="skin_tab_active") { image.preserveAspect=true; image.type=Image.Type.Simple; }
             image.raycastTarget = false;
             return rect;
         }
@@ -1858,8 +1859,9 @@ namespace DigAndWonder
         private RectTransform MakeArtActionButton(string name, Transform parent, string text, int size, float left, float bottom,
             float right, float top, UnityEngine.Events.UnityAction action, string art)
         {
-            if (art=="slot") art="hud_panel";
-            RectTransform rect = MakeArtPanel(name, parent, new Color(.12f,.36f,.37f), art, left, bottom, right, top);
+            if (art=="slot" || art=="hud_panel") art="skin_action";
+            if(name=="Close top menu")art="skin_close";
+            RectTransform rect = MakeArtPanel(name, parent, Color.white, art, left, bottom, right, top);
             Button button = rect.gameObject.AddComponent<Button>();
             Image image = rect.GetComponent<Image>();
             image.raycastTarget = true;
