@@ -84,9 +84,9 @@ namespace DigAndWonder
                 labelRect.offsetMin = Vector2.zero; labelRect.offsetMax = Vector2.zero;
                 var label = labelObject.GetComponent<TextMeshProUGUI>();
                 if (feedbackFont != null) label.font = feedbackFont;
-                label.outlineWidth = 0.15f;
+                label.outlineWidth = 0.25f;
                 label.outlineColor = new Color(0.03f, 0.06f, 0.10f);
-                label.fontSize = 26; label.alignment = TextAlignmentOptions.Center; label.raycastTarget = false;
+                label.fontSize = 32; label.alignment = TextAlignmentOptions.Center; label.raycastTarget = false;
             }
             gameObject.SetActive(false);
             allObjects.Add(gameObject);

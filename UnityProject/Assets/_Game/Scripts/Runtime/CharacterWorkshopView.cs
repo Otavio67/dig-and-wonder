@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.TextCore.LowLevel;
 using Button = UnityEngine.UI.Button;
 using Image = UnityEngine.UI.Image;
+using AspectRatioFitter = UnityEngine.UI.AspectRatioFitter;
 
 namespace DigAndWonder
 {
@@ -86,6 +87,7 @@ namespace DigAndWonder
             titleFont = LoadFont("TitanOne-Regular", 0.17f);
             bodyFont = LoadFont("DWRounded-ExtraBold", 0.055f);
             root.GetComponent<Image>().color = Petroleum;
+            BuildBackdrop();
             Build(returnToHub);
             driver.CombatEventRaised += OnCombatEvent;
             Refresh();
@@ -115,11 +117,16 @@ namespace DigAndWonder
         private void Build(Action returnToHub)
         {
             // Todas as regiões usam a área segura já calculada pelo bootstrap (1080 x 1920 de referência).
-            RectTransform header = Plate("Workshop sign", root, Steel, 0.04f, 0.925f, 0.82f, 0.986f);
-            sectionTitle = Label(header, "OFICINA", 64, Gold, 0.08f, 0.12f, 0.92f, 0.92f, true);
-            ButtonAt(root, "Close workshop", "", Coral, 0.84f, 0.91f, 0.98f, 0.99f, returnToHub,
+            // Placa de título e botão de fechar iguais aos dos menus ilustrados (loja, perfil).
+            RectTransform header = Region("Workshop sign", root, 0.04f, 0.922f, 0.82f, 0.988f);
+            Image headerArt = header.gameObject.AddComponent<Image>();
+            headerArt.sprite = StagePlate();
+            headerArt.raycastTarget = false;
+            if (headerArt.sprite == null) { headerArt.sprite = SpriteFor("plate"); headerArt.type = Image.Type.Sliced; headerArt.color = Steel; }
+            sectionTitle = Label(header, "OFICINA", 56, Gold, 0.14f, 0.16f, 0.86f, 0.86f, true);
+            ButtonAt(root, "Close workshop", "", Coral, 0.845f, 0.918f, 0.975f, 0.99f, returnToHub,
                 out TextMeshProUGUI ignoredCloseLabel, out Image closeFace);
-            Icon(closeFace.transform, "close", 0.2f, 0.15f, 0.8f, 0.85f);
+            Icon(closeFace.transform, "close", 0.3f, 0.3f, 0.7f, 0.7f);
             characterName = Label(root, "BROCA PIONEIRA", 32, Cream, 0.045f, 0.877f, 0.63f, 0.910f, true, TextAlignmentOptions.Left);
             wallet = Label(root, "0", 23, Gold, 0.76f, 0.877f, 0.96f, 0.915f, true, TextAlignmentOptions.Right);
 
@@ -138,6 +145,8 @@ namespace DigAndWonder
             BuildGarage();
             BuildArsenalGrid();
             lockSummary = Label(root, "Novas melhorias em preparação", 22, Dim, 0.05f, 0.193f, 0.95f, 0.217f, false);
+            // Faixa escura atrás da mensagem de status: legível sobre o fundo ilustrado.
+            Plate("Status plate", root, Steel, 0.04f, 0.116f, 0.62f, 0.192f);
             status = Label(root, "Escolha uma melhoria para turbinar a broca.", 26, Cream,
                 0.055f, 0.12f, 0.61f, 0.19f, false, TextAlignmentOptions.Left);
             ButtonAt(root, "Return from workshop", "VOLTAR", Cyan, 0.64f, 0.116f, 0.96f, 0.191f, returnToHub,
@@ -212,21 +221,22 @@ namespace DigAndWonder
             RectTransform attack = Plate("Attack row", panes[4], Steel, 0f, 0.37f, 1f, 0.73f);
             attackIcon = Icon(attack, "attack", 0.025f, 0.13f, 0.17f, 0.87f);
             attackValue = Label(attack, "ATQ", 27, Cream, 0.19f, 0.04f, 0.57f, 0.96f, false, TextAlignmentOptions.Left);
-            attackButton = ButtonAt(attack, "Upgrade attack", "TURBINAR", Gold, 0.59f, 0.16f, 0.97f, 0.87f,
+            attackButton = ButtonAt(attack, "Upgrade attack", "TURBINAR", Gold, 0.60f, 0.14f, 0.97f, 0.86f,
                 () => Purchase(VisibleUpgrade(0).Kind), out attackPrice, out attackFace);
             RectTransform health = Plate("Health row", panes[4], Steel, 0f, 0.005f, 1f, 0.365f);
             healthIcon = Icon(health, "health", 0.025f, 0.13f, 0.17f, 0.87f);
             healthValue = Label(health, "VIDA", 27, Cream, 0.19f, 0.04f, 0.57f, 0.96f, false, TextAlignmentOptions.Left);
-            healthButton = ButtonAt(health, "Upgrade health", "TURBINAR", Gold, 0.59f, 0.16f, 0.97f, 0.87f,
+            healthButton = ButtonAt(health, "Upgrade health", "TURBINAR", Gold, 0.60f, 0.14f, 0.97f, 0.86f,
                 () => { if (VisibleUpgrade(1) != null) Purchase(VisibleUpgrade(1).Kind); }, out healthPrice, out healthFace);
             attackPrice.fontSize = healthPrice.fontSize = 27;
         }
 
         private void BuildPager(RectTransform parent, Action previous, Action next, out TextMeshProUGUI label)
         {
-            ButtonAt(parent, "Previous page", "<", Teal, 0, 0.74f, 0.18f, 0.995f, previous, out TextMeshProUGUI ignored, out Image face);
-            label = Label(parent, "1 / 4", 28, Cream, 0.19f, 0.74f, 0.81f, 1f, true);
-            ButtonAt(parent, "Next page", ">", Teal, 0.82f, 0.74f, 1, 0.995f, next, out ignored, out face);
+            // Setas compactas: antes eram blocos verdes altos que dominavam a página.
+            ButtonAt(parent, "Previous page", "<", Teal, 0, 0.80f, 0.17f, 0.95f, previous, out TextMeshProUGUI ignored, out Image face);
+            label = Label(parent, "1 / 4", 28, Cream, 0.19f, 0.80f, 0.81f, 0.95f, true);
+            ButtonAt(parent, "Next page", ">", Teal, 0.83f, 0.80f, 1, 0.95f, next, out ignored, out face);
         }
 
         private EconomyUpgradeRule VisibleUpgrade(int row)
@@ -245,7 +255,7 @@ namespace DigAndWonder
                 float bottom = row == 0 ? 0.37f : 0.005f;
                 RectTransform panel = Plate("Power row " + row, panes[1], Steel, 0, bottom, 1, bottom + 0.36f);
                 powerValues[row] = Label(panel, "PODER", 27, Cream, 0.035f, 0.04f, 0.60f, 0.96f, false, TextAlignmentOptions.Left);
-                powerButtons[row] = ButtonAt(panel, "Buy power " + row, "APRENDER", Gold, 0.63f, 0.12f, 0.97f, 0.88f,
+                powerButtons[row] = ButtonAt(panel, "Buy power " + row, "APRENDER", Gold, 0.62f, 0.26f, 0.97f, 0.74f,
                     () => BuyPower(index), out powerPrices[row], out powerFaces[row]);
                 powerPrices[row].fontSize = 27;
             }
@@ -267,7 +277,7 @@ namespace DigAndWonder
             {
                 float left = 0.025f + i * 0.325f;
                 treasureButtons[i] = ButtonAt(plate, "Treasury action " + i, "", i == 0 ? Gold : Teal,
-                    left, 0.05f, left + 0.3f, 0.46f, actions[i], out treasurePrices[i], out Image face);
+                    left, 0.08f, left + 0.3f, 0.30f, actions[i], out treasurePrices[i], out Image face);
                 treasurePrices[i].fontSize = 25;
                 treasureFaces[i] = face;
             }
@@ -305,8 +315,8 @@ namespace DigAndWonder
                     () => SelectTab(index), out TextMeshProUGUI ignoredLabel, out Image face);
                 tabFaces[index] = face;
                 tabVisuals[index] = (RectTransform)button.transform;
-                Icon(face.transform, icons[i], 0.25f, 0.38f, 0.75f, 0.96f);
-                Label(face.transform, names[i], 24, Cream, 0.04f, 0.06f, 0.96f, 0.43f, true);
+                Icon(face.transform, icons[i], 0.30f, 0.44f, 0.70f, 0.86f);
+                Label(face.transform, names[i], 24, Cream, 0.12f, 0.17f, 0.88f, 0.40f, true);
             }
             SelectTab(0);
         }
@@ -315,14 +325,15 @@ namespace DigAndWonder
         {
             RectTransform pane = panes[3];
             BuildPager(pane, () => BrowseGarage(-1), () => BrowseGarage(1), out garagePage);
-            RectTransform body = Plate("Drill catalog", pane, Steel, 0, 0.60f, 1, 0.73f);
-            RectTransform art = Region("Catalog Visual", body, 0.015f, 0.46f, 0.29f, 0.94f);
+            // Cartão mais alto: nome, nível e descrição não encostam mais na borda superior.
+            RectTransform body = Plate("Drill catalog", pane, Steel, 0, 0.555f, 1, 0.77f);
+            RectTransform art = Region("Catalog Visual", body, 0.02f, 0.45f, 0.28f, 0.96f);
             garageImage = art.gameObject.AddComponent<Image>();
             art.gameObject.AddComponent<DrillSpriteSheetPlayer2D>();
-            garageDetails = Label(body, "BROCAS", 32, Cream, 0.31f, 0.43f, 0.96f, 0.98f, false, TextAlignmentOptions.Left);
-            garageEquip = ButtonAt(body, "Equip character", "EQUIPAR", Cyan, 0.03f, 0.03f, 0.97f, 0.41f,
+            garageDetails = Label(body, "BROCAS", 28, Cream, 0.30f, 0.44f, 0.97f, 0.95f, false, TextAlignmentOptions.Left);
+            garageEquip = ButtonAt(body, "Equip character", "EQUIPAR", Cyan, 0.04f, 0.04f, 0.96f, 0.42f,
                 EquipGarageCharacter, out garagePrice, out Image face);
-            garagePrice.fontSize = 34;
+            garagePrice.fontSize = 28;
         }
 
         private void BrowseGarage(int offset)
@@ -349,8 +360,9 @@ namespace DigAndWonder
             sectionTitle.text = new[] { "OFICINA", "PODERES", "TESOURO", "BROCAS", "MELHORIAS" }[index];
             for (int i = 0; i < panes.Length; i++)
             {
-                panes[i].gameObject.SetActive(i == index);
-                if (tabFaces[i] != null) tabFaces[i].color = i == index ? Cyan : Teal;
+                // A aba Oficina reaproveita o espaço livre sob o módulo de combate para as melhorias.
+                panes[i].gameObject.SetActive(i == index || (index == 0 && i == 4));
+                if (tabFaces[i] != null) Paint(tabFaces[i], i == index ? Cyan : Steel);
                 if (tabVisuals[i] != null) tabVisuals[i].anchoredPosition = new Vector2(0f, i == index ? 5f : 0f);
             }
             if (lockSummary != null)
@@ -459,7 +471,7 @@ namespace DigAndWonder
                 powerValues[i].text = power.Name + "  " + rank + "/" + power.MaximumRank + "\n" + power.Description;
                 powerPrices[i].text = locked ? "REQUER\nNV. " + power.UnlockLevel : maximum ? "MÁXIMO" : "MELHORAR\n" + power.Cost(rank) + " OURO";
                 powerButtons[i].interactable = driver.IsReady && !locked && !maximum && profile.Gold >= power.Cost(rank);
-                powerFaces[i].color = powerButtons[i].interactable ? Teal : Steel;
+                Paint(powerFaces[i], powerButtons[i].interactable ? Teal : Steel);
             }
             lockSummary.text = "Fase " + profile.CampaignStage + "/" + driver.Economy.MaximumStage + " • ATQ " + Number(driver.CurrentStats.AttackDamage) + " • PV " + Number(driver.CurrentStats.MaximumHealth);
             treasureSummary.text = "BAÚS " + profile.Chests + "  •  CHAVES " + profile.Keys + "\n" +
@@ -472,7 +484,7 @@ namespace DigAndWonder
             treasureButtons[1].interactable = driver.IsReady && profile.Crystals >= driver.Economy.KeyCrystalCost;
             treasureButtons[2].interactable = driver.IsReady && profile.Crystals >= driver.Economy.GoldPackCrystalCost;
             for (int i = 0; i < treasureFaces.Length; i++)
-                treasureFaces[i].color = treasureButtons[i].interactable ? Teal : Steel;
+                Paint(treasureFaces[i], treasureButtons[i].interactable ? Teal : Steel);
             if (driver.IsSaveBlocked) status.text = driver.LastSaveError;
         }
 
@@ -488,7 +500,7 @@ namespace DigAndWonder
             value.text = "<b>" + rule.Name + "  " + level + "/" + rule.MaximumLevel + "</b>\n" + rule.Description.Replace(" (multiplicativo)", "");
             price.text = locked ? "REQUER\nNV. " + rule.UnlockLevel : maximum ? "MÁXIMO" : "TURBINAR\n" + rule.Cost(level) + " OURO";
             button.interactable = driver.IsReady && !locked && !maximum && driver.Profile.Gold >= rule.Cost(level);
-            face.color = button.interactable ? Teal : Steel;
+            Paint(face, button.interactable ? Teal : Steel);
         }
 
         private static string Number(float value) => value.ToString("0.##", Portuguese);
@@ -529,8 +541,73 @@ namespace DigAndWonder
             return rect;
         }
 
+        // Painéis de leitura: aço escuro translúcido sobre o fundo ilustrado (o cinza-claro anterior parecia caixa simples).
+        private static readonly Color PanelDark = new Color(.07f, .15f, .21f, .94f);
+
         private RectTransform Plate(string name, Transform parent, Color color, float x0, float y0, float x1, float y1)
-            => ArtRegion(name, parent, "plate", color, x0, y0, x1, y1);
+            => ArtRegion(name, parent, "plate", color == Steel ? PanelDark : color, x0, y0, x1, y1);
+
+        private void BuildBackdrop()
+        {
+            Texture2D texture = Resources.Load<Texture2D>("Art/UI/Illustrated/menu_background");
+            if (texture == null) return;
+            RectTransform backdrop = Region("Workshop backdrop", root, 0, 0, 1, 1);
+            backdrop.SetAsFirstSibling();
+            Image image = backdrop.gameObject.AddComponent<Image>();
+            image.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f), 100);
+            image.color = new Color(.55f, .6f, .65f); // escurecido para não competir com os painéis
+            image.raycastTarget = false;
+            backdrop.gameObject.AddComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            backdrop.GetComponent<AspectRatioFitter>().aspectRatio = (float)texture.width / texture.height;
+        }
+
+        private Sprite StagePlate()
+        {
+            if (sprites.TryGetValue("stage_plate", out Sprite cached)) return cached;
+            Texture2D atlas = Resources.Load<Texture2D>("Art/UI/dw_hud_top_atlas");
+            Sprite plate = atlas == null ? null : Sprite.Create(atlas, new Rect(8, 232, 624, 185), new Vector2(.5f, .5f), 512f);
+            sprites["stage_plate"] = plate;
+            return plate;
+        }
+
+        /// <summary>Recorte dos botões ilustrados aprovados (buttons.png), os mesmos usados pelos menus.</summary>
+        private Sprite Skin(string name)
+        {
+            if (sprites.TryGetValue("skin_" + name, out Sprite cached)) return cached;
+            Texture2D texture = Resources.Load<Texture2D>("Art/UI/Illustrated/buttons");
+            Sprite skin = null;
+            if (texture != null)
+            {
+                float x, top, width, height;
+                bool sliced = true;
+                switch (name)
+                {
+                    case "tab": x = .005f; top = .08f; width = .49f; height = .36f; break;
+                    case "tab_active": x = .505f; top = .06f; width = .49f; height = .38f; break;
+                    case "close": x = .625f; top = .48f; width = .25f; height = .49f; sliced = false; break;
+                    default: x = .005f; top = .55f; width = .49f; height = .38f; break;
+                }
+                Rect rect = new Rect(x * texture.width, (1 - top - height) * texture.height, width * texture.width, height * texture.height);
+                skin = sliced
+                    ? Sprite.Create(texture, rect, new Vector2(.5f, .5f), texture.width / 10.24f, 0, SpriteMeshType.FullRect,
+                        new Vector4(rect.width * .07f, rect.height * .08f, rect.width * .07f, rect.height * .08f))
+                    : Sprite.Create(texture, rect, new Vector2(.5f, .5f), 100);
+            }
+            sprites["skin_" + name] = skin;
+            return skin;
+        }
+
+        /// <summary>Estado semântico → arte: verde = ação disponível, aço = indisponível, ciano = selecionado, coral = fechar.</summary>
+        private void Paint(Image face, Color semantic)
+        {
+            string name = semantic == Cyan ? "tab_active" : semantic == Coral ? "close" : semantic == Steel ? "tab" : "action";
+            Sprite skin = Skin(name);
+            if (skin == null) { face.color = semantic; return; }
+            face.sprite = skin;
+            face.type = name == "close" ? Image.Type.Simple : Image.Type.Sliced;
+            face.preserveAspect = name == "close";
+            face.color = Color.white;
+        }
 
         private Image Icon(Transform parent, string art, float x0, float y0, float x1, float y1)
         {
@@ -567,9 +644,14 @@ namespace DigAndWonder
             RectTransform rect = ArtRegion(name, parent, "button", Petroleum, x0, y0, x1, y1);
             Image target = rect.GetComponent<Image>();
             target.raycastTarget = true;
-            RectTransform front = ArtRegion("Button face", rect, "button", color, 0.02f, 0.06f, 0.98f, 0.96f);
+            bool illustrated = Skin("action") != null;
+            if (illustrated) target.color = new Color(0, 0, 0, 0); // a arte ilustrada já tem base e sombra
+            RectTransform front = ArtRegion("Button face", rect, "button", color, illustrated ? 0f : 0.02f, illustrated ? 0f : 0.06f,
+                illustrated ? 1f : 0.98f, illustrated ? 1f : 0.96f);
             face = front.GetComponent<Image>();
-            label = Label(front, text, 32, Cream, 0.06f, 0.12f, 0.94f, 0.89f, false);
+            Paint(face, color);
+            // Texto dentro do miolo da arte, longe das ferragens laterais.
+            label = Label(front, text, 32, Cream, 0.12f, 0.16f, 0.88f, 0.84f, false);
             label.fontStyle = FontStyles.Bold;
             Button button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = target;

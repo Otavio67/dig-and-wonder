@@ -15,10 +15,11 @@ namespace DigAndWonder
             TextMeshProUGUI heading=MakeLabel("Offer title",card,title,28,Gold,new Vector2(.12f,.70f),new Vector2(.88f,.83f),TextAlignmentOptions.Center);
             if(startFont!=null)heading.font=startFont;heading.outlineWidth=.07f;heading.outlineColor=Ink;
 
-            Image product=MakeIcon(card,ProductArtFor(title,icon),.14f,.32f,.86f,.72f,Color.white);
+            Image product=MakeIcon(card,ProductArtFor(title,icon),.18f,.40f,.82f,.70f,Color.white);
             product.transform.DOScale(1.035f,1.8f).SetLoops(-1,LoopType.Yoyo).SetEase(Ease.InOutSine);
-            MakeLabel("Offer detail",card,detail,22,Cream,new Vector2(.12f,.27f),new Vector2(.88f,.34f),TextAlignmentOptions.Center);
-            MakeArtActionButton("Offer action",card,price,25,.14f,.14f,.86f,.26f,action,"hud_panel");
+            MakeLabel("Offer detail",card,detail,22,Cream,new Vector2(.12f,.33f),new Vector2(.88f,.395f),TextAlignmentOptions.Center);
+            // Ação acima do aro inferior do cartão; antes o texto ficava sobre a borda dourada.
+            MakeArtActionButton("Offer action",card,price,20,.15f,.19f,.85f,.325f,action,"hud_panel");
         }
         private void StoreMessage(string message)
         {
@@ -72,7 +73,9 @@ namespace DigAndWonder
                 float x=.05f+(i%2)*.46f,y=i<2?.51f:.14f;
                 StoreCard(names[i],"Sistema da broca",icons[i],"VER NA OFICINA",x,y,x+.44f,y+.34f,()=>{topModal.gameObject.SetActive(false);OpenProgression();});
             }
-            TopText("Os atributos atuais vêm das melhorias e da broca equipada. Troca de peças em preparação.",.07f,.02f,.93f,.12f,22);
+            // Rodapé em faixa escura: o texto não fica mais sobre as pedras da ilustração.
+            MakeArtPanel("Equipment note plate",topContent,new Color(.02f,.06f,.08f,.82f),"hud_panel",.06f,.025f,.94f,.115f);
+            TopText("Os atributos atuais vêm das melhorias e da broca equipada. Troca de peças em preparação.",.10f,.035f,.90f,.105f,22).alignment=TextAlignmentOptions.Center;
         }
     }
 }

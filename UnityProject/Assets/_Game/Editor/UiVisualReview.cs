@@ -63,7 +63,33 @@ namespace DigAndWonder.Editor
                 else if(step==4) Call(ui,"OpenTopMenu","configuracoes");
                 else if(step==5) Shot(folder,"configuracoes.png");
                 else if(step==6) Call(ui,"CloseTopMenu");
-                else if(step==7) Shot(folder,"hud.png");
+                else if(step==7)
+                {
+                    Shot(folder,"hud.png");
+                    // DW_UI_REVIEW_EXTRA=1 também captura Modos, Equipamentos e as quatro páginas da Oficina.
+                    if(Environment.GetEnvironmentVariable("DW_UI_REVIEW_EXTRA")=="1"){SessionState.SetInt(Key+"step",20);next=EditorApplication.timeSinceStartup+1;return;}
+                }
+                else if(step>=20 && step<=33)
+                {
+                    var workshop=(CharacterWorkshopView)typeof(PrototypeGameUI).GetField("workshop",Private).GetValue(ui);
+                    switch(step)
+                    {
+                        case 20: Call(ui,"SelectTab","MODOS"); break;
+                        case 21: Shot(folder,"modos.png"); break;
+                        case 22: Call(ui,"SelectTab","MINA"); Call(ui,"OpenEquipmentPage"); break;
+                        case 23: Shot(folder,"equipamentos.png"); break;
+                        case 24: Call(ui,"CloseTopMenu"); Call(ui,"OpenProgression"); break;
+                        case 25: Shot(folder,"oficina-0.png"); break;
+                        case 26: workshop.Show(1); break;
+                        case 27: Shot(folder,"oficina-1.png"); break;
+                        case 28: workshop.Show(2); break;
+                        case 29: Shot(folder,"oficina-2.png"); break;
+                        case 30: workshop.Show(3); break;
+                        case 31: Shot(folder,"oficina-3.png"); break;
+                        case 32: Call(ui,"CloseProgression"); break;
+                        case 33: SessionState.SetInt(Key+"step",8); next=EditorApplication.timeSinceStartup+1; return;
+                    }
+                }
                 else if(step==8)
                 {
                     var driver=UnityEngine.Object.FindFirstObjectByType<AutoBattleDriver>();

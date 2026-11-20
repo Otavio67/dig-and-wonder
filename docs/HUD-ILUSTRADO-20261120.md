@@ -31,6 +31,20 @@ O usuário pediu mais ajustes em todas as áreas, principalmente ícones, textos
 - **Navegação:** a placa ciano inteira fica atrás do ícone, sem esticar em nove partes. O rótulo fica abaixo dela, em ciano na aba ativa, e todos os rótulos ganharam contorno.
 - **Compilação com stubs:** recebeu as APIs usadas pelo build Windows e por `TMP margin`. Na primeira rodada esse check quebrava, o que teria falhado o CI.
 
+## Terceira rodada — moldura, combate, navegação e outras telas
+O usuário escolheu as quatro frentes: moldura das melhorias, combate no cenário, ícones da navegação e outras telas.
+- **Moldura das melhorias:** chapa azul-aço com contorno fino de latão, no lugar das tampas douradas grandes da `skin_id`.
+- **Combate:** barras de inimigos com contorno escuro e números de dano maiores (32) com contorno mais grosso. As mensagens de status ficam sobre uma faixa translúcida, que só aparece quando há texto.
+- **Navegação:** área do ícone maior e escala óptica por ícone (picareta ×1,18, chave ×1,12, escudo e cadeado ×0,96), para que diagonais finas e formas cheias pareçam do mesmo tamanho.
+- **Oficina** (abas Oficina, Poderes, Tesouro e Brocas):
+  - Fundo ilustrado escurecido e placa de título igual à dos menus. O fechar usa o disco coral ilustrado.
+  - Os botões usam a arte ilustrada por estado: verde para ação, aço para indisponível e ciano para selecionado.
+  - Os painéis cinza-claros passaram a aço escuro translúcido, e as setas de página ficaram compactas.
+  - A aba Oficina mostra as melhorias no espaço que antes ficava vazio. A mensagem de status ganhou uma faixa própria.
+  - O cartão da garagem ficou mais alto, com o botão EQUIPAR legível.
+- **Equipamentos e Loja:** o botão do cartão saiu de cima do aro dourado. O rodapé de Equipamentos fica numa faixa escura.
+- **Revisão:** `UiVisualReview` com `DW_UI_REVIEW_EXTRA=1` também captura Modos, Equipamentos e as quatro páginas da Oficina.
+
 ## Build Windows
 Menu **Dig & Wonder → Build Windows (.exe)** ou linha de comando:
 

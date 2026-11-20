@@ -38,7 +38,7 @@ namespace UnityEngine
         public T GetComponentInChildren<T>() where T : class => null;
         public void SetActive(bool active) { }
     }
-    public class Transform : Component { public Transform parent; public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } public Transform Find(string path) => null; public void SetAsFirstSibling() { } public void SetAsLastSibling() { } public int childCount; public Transform GetChild(int index) => null; }
+    public class Transform : Component { public Transform parent; public Vector3 localPosition, localScale; public Quaternion localRotation; public void SetParent(Transform parent, bool worldPositionStays) { } public Transform Find(string path) => null; public void SetAsFirstSibling() { } public void SetAsLastSibling() { } public int GetSiblingIndex() => 0; public void SetSiblingIndex(int index) { } public int childCount; public Transform GetChild(int index) => null; }
     public class RectTransform : Transform { public Rect rect; public Vector2 anchorMin, anchorMax, offsetMin, offsetMax, anchoredPosition, sizeDelta, pivot; }
     public struct Quaternion { public static Quaternion identity => new Quaternion(); }
     public enum SpriteMeshType { FullRect }
@@ -189,6 +189,7 @@ namespace UnityEngine.UI
     }
     public class GraphicRaycaster : UnityEngine.Component { }
     public class Graphic : UnityEngine.Component { public UnityEngine.Color color; public bool raycastTarget; public UnityEngine.RectTransform rectTransform; }
+    public class Outline : UnityEngine.Component { public UnityEngine.Color effectColor; public UnityEngine.Vector2 effectDistance; }
     public class Image : Graphic { public enum Type { Simple, Sliced } public Type type; public UnityEngine.Sprite sprite; public bool preserveAspect; public UnityEngine.Material material; }
     public class AspectRatioFitter : UnityEngine.Component
     {

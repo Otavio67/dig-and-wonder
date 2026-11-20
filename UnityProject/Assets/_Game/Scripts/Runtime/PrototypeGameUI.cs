@@ -68,6 +68,7 @@ namespace DigAndWonder
         private readonly Image[] sceneryTiles = new Image[3];
         private Button autoToggleButton;
         private TextMeshProUGUI autoStateLabel;
+        private GameObject statusPlate;
         private PooledCombatFeedback feedback;
         private Image healthFill;
         private Image playerHealthTrack;
@@ -413,6 +414,10 @@ namespace DigAndWonder
                 enemyHealth[i].gameObject.SetActive(false);
                 enemyHealthFills[i].gameObject.SetActive(false);
                 enemyHealthTracks[i].gameObject.SetActive(false);
+                // Contorno escuro separa a barra do chão claro do cenário.
+                Outline trackEdge = enemyHealthTracks[i].gameObject.AddComponent<Outline>();
+                trackEdge.effectColor = Ink;
+                trackEdge.effectDistance = new Vector2(3f, -3f);
             }
             healthLabel = MakeLabel("Health", worldPanel, "", 24, Cream,
                 new Vector2(0.04f, 0.462f), new Vector2(0.38f, 0.493f), TextAlignmentOptions.Left);
@@ -440,6 +445,10 @@ namespace DigAndWonder
                 new Vector2(0.06f, 0.48f), new Vector2(0.94f, 0.495f), TextAlignmentOptions.Center);
             statusLabel.outlineWidth = combatLog.outlineWidth = .2f;
             statusLabel.outlineColor = combatLog.outlineColor = Ink;
+            // Faixa translúcida atrás das mensagens: leitura fixa sem depender do chão do cenário.
+            RectTransform statusBand = MakeArtPanel("Status plate", combatRoot, new Color(.02f, .06f, .08f, .62f), "hud_panel", .10f, .479f, .90f, .533f);
+            statusBand.SetSiblingIndex(statusLabel.transform.GetSiblingIndex());
+            statusPlate = statusBand.gameObject;
             BuildPowerBar(combatRoot);
             BuildNavIconAtlas();
 
@@ -845,6 +854,8 @@ namespace DigAndWonder
                 return;
             }
             if (driver.Simulation == null) return;
+            if (statusPlate != null)
+                statusPlate.SetActive(!string.IsNullOrEmpty(statusLabel.text) || !string.IsNullOrEmpty(combatLog.text));
             UpdateDefeatPopup();
             // Avanço fora do evento de vitória: o driver já terminou o passo e salvou as recompensas.
             if (pendingDiscovery > 0)
@@ -1219,9 +1230,7 @@ namespace DigAndWonder
                 // Guia, seção 9: ouro insuficiente dessatura a face e mantém o preço legível; coral fica para perigo.
                 bool affordable = unlocked && !maxed && sim.Profile.Gold >= rule.Cost(level);
                 view.Price.color = affordable || maxed ? Cream : new Color(.80f, .84f, .87f);
-                bool illustrated = uiAssetSprites.ContainsKey("skin_id");
-                view.Face.color = illustrated ? (unlocked ? Color.white : new Color(.55f, .6f, .65f))
-                    : unlocked ? new Color(.15f, .25f, .31f) : new Color(.035f, .06f, .08f);
+                view.Face.color = unlocked ? new Color(.11f, .22f, .30f) : new Color(.06f, .11f, .15f);
                 Image actionFace = view.Button.GetComponent<Image>();
                 string actionSkin = view.Button.interactable ? "skin_action" : maxed ? "skin_tab_active" : "skin_tab";
                 if (uiAssetSprites.TryGetValue(actionSkin, out Sprite actionSprite) && actionFace.sprite != actionSprite)
@@ -1586,11 +1595,14 @@ namespace DigAndWonder
             element.preferredHeight = 156f;
             element.minHeight = 156f;
             var rowImage = rowObject.GetComponent<Image>();
-            bool illustratedRow = uiAssetSprites.TryGetValue("skin_id", out Sprite rowSkin);
-            rowImage.sprite = illustratedRow ? rowSkin : SpriteFor("hud_panel");
+            // Moldura leve e uniforme: chapa azul-aço com contorno fino de latão (sem tampas douradas grandes).
+            rowImage.sprite = SpriteFor("hud_panel");
             rowImage.type = Image.Type.Sliced;
-            rowImage.color = illustratedRow ? Color.white : new Color(.15f, .25f, .31f);
+            rowImage.color = new Color(.11f, .22f, .30f);
             rowImage.raycastTarget = false;
+            Outline rowEdge = rowObject.AddComponent<Outline>();
+            rowEdge.effectColor = new Color(.85f, .58f, .16f, .75f);
+            rowEdge.effectDistance = new Vector2(2f, -2f);
             // A caixa do ícone cobre a tampa quadrada de latão da moldura, evitando peças aparecendo pela borda.
             RectTransform iconFrame = MakeArtPanel("Upgrade icon", rowRect, new Color(.06f, .13f, .18f), "hud_panel", 0.008f, 0.06f, 0.19f, 0.94f);
             MakeIcon(iconFrame, icon, 0.18f, 0.36f, 0.82f, 0.92f, Color.white);
@@ -1608,7 +1620,7 @@ namespace DigAndWonder
             RectTransform button = MakeArtActionButton("Upgrade action", rowRect, "MELHORAR", 24, 0.60f, 0.08f, 0.895f, 0.92f, action, "hud_panel");
             button.GetComponentInChildren<TextMeshProUGUI>().gameObject.SetActive(false);
             // Conteúdo dentro do miolo do botão: a moldura ilustrada ocupa ~14% de cada borda.
-            TextMeshProUGUI actionTitle = MakeLabel("Upgrade action title", button, "MELHORAR", 21, Cream, new Vector2(.14f, .53f), new Vector2(.86f, .80f), TextAlignmentOptions.Center);
+            TextMeshProUGUI actionTitle = MakeLabel("Upgrade action title", button, "MELHORAR", 21, Cream, new Vector2(.16f, .50f), new Vector2(.84f, .75f), TextAlignmentOptions.Center);
             actionTitle.outlineWidth = .2f;
             actionTitle.outlineColor = Ink;
             MakeIcon(button, "gold_coin", .24f, .20f, .37f, .48f, Color.white);
@@ -1726,7 +1738,11 @@ namespace DigAndWonder
             if (illustratedTab) { highlightImage.sprite = activeSkin; highlightImage.type = Image.Type.Simple; highlightImage.preserveAspect = true; }
             navHighlights[text] = highlight.gameObject;
             highlight.gameObject.SetActive(stateColor == Cyan);
-            MakeIcon(rect, icon, .30f, .46f, .70f, .90f, Color.white);
+            // Mesma família de ícones, mas pesos ópticos diferentes: diagonais finas (picareta, chave)
+            // recebem escala maior para igualar o tamanho percebido.
+            Image navIcon = MakeIcon(rect, icon, .27f, .43f, .73f, .95f, Color.white);
+            float optical = icon == "nav_mine" ? 1.18f : icon == "nav_workshop" ? 1.12f : icon == "shield" || icon == "nav_shop" ? .96f : 1f;
+            navIcon.rectTransform.localScale = new Vector3(optical, optical, 1f);
             TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 22, Cream,
                 new Vector2(.03f, .05f), new Vector2(.97f, .36f), TextAlignmentOptions.Center);
             label.outlineWidth = .18f;
