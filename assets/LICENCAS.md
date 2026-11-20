@@ -14,7 +14,7 @@ Os SVGs em `assets/ui/gameplay/` são fontes editáveis de pictogramas construí
 
 - **Titan One Regular**: Google Fonts, SIL Open Font License 1.1. Fonte e licença em `UnityProject/Assets/_Game/Resources/Fonts/Workshop/TitanOne-Regular.ttf` e `TitanOne-OFL.txt`. Origem: https://github.com/google/fonts/tree/main/ofl/titanone.
 - **DW Rounded ExtraBold**: derivação estática do Nunito variável, peso 800, instanciada com fontTools e renomeada para DW Rounded. Créditos e OFL preservados em `DWRounded-ExtraBold.ttf` e `Nunito-OFL.txt`. Origem: https://github.com/google/fonts/tree/main/ofl/nunito.
-- **Nunito Reading**: arquivo variável original do Nunito, usando o peso padrão de leitura. Arquivo `Nunito-Reading.ttf`, mesma OFL integral preservada no projeto.
+- **Nunito Reading** (`Nunito-Reading.ttf`) e **Nunito Bold** (`Nunito-Bold.ttf`): instâncias estáticas SemiBold (600) e Bold (700) do Nunito, baixadas em 20/11/2026 da API oficial do Google Fonts (fonts.gstatic.com, versão v32). Substituem o arquivo variável anterior, que o Unity renderizava no peso ExtraLight padrão e com métricas erradas. Mesma OFL integral em `Nunito-OFL.txt`.
 
 ## Dependências e histórico
 

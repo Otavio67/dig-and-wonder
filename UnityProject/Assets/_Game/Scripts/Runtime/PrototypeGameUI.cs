@@ -44,6 +44,7 @@ namespace DigAndWonder
         private RectTransform trainingPicker, albumPanel;
         private TextMeshProUGUI trainingSelection, albumTitle, albumCount;
         private readonly TextMeshProUGUI[] discoveryCards = new TextMeshProUGUI[2];
+        private readonly RectTransform[] helpTabs = new RectTransform[2];
         private readonly Image[] drillModules = new Image[3];
         private int trainingStage, albumChapter = 1, pendingDiscovery;
 
@@ -102,6 +103,7 @@ namespace DigAndWonder
         private UnityEngine.UI.Button startButton;
         private TextMeshProUGUI startStatusLabel;
         private TMP_FontAsset startFont;
+        private TMP_FontAsset labelFont;
         private RectTransform loadingRoot;
         private RectTransform loadingFill;
         private TextMeshProUGUI loadingLabel;
@@ -248,6 +250,12 @@ namespace DigAndWonder
                 if (readingFont.material != null) Destroy(readingFont.material);
                 Destroy(readingFont);
             }
+            if (labelFont != null)
+            {
+                foreach (Texture2D atlas in labelFont.atlasTextures) if (atlas != null) Destroy(atlas);
+                if (labelFont.material != null) Destroy(labelFont.material);
+                Destroy(labelFont);
+            }
             foreach (Sprite sprite in navIconSprites.Values)
                 if (sprite != null) Destroy(sprite);
         }
@@ -266,6 +274,13 @@ namespace DigAndWonder
             Font reading = Resources.Load<Font>("Fonts/Workshop/Nunito-Reading");
             if (reading != null)
                 readingFont = TMP_FontAsset.CreateFontAsset(reading, 64, 8, UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA, 1024, 1024);
+            Font labelSource = Resources.Load<Font>("Fonts/Workshop/Nunito-Bold");
+            if (labelSource != null)
+                labelFont = TMP_FontAsset.CreateFontAsset(labelSource, 64, 8, UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA, 1024, 1024);
+            UiTypography.DisableSyntheticBold(hudFont);
+            UiTypography.DisableSyntheticBold(readingFont);
+            UiTypography.DisableSyntheticBold(labelFont);
+            UiTypography.DisableSyntheticBold(startFont);
             var background = MakePanel("Background", root, Ink, new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
             progressionPanel = MakePanel("Progression screen", background, new Color(0.12f, 0.19f, 0.24f), new Vector2(0, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
             BuildProgressionInterface(progressionPanel);
@@ -487,9 +502,11 @@ namespace DigAndWonder
             trainingPicker = Region("Training selection", menuPanel, 0.06f, 0.25f, 0.94f, 0.47f);
             RectTransform previousTraining = MakeButton("Previous training", trainingPicker, "<", 28, 0, 0, .22f, 1, () => ChangeTraining(-1), Steel);
             RectTransform nextTraining = MakeButton("Next training", trainingPicker, ">", 28, .78f, 0, 1, 1, () => ChangeTraining(1), Steel);
-            previousTraining.GetComponent<Image>().sprite = nextTraining.GetComponent<Image>().sprite = SpriteFor("slot");
+            if (uiAssetSprites.TryGetValue("skin_tab", out Sprite pagerSkin)) { previousTraining.GetComponent<Image>().sprite = nextTraining.GetComponent<Image>().sprite = pagerSkin; previousTraining.GetComponent<Image>().color = nextTraining.GetComponent<Image>().color = Color.white; }
+            else previousTraining.GetComponent<Image>().sprite = nextTraining.GetComponent<Image>().sprite = SpriteFor("slot");
             previousTraining.GetComponentInChildren<TextMeshProUGUI>().color = nextTraining.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
-            trainingButton.GetComponent<Image>().sprite = SpriteFor("plain_action");
+            if (uiAssetSprites.TryGetValue("skin_action", out Sprite trainSkin)) { trainingButton.GetComponent<Image>().sprite = trainSkin; trainingButton.GetComponent<Image>().color = Color.white; }
+            else trainingButton.GetComponent<Image>().sprite = SpriteFor("plain_action");
             trainingButton.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
             trainingSelection = MakeLabel("Selected training stage", trainingPicker, "", 20, Cream, new Vector2(.23f, 0), new Vector2(.77f, 1), TextAlignmentOptions.Center);
             trainingPicker.gameObject.SetActive(false);
@@ -525,6 +542,7 @@ namespace DigAndWonder
             missionLabel.gameObject.SetActive(false);
             progressionPanel.gameObject.SetActive(false);
             combatRoot.gameObject.SetActive(false);
+            UiTypography.Normalize(root, hudFont, labelFont);
         }
 
         private void ChangeTraining(int direction)
@@ -535,27 +553,32 @@ namespace DigAndWonder
 
         private void BuildHelp()
         {
-            helpPanel = MakePanel("Combat help", combatRoot, new Color(.02f, .05f, .08f, .96f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            RectTransform card = MakeArtPanel("Help card", helpPanel, Panel, "hud_panel", .06f, .22f, .94f, .78f);
-            helpTitle = MakeLabel("Help title", card, "COMO JOGAR", 36, Sand, new Vector2(.08f, .86f), new Vector2(.92f, .96f), TextAlignmentOptions.Center);
-            helpText = MakeLabel("Help text", card, "", 27, Cream, new Vector2(.09f, .34f), new Vector2(.91f, .82f), TextAlignmentOptions.Center);
-            RectTransform basics = MakeButton("Guide basics", card, "COMBATE", 22, .08f, .22f, .49f, .31f, () => ShowHelpPage(false), Steel);
-            RectTransform progress = MakeButton("Guide progress", card, "PROGRESSO", 22, .51f, .22f, .92f, .31f, () => ShowHelpPage(true), Steel);
-            basics.GetComponent<Image>().sprite = progress.GetComponent<Image>().sprite = SpriteFor("plain_action");
-            basics.GetComponentInChildren<TextMeshProUGUI>().color = progress.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
-            RectTransform close = MakeButton("Close help", card, "VOLTAR AO JOGO", 27, .16f, .07f, .84f, .19f, () => {
+            // Mesma linguagem dos menus ilustrados: fundo da oficina, placa de título, painel escuro de leitura e botões com arte.
+            helpPanel = MakePanel("Combat help", combatRoot, new Color(.02f, .05f, .08f, .88f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            RectTransform card = MakeArtPanel("Help card", helpPanel, Color.white, "menu_background", .04f, .12f, .96f, .88f);
+            MakeArtPanel("Help plaque", card, Color.white, "stage_plate", .08f, .87f, .92f, .97f);
+            helpTitle = MakeLabel("Help title", card, "COMO JOGAR", 40, Gold, new Vector2(.16f, .885f), new Vector2(.84f, .955f), TextAlignmentOptions.Center);
+            if (startFont != null) helpTitle.font = startFont;
+            helpTitle.outlineWidth = .12f; helpTitle.outlineColor = Ink;
+            MakeArtPanel("Help reading plate", card, new Color(.03f, .08f, .11f, .88f), "hud_panel", .07f, .33f, .93f, .84f);
+            helpText = MakeLabel("Help text", card, "", 28, Cream, new Vector2(.12f, .36f), new Vector2(.88f, .81f), TextAlignmentOptions.Center);
+            if (readingFont != null) helpText.font = readingFont;
+            helpTabs[0] = MakeArtActionButton("Guide basics", card, "COMBATE", 24, .07f, .215f, .49f, .305f, () => ShowHelpPage(false), "skin_tab");
+            helpTabs[1] = MakeArtActionButton("Guide progress", card, "PROGRESSO", 24, .51f, .215f, .93f, .305f, () => ShowHelpPage(true), "skin_tab");
+            MakeArtActionButton("Close help", card, "VOLTAR AO JOGO", 28, .17f, .06f, .83f, .18f, () => {
                 helpPanel.gameObject.SetActive(false);
                 bool resumeCombat = currentTab == "MINA" || currentTab == "MELHORIAS";
                 driver.SetMenuPaused(!resumeCombat);
                 if (resumeCombat && driver.Simulation != null && driver.Simulation.IsActive && !driver.IsSaveBlocked) StartCaveMotion();
-            }, Mint);
-            close.GetComponent<Image>().sprite = SpriteFor("plain_action");
-            close.GetComponent<Image>().color = Color.white;
+            }, "hud_panel");
             helpPanel.gameObject.SetActive(false);
         }
 
         private void ShowHelpPage(bool progress)
         {
+            for (int i = 0; i < helpTabs.Length; i++)
+                if (helpTabs[i] != null && uiAssetSprites.TryGetValue((i == 1) == progress ? "skin_tab_active" : "skin_tab", out Sprite tabSkin))
+                    helpTabs[i].GetComponent<Image>().sprite = tabSkin;
             helpTitle.text = progress ? "DIÁRIO DE EXPEDIÇÃO" : "COMO JOGAR";
             if (!progress)
             {
@@ -581,30 +604,33 @@ namespace DigAndWonder
 
         private void BuildAlbum()
         {
-            albumPanel = MakeArtPanel("Discovery album", combatRoot, new Color(.07f, .16f, .21f), "hud_panel", 0, 0, 1, 1);
+            albumPanel = MakeArtPanel("Discovery album", combatRoot, Color.white, "menu_background", 0, 0, 1, 1);
             albumPanel.GetComponent<Image>().raycastTarget = true;
-            albumTitle = MakeLabel("Album title", albumPanel, "ÁLBUM DE DESCOBERTAS", 34, Sand, new Vector2(.06f, .86f), new Vector2(.94f, .95f), TextAlignmentOptions.Center);
-            albumCount = MakeLabel("Album progress", albumPanel, "", 24, Cyan, new Vector2(.06f, .77f), new Vector2(.94f, .86f), TextAlignmentOptions.Center);
+            MakeArtPanel("Album plaque", albumPanel, Color.white, "stage_plate", .06f, .875f, .94f, .965f);
+            albumTitle = MakeLabel("Album title", albumPanel, "ÁLBUM DE DESCOBERTAS", 38, Gold, new Vector2(.15f, .888f), new Vector2(.85f, .952f), TextAlignmentOptions.Center);
+            if (startFont != null) albumTitle.font = startFont;
+            albumTitle.outlineWidth = .12f; albumTitle.outlineColor = Ink;
+            MakeArtPanel("Album progress plate", albumPanel, new Color(.03f, .08f, .11f, .85f), "hud_panel", .20f, .80f, .80f, .855f);
+            albumCount = MakeLabel("Album progress", albumPanel, "", 26, Cyan, new Vector2(.22f, .805f), new Vector2(.78f, .85f), TextAlignmentOptions.Center);
             for (int i = 0; i < 2; i++)
             {
-                float bottom = i == 0 ? .48f : .22f;
-                RectTransform card = MakeArtPanel("Discovery card " + i, albumPanel, new Color(.15f, .23f, .28f), "hud_panel", .08f, bottom, .92f, bottom + .23f);
-                discoveryCards[i] = MakeLabel("Discovery description", card, "", 28, Cream, new Vector2(.08f, .12f), new Vector2(.92f, .88f), TextAlignmentOptions.Center);
+                float bottom = i == 0 ? .50f : .24f;
+                // Cartão de descoberta: chapa escura com contorno de latão e ícone do álbum.
+                RectTransform card = MakeArtPanel("Discovery card " + i, albumPanel, new Color(.06f, .13f, .18f, .95f), "hud_panel", .07f, bottom, .93f, bottom + .23f);
+                Outline edge = card.gameObject.AddComponent<Outline>();
+                edge.effectColor = new Color(.85f, .58f, .16f, .9f);
+                edge.effectDistance = new Vector2(3f, -3f);
+                MakeArtPanel("Discovery badge", card, new Color(.03f, .08f, .11f), "hud_panel", .04f, .25f, .22f, .75f);
+                MakeIcon(card, i == 0 ? "nav_album" : "crystal", .06f, .30f, .20f, .70f, Color.white);
+                discoveryCards[i] = MakeLabel("Discovery description", card, "", 28, Cream, new Vector2(.26f, .10f), new Vector2(.95f, .90f), TextAlignmentOptions.Left);
                 if (readingFont != null) discoveryCards[i].font = readingFont;
-                discoveryCards[i].fontStyle = FontStyles.Bold;
             }
-            RectTransform previous = MakeButton("Previous chapter", albumPanel, "<", 32, .08f, .12f, .25f, .20f, () => { albumChapter = Math.Max(1, albumChapter - 1); RefreshAlbum(); }, Steel);
-            RectTransform next = MakeButton("Next chapter", albumPanel, ">", 32, .75f, .12f, .92f, .20f, () => { albumChapter = Math.Min(10, albumChapter + 1); RefreshAlbum(); }, Steel);
-            previous.GetComponent<Image>().sprite = next.GetComponent<Image>().sprite = SpriteFor("slot");
-            previous.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
-            next.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
-            RectTransform albumClose = MakeButton("Close album", albumPanel, "CONTINUAR", 26, .28f, .045f, .72f, .13f, () => {
+            MakeArtActionButton("Previous chapter", albumPanel, "<", 32, .07f, .14f, .27f, .21f, () => { albumChapter = Math.Max(1, albumChapter - 1); RefreshAlbum(); }, "skin_tab");
+            MakeArtActionButton("Next chapter", albumPanel, ">", 32, .73f, .14f, .93f, .21f, () => { albumChapter = Math.Min(10, albumChapter + 1); RefreshAlbum(); }, "skin_tab");
+            MakeArtActionButton("Close album", albumPanel, "CONTINUAR", 28, .25f, .04f, .75f, .13f, () => {
                 albumPanel.gameObject.SetActive(false);
                 SelectTab("MINA");
-            }, Mint);
-            albumClose.GetComponent<Image>().sprite = SpriteFor("plain_action");
-            albumClose.GetComponent<Image>().color = Color.white;
-            albumClose.GetComponentInChildren<TextMeshProUGUI>().color = Cream;
+            }, "hud_panel");
             albumPanel.gameObject.SetActive(false);
         }
 

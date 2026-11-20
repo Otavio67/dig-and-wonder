@@ -37,6 +37,9 @@ namespace DigAndWonder
         private TMP_FontAsset titleFont;
         private TMP_FontAsset bodyFont;
         private TextMeshProUGUI wallet;
+        private TextMeshProUGUI crystalWallet;
+        private readonly Image[] powerIcons = new Image[2];
+        private static readonly string[] PowerIcons = { "attack", "core", "shield", "bolt" };
         private TextMeshProUGUI experienceLabel;
         private TextMeshProUGUI characterName;
         private TextMeshProUGUI attackValue;
@@ -87,8 +90,11 @@ namespace DigAndWonder
             titleFont = LoadFont("TitanOne-Regular", 0.17f);
             bodyFont = LoadFont("DWRounded-ExtraBold", 0.055f);
             root.GetComponent<Image>().color = Petroleum;
+            UiTypography.DisableSyntheticBold(titleFont);
+            UiTypography.DisableSyntheticBold(bodyFont);
             BuildBackdrop();
             Build(returnToHub);
+            UiTypography.Normalize(root, bodyFont, null);
             driver.CombatEventRaised += OnCombatEvent;
             Refresh();
         }
@@ -128,7 +134,13 @@ namespace DigAndWonder
                 out TextMeshProUGUI ignoredCloseLabel, out Image closeFace);
             Icon(closeFace.transform, "close", 0.3f, 0.3f, 0.7f, 0.7f);
             characterName = Label(root, "BROCA PIONEIRA", 32, Cream, 0.045f, 0.877f, 0.63f, 0.910f, true, TextAlignmentOptions.Left);
-            wallet = Label(root, "0", 23, Gold, 0.76f, 0.877f, 0.96f, 0.915f, true, TextAlignmentOptions.Right);
+            // Carteira em duas pílulas com ícone dedicado (moeda e cristal), sem palavras "ouro/cristais".
+            RectTransform goldPill = Plate("Gold pill", root, Steel, 0.64f, 0.876f, 0.80f, 0.912f);
+            Icon(goldPill, "coin", 0.03f, 0.08f, 0.30f, 0.92f);
+            wallet = Label(goldPill, "0", 26, Gold, 0.32f, 0.08f, 0.94f, 0.92f, true, TextAlignmentOptions.Center);
+            RectTransform crystalPill = Plate("Crystal pill", root, Steel, 0.81f, 0.876f, 0.96f, 0.912f);
+            Icon(crystalPill, "crystal", 0.03f, 0.08f, 0.30f, 0.92f);
+            crystalWallet = Label(crystalPill, "0", 26, Cyan, 0.32f, 0.08f, 0.94f, 0.92f, true, TextAlignmentOptions.Center);
 
             BuildShowcase();
             RectTransform experienceTrack = Plate("Character XP track", root, Teal, 0.04f, 0.561f, 0.96f, 0.602f);
@@ -254,7 +266,10 @@ namespace DigAndWonder
                 int index = row;
                 float bottom = row == 0 ? 0.37f : 0.005f;
                 RectTransform panel = Plate("Power row " + row, panes[1], Steel, 0, bottom, 1, bottom + 0.36f);
-                powerValues[row] = Label(panel, "PODER", 27, Cream, 0.035f, 0.04f, 0.60f, 0.96f, false, TextAlignmentOptions.Left);
+                // Ícone do poder em moldura própria: a linha deixa de ser só texto.
+                RectTransform badge = Plate("Power badge " + row, panel, new Color(.05f, .11f, .15f), 0.025f, 0.22f, 0.165f, 0.78f);
+                powerIcons[row] = Icon(badge, "attack", 0.1f, 0.1f, 0.9f, 0.9f);
+                powerValues[row] = Label(panel, "PODER", 27, Cream, 0.19f, 0.04f, 0.60f, 0.96f, false, TextAlignmentOptions.Left);
                 powerButtons[row] = ButtonAt(panel, "Buy power " + row, "APRENDER", Gold, 0.62f, 0.26f, 0.97f, 0.74f,
                     () => BuyPower(index), out powerPrices[row], out powerFaces[row]);
                 powerPrices[row].fontSize = 27;
@@ -271,11 +286,17 @@ namespace DigAndWonder
         private void BuildTreasury()
         {
             RectTransform plate = Plate("Treasury", panes[2], Steel, 0, 0.01f, 1, 1);
-            treasureSummary = Label(plate, "TESOURO", 27, Cream, 0.035f, 0.51f, 0.965f, 0.98f, false);
+            treasureSummary = Label(plate, "TESOURO", 27, Cream, 0.035f, 0.64f, 0.965f, 0.97f, false);
             Action[] actions = { OpenChest, BuyKey, BuyGold };
+            // Cada ação ganha uma vitrine com arte (baú, chave, ouro) acima do botão, como cartões de loja.
+            string[] art = { "nav_chests", "key", "coin" };
+            string[] captions = { "BAÚ", "CHAVE", "OURO" };
             for (int i = 0; i < 3; i++)
             {
                 float left = 0.025f + i * 0.325f;
+                RectTransform showcase = Plate("Treasury showcase " + i, plate, new Color(.05f, .11f, .15f), left, 0.32f, left + 0.3f, 0.62f);
+                Icon(showcase, art[i], 0.18f, 0.26f, 0.82f, 0.94f);
+                Label(showcase, captions[i], 26, Gold, 0.05f, 0.03f, 0.95f, 0.25f, true);
                 treasureButtons[i] = ButtonAt(plate, "Treasury action " + i, "", i == 0 ? Gold : Teal,
                     left, 0.08f, left + 0.3f, 0.30f, actions[i], out treasurePrices[i], out Image face);
                 treasurePrices[i].fontSize = 25;
@@ -418,7 +439,8 @@ namespace DigAndWonder
                 return;
             }
             lastReady = driver.IsReady;
-            wallet.text = profile.Gold.ToString("N0", Portuguese) + " ouro\n" + profile.Crystals + " cristais";
+            wallet.text = GameplayHudModel.Number(profile.Gold);
+            crystalWallet.text = GameplayHudModel.Number(profile.Crystals);
             CharacterLevelState level = driver.CurrentCharacterLevel;
             CharacterDefinition definition = driver.EquippedCharacterDefinition;
             characterName.text = definition != null ? definition.displayName.ToUpperInvariant() : "PERSONAGEM INDISPONÍVEL";
@@ -446,6 +468,7 @@ namespace DigAndWonder
                     " • ATQ BASE x" + Number(option.AttackMultiplier) + "\n" + option.Description;
                 garagePrice.text = !owns ? "BLOQUEADA • FASE " + option.UnlockStage : selected ? "EQUIPADA" : active ? "TROCA ENTRE TENTATIVAS" : "EQUIPAR";
                 garageEquip.interactable = driver.IsReady && owns && !selected && !active;
+                RefreshArsenal();
             }
             float specialDamage = balance.specialAbility.damage * driver.CurrentStats.AttackDamage / balance.drillAttackDamage *
                 driver.CurrentStats.SpecialMultiplier * (1f + EconomyProgression.PowerBonus(profile, driver.Economy, profile.EquippedCharacterId, AttackPowerKind.Resonance));
@@ -468,6 +491,7 @@ namespace DigAndWonder
                 int rank = EconomyProgression.PowerRank(profile, profile.EquippedCharacterId, power.Id);
                 bool locked = level.Level < power.UnlockLevel;
                 bool maximum = rank >= power.MaximumRank;
+                powerIcons[i].sprite = SpriteFor(PowerIcons[(powerPage * 2 + i) % PowerIcons.Length]);
                 powerValues[i].text = power.Name + "  " + rank + "/" + power.MaximumRank + "\n" + power.Description;
                 powerPrices[i].text = locked ? "REQUER\nNV. " + power.UnlockLevel : maximum ? "MÁXIMO" : "MELHORAR\n" + power.Cost(rank) + " OURO";
                 powerButtons[i].interactable = driver.IsReady && !locked && !maximum && profile.Gold >= power.Cost(rank);

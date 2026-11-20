@@ -93,6 +93,7 @@ namespace DigAndWonder
             else if (page.StartsWith("loja")) ShowStorePage(page);
             else if (page == "equipamentos") { topTitle.text = "EQUIPAMENTOS"; TopText("EQUIPAMENTOS\n\nOs espaços de equipamento estão em preparação. Acesse a Oficina para acompanhar sua broca e seus poderes.", .08f, .25f, .92f, .75f, 28); }
             else ShowSettingsPage();
+            UiTypography.Normalize(topContent, hudFont, labelFont);
         }
 
         private void ShowProfilePage(string page)
@@ -114,7 +115,7 @@ namespace DigAndWonder
                 input.textViewport = inputPanel; input.textComponent = inputText; input.characterLimit = 20; input.text = name;
                 input.onEndEdit.AddListener(value => { string clean = value.Trim(); if (clean.Length == 0) clean = "Explorador"; PlayerPrefs.SetString("dw.playerName", clean); PlayerPrefs.Save(); input.text = clean; });
                 MakeArtPanel("Account ID plate",topContent,Color.white,"skin_id",.025f,.51f,.975f,.64f);
-                TopText("ID LOCAL  " + localPlayerId + "\nEste identificador pertence a este aparelho.", .18f, .53f, .93f, .62f, 21);
+                TopText("ID LOCAL  " + localPlayerId + "\nEste identificador pertence a este aparelho.", .23f, .53f, .90f, .62f, 22);
                 TopButton("COPIAR ID", .58f, .43f, .96f, .51f, () => GUIUtility.systemCopyBuffer = localPlayerId);
                 var profile = driver.Profile;
                 CharacterLevelState level = driver.CurrentCharacterLevel;
@@ -183,13 +184,16 @@ namespace DigAndWonder
         {
             topTitle.text = "CONFIGURAÇÕES";
             int volume = Mathf.RoundToInt(AudioListener.volume * 100f);
-            TopText("VOLUME GERAL\n" + volume + "%", .08f, .70f, .55f, .86f, 29);
-            TopButton("−", .56f, .72f, .72f, .83f, () => ChangeVolume(-.1f));
-            TopButton("+", .77f, .72f, .93f, .83f, () => ChangeVolume(.1f));
+            // Blocos de leitura em chapa escura; botões de volume largos o bastante para o toque (alvo de 48 pt ou mais).
+            MakeArtPanel("Volume plate", topContent, new Color(.03f, .08f, .11f, .86f), "hud_panel", .06f, .59f, .94f, .88f);
+            MakeArtPanel("Info plate", topContent, new Color(.03f, .08f, .11f, .86f), "hud_panel", .06f, .07f, .94f, .32f);
+            TopText("VOLUME GERAL\n" + volume + "%", .10f, .70f, .50f, .86f, 30);
+            TopButton("−", .51f, .70f, .71f, .85f, () => ChangeVolume(-.1f));
+            TopButton("+", .73f, .70f, .93f, .85f, () => ChangeVolume(.1f));
             TopText("Sua preferência de volume é salva neste aparelho.", .08f, .60f, .92f, .68f, 23);
             TopButton("MEU PERFIL",.09f,.47f,.91f,.58f,()=>OpenTopMenu("perfil-info"));
             TopButton("COMO JOGAR", .09f, .34f, .91f, .45f, () => { topModal.gameObject.SetActive(false); OpenHelp(); });
-            TopText("IDIOMA  Português (Brasil)\n\nVERSÃO  " + Application.version + "\n\nID LOCAL  " + localPlayerId, .08f, .09f, .92f, .30f, 23);
+            TopText("IDIOMA  Português (Brasil)\n\nVERSÃO  " + Application.version + "\n\nID LOCAL  " + localPlayerId, .10f, .09f, .90f, .30f, 24);
         }
 
         private void ChangeVolume(float amount)

@@ -19,7 +19,7 @@ namespace DigAndWonder
             product.transform.DOScale(1.035f,1.8f).SetLoops(-1,LoopType.Yoyo).SetEase(Ease.InOutSine);
             MakeLabel("Offer detail",card,detail,22,Cream,new Vector2(.12f,.33f),new Vector2(.88f,.395f),TextAlignmentOptions.Center);
             // Ação acima do aro inferior do cartão; antes o texto ficava sobre a borda dourada.
-            MakeArtActionButton("Offer action",card,price,20,.15f,.19f,.85f,.325f,action,"hud_panel");
+            MakeArtActionButton("Offer action",card,price,26,.13f,.165f,.87f,.335f,action,"hud_panel");
         }
         private void StoreMessage(string message)
         {
@@ -76,6 +76,7 @@ namespace DigAndWonder
             // Rodapé em faixa escura: o texto não fica mais sobre as pedras da ilustração.
             MakeArtPanel("Equipment note plate",topContent,new Color(.02f,.06f,.08f,.82f),"hud_panel",.06f,.025f,.94f,.115f);
             TopText("Os atributos atuais vêm das melhorias e da broca equipada. Troca de peças em preparação.",.10f,.035f,.90f,.105f,22).alignment=TextAlignmentOptions.Center;
+            UiTypography.Normalize(topContent, hudFont, labelFont);
         }
     }
 }

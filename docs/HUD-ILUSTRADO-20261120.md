@@ -45,6 +45,18 @@ O usuário escolheu as quatro frentes: moldura das melhorias, combate no cenári
 - **Equipamentos e Loja:** o botão do cartão saiu de cima do aro dourado. O rodapé de Equipamentos fica numa faixa escura.
 - **Revisão:** `UiVisualReview` com `DW_UI_REVIEW_EXTRA=1` também captura Modos, Equipamentos e as quatro páginas da Oficina.
 
+## Quarta rodada — revisão completa de telas, textos, ícones e botões
+O usuário relatou textos deformados, ícones mal feitos e telas erradas. Pediu revisão de tudo usando jogos do gênero como referência, adaptados à identidade Toy-Mecha. As regras foram registradas em `IDENTIDADE-TOY-MECHA.md` (seção de 20/11/2026).
+- **Textos deformados (causa):** `Nunito-Reading.ttf` era uma fonte variável. O Unity a desenhava no peso ExtraLight padrão, sem as métricas corretas, e ainda havia negrito sintético sobre uma fonte ExtraBold. Correção: Nunito estática SemiBold e Bold, negrito sintético desligado e regra `UiTypography.Normalize` aplicada no HUD, nos menus e na Oficina.
+- **Ícones:** a família Toy-Mecha v3 foi gerada por `scripts/export-mecha-icons-v3.cjs`, que usa o Edge headless e não depende de pacotes. Tem 24 ícones, incluindo cadeado, chave, cristal e moeda.
+- **Garagem:** cada cartão mostra a broca real tingida com a cor dela. As bloqueadas aparecem como silhueta com cadeado. A equipada tem borda ciano e a selecionada, borda âmbar.
+- **Tesouro e carteira:** vitrines com baú, chave e moeda acima dos botões. A carteira da Oficina virou duas pílulas com ícone, no lugar do texto "ouro/cristais".
+- **Poderes:** cada linha ganhou o ícone do poder. **Modos:** setas e botão de treino com a arte ilustrada.
+- **Ajuda e Álbum:** fundo ilustrado, placa de título, painel de leitura, abas que indicam a página ativa e cartões de descoberta com contorno de latão.
+- **Configurações e Perfil:** blocos de leitura em chapa escura, botões de volume do tamanho certo para o toque e ID afastado das ferragens.
+- **Cartões da Loja e de Equipamentos:** o botão ficou mais alto e o texto, legível.
+- **Revisão:** capturas 2x de todas as telas, incluindo Ajuda e Álbum (`UiVisualReview` com `DW_UI_REVIEW_EXTRA=1`).
+
 ## Build Windows
 Menu **Dig & Wonder → Build Windows (.exe)** ou linha de comando:
 

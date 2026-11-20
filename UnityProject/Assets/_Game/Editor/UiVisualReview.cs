@@ -69,7 +69,7 @@ namespace DigAndWonder.Editor
                     // DW_UI_REVIEW_EXTRA=1 também captura Modos, Equipamentos e as quatro páginas da Oficina.
                     if(Environment.GetEnvironmentVariable("DW_UI_REVIEW_EXTRA")=="1"){SessionState.SetInt(Key+"step",20);next=EditorApplication.timeSinceStartup+1;return;}
                 }
-                else if(step>=20 && step<=33)
+                else if(step>=20 && step<=38)
                 {
                     var workshop=(CharacterWorkshopView)typeof(PrototypeGameUI).GetField("workshop",Private).GetValue(ui);
                     switch(step)
@@ -87,7 +87,12 @@ namespace DigAndWonder.Editor
                         case 30: workshop.Show(3); break;
                         case 31: Shot(folder,"oficina-3.png"); break;
                         case 32: Call(ui,"CloseProgression"); break;
-                        case 33: SessionState.SetInt(Key+"step",8); next=EditorApplication.timeSinceStartup+1; return;
+                        case 33: Call(ui,"OpenHelp"); break;
+                        case 34: Shot(folder,"ajuda.png"); break;
+                        case 35: ((UnityEngine.Component)typeof(PrototypeGameUI).GetField("helpPanel",Private).GetValue(ui)).gameObject.SetActive(false); Call(ui,"OpenAlbum",false); break;
+                        case 36: Shot(folder,"album.png"); break;
+                        case 37: ((UnityEngine.Component)typeof(PrototypeGameUI).GetField("albumPanel",Private).GetValue(ui)).gameObject.SetActive(false); Call(ui,"SelectTab","MINA"); break;
+                        case 38: SessionState.SetInt(Key+"step",8); next=EditorApplication.timeSinceStartup+1; return;
                     }
                 }
                 else if(step==8)

@@ -225,3 +225,17 @@ Botões devem ter arte própria, bordas chanfradas, face pintada, reflexos curto
 O retrato do perfil recebe moldura metálica com cristal; nome, ID e estatísticas usam campos personalizados ilustrados. O centro permanece escuro e limpo para o texto. Detalhe visual deve ficar nas bordas, sem ferragens sob rótulos. O usuário pediu caixa de derrota cartoon com resumo da tentativa, opção Morrer/reiniciar e escolha por 10 segundos. Continuação por anúncio continua futura e deve estar identificada como indisponível até integração real.
 
 Referências de produção e prompts: CARTOON-E-DERROTA-20261031.md. Aprovação artística final continua com o usuário; captura de Play Mode é a evidência de integração.
+## Revisão completa da interface — 20/11/2026
+
+O usuário pediu que todas as telas, textos, ícones e botões fossem revistos a partir de jogos do gênero, adaptados à identidade própria. Decisões adotadas:
+
+- **Tipografia:** a leitura usa a Nunito estática (SemiBold 600 e Bold 700). O arquivo variável anterior saía fino e deformado no Unity. O negrito sintético do TMP fica desligado, porque engrossava e deformava letras que já eram ExtraBold. O contorno é limitado a 0,12 em textos menores que 24 pt e o encolhimento automático, a 78% do tamanho de projeto. Rótulos de até 20 pt usam a Nunito Bold em vez da fonte de impacto. Regra central em `UiTypography`.
+- **Ícones Toy-Mecha v3:** mesma família vetorial da v2, agora com contorno externo grosso (efeito adesivo), sombra dura de cel, brilhos curtos e pesos visuais equilibrados. Novos ícones: cadeado, chave, cristal e moeda. As fontes ficam em `assets/ui/gameplay/` e o exportador canônico passa a ser `scripts/export-mecha-icons-v3.cjs`, que usa o Edge headless e não depende de pacotes externos.
+- **Botões por estado** em todas as telas, com a arte de `buttons.png`: verde para ação disponível, aço para indisponível, ciano para selecionado e coral para fechar.
+- **Painéis de leitura** em aço escuro translúcido sobre o fundo ilustrado. Placas de título iguais em Oficina, Ajuda, Álbum e menus superiores.
+- **Referências de gênero** (princípios, sem copiar telas):
+  - contraste antes do contorno;
+  - alvos de toque de 48 pt ou mais;
+  - cor indicando se é possível comprar;
+  - informação persistente no topo e evolução na parte de baixo;
+  - feedback imediato.

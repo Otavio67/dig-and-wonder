@@ -26,6 +26,7 @@ namespace UnityEngine
         public T GetComponent<T>() where T : class => null;
         public T GetComponentInParent<T>() where T : class => null;
         public T GetComponentInChildren<T>() where T : class => null;
+        public T[] GetComponentsInChildren<T>(bool includeInactive) where T : class => System.Array.Empty<T>();
     }
     public class GameObject : Object
     {
@@ -145,6 +146,7 @@ namespace UnityEngine
         public static int RoundToInt(float value) => (int)Math.Round(value); public static int CeilToInt(float value) => (int)Math.Ceiling(value);
         public static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));
         public static float Clamp01(float value) => Clamp(value, 0f, 1f);
+        public static float Min(float left, float right) => Math.Min(left, right);
         public static float Max(float left, float right) => Math.Max(left, right);
         public static int Max(int left, int right) => Math.Max(left, right);
         public static int Abs(int value) => Math.Abs(value);
@@ -236,6 +238,7 @@ namespace TMPro
     {
         public UnityEngine.Material material;
         public UnityEngine.Texture2D[] atlasTextures;
+        public float boldStyle, boldSpacing;
         public bool TryAddCharacters(string characters) => true;
         public static TMP_FontAsset CreateFontAsset(UnityEngine.Font font, int size, int padding, UnityEngine.TextCore.LowLevel.GlyphRenderMode renderMode, int atlasWidth, int atlasHeight) => null;
     }
