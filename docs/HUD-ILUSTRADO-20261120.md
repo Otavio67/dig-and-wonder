@@ -57,6 +57,22 @@ O usuário relatou textos deformados, ícones mal feitos e telas erradas. Pediu 
 - **Cartões da Loja e de Equipamentos:** o botão ficou mais alto e o texto, legível.
 - **Revisão:** capturas 2x de todas as telas, incluindo Ajuda e Álbum (`UiVisualReview` com `DW_UI_REVIEW_EXTRA=1`).
 
+## Quinta rodada — vitória, chefe, derrota e feedback
+O usuário escolheu esses dois blocos. Antes, vitória, chefe e broca nova eram só uma linha de texto de status, e os botões do HUD não reagiam ao toque.
+- **Faixas de momento** (`PrototypeGameUI.Moments.cs`): placa de título, faixa escura com contorno na cor do momento e subtítulo. Entram em 0,28 s (escala elástica), ficam visíveis e saem. Uma fila evita sobreposição:
+  - "GUARDIÃO!" ou "MINI-CHEFE!" em coral, com emblema;
+  - "FASE CONCLUÍDA!" em âmbar, com o ouro ganho na fase e a próxima fase;
+  - "NOVA BROCA!" em ciano, com a broca tingida na cor dela. Aparece depois da vitória.
+- As faixas aparecem só depois do evento real da simulação e são limpas na derrota. Não alteram combate, recompensa nem save.
+- **Barra do chefe:** chapa escura com contorno coral, emblema de perigo, barra grossa com reflexo e nome com vida. Pisca em creme durante a preparação do ataque. Fica abaixo da placa da fase.
+- **Derrota:** o popup ilustrado foi mantido, agora com a tipografia normalizada e resposta ao toque.
+- **Feedback:**
+  - `UiPressFeedback` em todos os botões (HUD, menus, derrota e cartões da garagem): o botão afunda em 80 ms e volta com leve elasticidade.
+  - O texto "MELHORAR" pulsa devagar enquanto a compra é possível.
+  - Ao comprar, a linha pulsa e o nível acende em ciano.
+  - Ajuda e Álbum entram com animação curta (0,2 s).
+- **Verificação:** capturas reais de chefe, vitória e broca liberada (forçadas no perfil de revisão, sem mudar a fase salva) e reinício da derrota confirmado. As animações foram verificadas só pelo código e pela execução sem erros. Ainda não foram avaliadas em movimento por uma pessoa.
+
 ## Build Windows
 Menu **Dig & Wonder → Build Windows (.exe)** ou linha de comando:
 

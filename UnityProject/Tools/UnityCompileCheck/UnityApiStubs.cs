@@ -139,13 +139,14 @@ namespace UnityEngine
         public static bool isBatchMode => true;
     }
     public sealed class WaitForSecondsRealtime { public WaitForSecondsRealtime(float seconds) { } }
-    public static class Time { public static float deltaTime; public static float unscaledDeltaTime; }
+    public static class Time { public static float deltaTime; public static float unscaledDeltaTime; public static float unscaledTime; }
     public static class Mathf
     {
         public static float Sin(float value) => (float)Math.Sin(value);
         public static int RoundToInt(float value) => (int)Math.Round(value); public static int CeilToInt(float value) => (int)Math.Ceiling(value);
         public static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));
         public static float Clamp01(float value) => Clamp(value, 0f, 1f);
+        public static float Repeat(float t, float length) => t - (float)Math.Floor(t / length) * length;
         public static float Min(float left, float right) => Math.Min(left, right);
         public static float Max(float left, float right) => Math.Max(left, right);
         public static int Max(int left, int right) => Math.Max(left, right);

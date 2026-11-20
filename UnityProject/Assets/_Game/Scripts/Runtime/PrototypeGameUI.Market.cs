@@ -77,6 +77,7 @@ namespace DigAndWonder
             MakeArtPanel("Equipment note plate",topContent,new Color(.02f,.06f,.08f,.82f),"hud_panel",.06f,.025f,.94f,.115f);
             TopText("Os atributos atuais vêm das melhorias e da broca equipada. Troca de peças em preparação.",.10f,.035f,.90f,.105f,22).alignment=TextAlignmentOptions.Center;
             UiTypography.Normalize(topContent, hudFont, labelFont);
+            UiPressFeedback.AttachAll(topContent);
         }
     }
 }

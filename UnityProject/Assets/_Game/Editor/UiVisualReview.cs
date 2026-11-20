@@ -42,6 +42,7 @@ namespace DigAndWonder.Editor
         }
         static void Shot(string folder,string file){int s;ScreenCapture.CaptureScreenshot(Path.Combine(folder,file),int.TryParse(Environment.GetEnvironmentVariable("DW_UI_REVIEW_SUPERSIZE"),out s)&&s>1?s:1);}
         static void Call(PrototypeGameUI ui,string name,params object[] args)=>typeof(PrototypeGameUI).GetMethod(name,Private).Invoke(ui,args);
+        static object Call2(PrototypeGameUI ui,string name,params object[] args)=>typeof(PrototypeGameUI).GetMethod(name,Private).Invoke(ui,args);
         static void Tick()
         {
             if(EditorApplication.timeSinceStartup>deadline){Finish(1,"Tempo esgotado");return;}
@@ -69,7 +70,7 @@ namespace DigAndWonder.Editor
                     // DW_UI_REVIEW_EXTRA=1 também captura Modos, Equipamentos e as quatro páginas da Oficina.
                     if(Environment.GetEnvironmentVariable("DW_UI_REVIEW_EXTRA")=="1"){SessionState.SetInt(Key+"step",20);next=EditorApplication.timeSinceStartup+1;return;}
                 }
-                else if(step>=20 && step<=38)
+                else if(step>=20 && step<=46)
                 {
                     var workshop=(CharacterWorkshopView)typeof(PrototypeGameUI).GetField("workshop",Private).GetValue(ui);
                     switch(step)
@@ -92,7 +93,16 @@ namespace DigAndWonder.Editor
                         case 35: ((UnityEngine.Component)typeof(PrototypeGameUI).GetField("helpPanel",Private).GetValue(ui)).gameObject.SetActive(false); Call(ui,"OpenAlbum",false); break;
                         case 36: Shot(folder,"album.png"); break;
                         case 37: ((UnityEngine.Component)typeof(PrototypeGameUI).GetField("albumPanel",Private).GetValue(ui)).gameObject.SetActive(false); Call(ui,"SelectTab","MINA"); break;
-                        case 38: SessionState.SetInt(Key+"step",8); next=EditorApplication.timeSinceStartup+1; return;
+                        case 38: { var drv=UnityEngine.Object.FindFirstObjectByType<AutoBattleDriver>(); var sim=drv.Simulation; SessionState.SetInt(Key+"encounter",sim.Run.EncounterVersion); sim.Run.EncounterVersion=0; var st=sim.GetType(); st.GetMethod("SpawnEnemy",Private).Invoke(sim,new object[]{st.GetField("bossDefinition",Private).GetValue(sim),true}); next=EditorApplication.timeSinceStartup+.7; SessionState.SetInt(Key+"step",39); return; }
+                        case 39: Shot(folder,"chefe.png"); break;
+                        case 40: { var drv2=UnityEngine.Object.FindFirstObjectByType<AutoBattleDriver>(); drv2.Simulation.Run.EncounterVersion=SessionState.GetInt(Key+"encounter",drv2.Simulation.Run.EncounterVersion); }
+                            Call(ui,"ClearBanners"); Call(ui,"QueueBanner","FASE CONCLUÍDA!","+120 ouro  •  Próxima: Capítulo 2 • Fase 1",new Color(1f,.72f,.08f),1.5f,Call2(ui,"SpriteFor","coin"),null); next=EditorApplication.timeSinceStartup+.6; SessionState.SetInt(Key+"step",41); return;
+                        case 41: Shot(folder,"vitoria.png"); break;
+                        case 42: Call(ui,"ClearBanners"); Call(ui,"QueueBanner","NOVA BROCA!","Broca Rebite liberada. Equipe na Oficina → Brocas.",new Color(0f,.96f,.83f),2.4f,Call2(ui,"SpriteFor","drill"),new Color(1f,.87f,.68f)); next=EditorApplication.timeSinceStartup+.6; SessionState.SetInt(Key+"step",43); return;
+                        case 43: Shot(folder,"broca.png"); break;
+                        case 44: Call(ui,"ClearBanners"); break;
+                        case 45: break;
+                        case 46: SessionState.SetInt(Key+"step",8); next=EditorApplication.timeSinceStartup+1; return;
                     }
                 }
                 else if(step==8)

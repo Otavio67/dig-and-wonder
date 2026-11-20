@@ -95,6 +95,7 @@ namespace DigAndWonder
             BuildBackdrop();
             Build(returnToHub);
             UiTypography.Normalize(root, bodyFont, null);
+            UiPressFeedback.AttachAll(root);
             driver.CombatEventRaised += OnCombatEvent;
             Refresh();
         }

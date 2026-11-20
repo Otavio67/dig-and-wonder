@@ -94,6 +94,7 @@ namespace DigAndWonder
             else if (page == "equipamentos") { topTitle.text = "EQUIPAMENTOS"; TopText("EQUIPAMENTOS\n\nOs espaços de equipamento estão em preparação. Acesse a Oficina para acompanhar sua broca e seus poderes.", .08f, .25f, .92f, .75f, 28); }
             else ShowSettingsPage();
             UiTypography.Normalize(topContent, hudFont, labelFont);
+            UiPressFeedback.AttachAll(topContent);
         }
 
         private void ShowProfilePage(string page)

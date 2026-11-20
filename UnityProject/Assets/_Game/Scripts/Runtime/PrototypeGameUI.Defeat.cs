@@ -59,6 +59,8 @@ namespace DigAndWonder
             revive.GetComponent<Image>().color=new Color(.18f,.23f,.29f);
             MakeArtActionButton("Accept defeat",card,"MORRER\nReiniciar fase",25,.51f,.14f,.93f,.27f,RestartAfterDefeat,"hud_panel");
             defeatCountdown=MakeLabel("Defeat timer",card,"",24,Gold,new Vector2(.08f,.025f),new Vector2(.92f,.115f),TextAlignmentOptions.Center);
+            UiTypography.Normalize(defeatPopup, hudFont, labelFont);
+            UiPressFeedback.AttachAll(defeatPopup);
             defeatPopup.SetAsLastSibling();
             card.localScale=new Vector3(.90f,.90f,1);
             card.DOScale(1,.22f).SetEase(Ease.OutBack);

@@ -443,12 +443,20 @@ namespace DigAndWonder
             healthLabel.margin = new Vector4(52f, 0f, 0f, 0f);
             playerHealthTrack = MakePanel("Health track", worldPanel, Ink, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             healthFill = MakePanel("Health fill", worldPanel, Mint, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
-            bossBar = MakeArtPanel("Boss health", worldPanel, new Color(.10f, .19f, .25f), "hud_panel", .08f, .68f, .92f, .755f);
+            // Barra do chefe: chapa escura com contorno coral, emblema de perigo e barra grossa com reflexo.
+            bossBar = MakeArtPanel("Boss health", worldPanel, new Color(.03f, .07f, .10f, .92f), "hud_panel", .06f, .595f, .94f, .685f);
             bossBar.GetComponent<Image>().raycastTarget = false;
-            MakePanel("Boss health track", bossBar, Ink, new Vector2(.03f, .14f), new Vector2(.97f, .36f), Vector2.zero, Vector2.zero).GetComponent<Image>().raycastTarget = false;
-            bossBarFill = MakePanel("Boss health fill", bossBar, Coral, new Vector2(.03f, .14f), new Vector2(.97f, .36f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            Outline bossEdge = bossBar.gameObject.AddComponent<Outline>();
+            bossEdge.effectColor = Coral;
+            bossEdge.effectDistance = new Vector2(3f, -3f);
+            MakeIcon(bossBar, "critical_damage", .01f, .06f, .12f, .94f, Color.white);
+            MakePanel("Boss health track", bossBar, Ink, new Vector2(BossBarStart, .12f), new Vector2(BossBarStart + BossBarWidth, .44f), Vector2.zero, Vector2.zero).GetComponent<Image>().raycastTarget = false;
+            bossBarFill = MakePanel("Boss health fill", bossBar, Coral, new Vector2(BossBarStart, .12f), new Vector2(BossBarStart + BossBarWidth, .44f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             bossBarFill.raycastTarget = false;
-            bossBarText = MakeLabel("Boss health text", bossBar, "GUARDIÃO", 24, Cream, new Vector2(.04f, .43f), new Vector2(.96f, .94f), TextAlignmentOptions.Center);
+            MakePanel("Boss health shine", bossBarFill.transform, new Color(1f, 1f, 1f, .22f), new Vector2(0, .62f), new Vector2(1, .86f), Vector2.zero, Vector2.zero).GetComponent<Image>().raycastTarget = false;
+            bossBarText = MakeLabel("Boss health text", bossBar, "GUARDIÃO", 26, Cream, new Vector2(BossBarStart, .48f), new Vector2(.97f, .96f), TextAlignmentOptions.Left);
+            bossBarText.outlineWidth = .15f;
+            bossBarText.outlineColor = Ink;
             bossBarText.raycastTarget = false;
             bossBar.gameObject.SetActive(false);
             playerExperienceTrack = MakePanel("Experience track", avatar, Ink, new Vector2(.12f, .06f), new Vector2(.88f, .10f), Vector2.zero, Vector2.zero).GetComponent<Image>();
@@ -542,7 +550,9 @@ namespace DigAndWonder
             missionLabel.gameObject.SetActive(false);
             progressionPanel.gameObject.SetActive(false);
             combatRoot.gameObject.SetActive(false);
+            BuildMomentBanner();
             UiTypography.Normalize(root, hudFont, labelFont);
+            UiPressFeedback.AttachAll(root);
         }
 
         private void ChangeTraining(int direction)
@@ -600,6 +610,7 @@ namespace DigAndWonder
             driver.SetMenuPaused(true);
             StopCaveMotion();
             helpPanel.gameObject.SetActive(true);
+            OpenWithPop(helpPanel);
         }
 
         private void BuildAlbum()
@@ -641,6 +652,7 @@ namespace DigAndWonder
             feedback?.Clear();
             albumTitle.text = newDiscovery ? "NOVA DESCOBERTA!" : "ÁLBUM DE DESCOBERTAS";
             albumPanel.gameObject.SetActive(true);
+            OpenWithPop(albumPanel);
             RefreshAlbum();
         }
 
@@ -1073,7 +1085,9 @@ namespace DigAndWonder
             {
                 float maximum = sim.EnemyMaximumHealth(true);
                 float bossRatio = maximum > 0f ? Mathf.Clamp01(boss.Health / maximum) : 0f;
-                bossBarFill.rectTransform.anchorMax = new Vector2(.03f + .94f * bossRatio, .36f);
+                bossBarFill.rectTransform.anchorMax = new Vector2(BossBarStart + BossBarWidth * bossRatio, .44f);
+                // Preparação de ataque do chefe pisca a barra em creme: aviso legível sem depender só da cor.
+                bossBarFill.color = sim.IsWindingUp(boss.Id) && Mathf.Repeat(Time.unscaledTime, .4f) < .2f ? Cream : Coral;
                 string bossTitle = sim.Run.EncounterVersion >= 1 && sim.Run.CampaignStage % 10 == 5 ? "MINI-CHEFE" : "GUARDIÃO";
                 bossBarText.text = (sim.IsWindingUp(boss.Id) ? "ATAQUE!  •  " : "") + bossTitle + "  " + GameplayHudModel.Number(Math.Ceiling(boss.Health)) + " / " + GameplayHudModel.Number(Math.Ceiling(maximum));
             }
@@ -1253,6 +1267,7 @@ namespace DigAndWonder
                 view.Price.rectTransform.anchorMin = new Vector2(unlocked && !maxed ? .39f : .14f, .18f);
                 view.Price.alignment = unlocked && !maxed ? TextAlignmentOptions.Left : TextAlignmentOptions.Center;
                 view.Button.interactable = driver.IsReady && GameplayHudModel.CanBuyUpgrade(sim.Profile, driver.Economy, entry.Key);
+                SetReadyPulse(view.Button.transform.Find("Upgrade action title"), view.Button.interactable);
                 // Guia, seção 9: ouro insuficiente dessatura a face e mantém o preço legível; coral fica para perigo.
                 bool affordable = unlocked && !maxed && sim.Profile.Gold >= rule.Cost(level);
                 view.Price.color = affordable || maxed ? Cream : new Color(.80f, .84f, .87f);
@@ -1375,6 +1390,7 @@ namespace DigAndWonder
         private void OnCombatEvent(CombatEvent e)
         {
             if (!inGame) return;
+            HandleMomentEvent(e);
             if (e.Type == CombatEventType.EnemySpawned || e.Type == CombatEventType.BossSpawned) SyncEnemyVisuals();
             feedback.Handle(e);
             int enemySlot = EnemySlot(e.EntityId);
@@ -1599,11 +1615,14 @@ namespace DigAndWonder
         private void BuildGameplayUpgrade(RectTransform content, UpgradeKind kind)
         {
             string title = GameplayHudModel.UpgradeTitle(kind);
+            RectTransform rowForFeedback = null;
             RectTransform action = BuildUpgradeRow(content, title, GameplayHudModel.UpgradeIcon(kind), "", 0,
                 () => { bool bought = driver.Simulation.IsActive ? driver.TryPurchaseUpgrade(kind) : driver.TryPurchaseUpgradeAtBase(kind);
-                    statusLabel.text = bought ? title + " MELHORADO" : "REQUISITO, SALDO OU LIMITE NÃO ATENDIDO"; Refresh(); },
+                    statusLabel.text = bought ? title + " MELHORADO" : "REQUISITO, SALDO OU LIMITE NÃO ATENDIDO"; Refresh();
+                    if (bought) PlayPurchaseFeedback(rowForFeedback, upgradeViews[kind].Level); },
                 out Button button, out TextMeshProUGUI price);
             RectTransform row = (RectTransform)action.parent;
+            rowForFeedback = row;
             TextMeshProUGUI value = row.Find("Upgrade value").GetComponent<TextMeshProUGUI>();
             Image face = row.GetComponent<Image>();
             Image lockIcon = MakeIcon(action, "lock", 0.02f, 0.25f, 0.16f, 0.75f, Cream);
