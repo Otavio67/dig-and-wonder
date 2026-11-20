@@ -35,6 +35,14 @@ namespace DigAndWonder
         private const float BossBarStart = .135f, BossBarWidth = .83f;
         private readonly HashSet<Transform> pulsingTargets = new HashSet<Transform>();
 
+        /// <summary>Reflexo claro no terço superior de um preenchimento de barra; acompanha a largura do pai.</summary>
+        private void AddBarShine(RectTransform fill)
+        {
+            if (fill == null) return;
+            MakePanel("Bar shine", fill, new Color(1f, 1f, 1f, .28f), new Vector2(0f, .58f), new Vector2(1f, .88f), Vector2.zero, Vector2.zero)
+                .GetComponent<Image>().raycastTarget = false;
+        }
+
         /// <summary>Entrada curta de painel (140–220 ms, guia seção 10).</summary>
         private static void OpenWithPop(RectTransform panel)
         {

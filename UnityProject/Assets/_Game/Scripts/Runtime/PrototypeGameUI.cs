@@ -77,6 +77,9 @@ namespace DigAndWonder
         private Image bossBarFill;
         private TextMeshProUGUI bossBarText;
         private Image playerExperienceTrack, playerExperienceFill;
+        private TextMeshProUGUI avatarLevelLabel, missionNumber;
+        private Image missionRewardIcon, autoSwitchFace;
+        private readonly Image[] powerFrames = new Image[5];
         private TextMeshProUGUI drillIcon;
         private ProceduralAnimator2D drillAnimator;
         private GroundDrillMotion2D drillMotion;
@@ -308,18 +311,25 @@ namespace DigAndWonder
                 new Vector2(0.15f, 0.16f), new Vector2(0.85f, 0.40f), TextAlignmentOptions.Center);
 
             // Missão em placa ilustrada (mesma família dos campos do perfil), não texto solto sobre o fundo.
-            var missionPanel = MakePanel("Mission banner", combatRoot, Color.white, new Vector2(.02f,.424f), new Vector2(.98f,.479f), Vector2.zero, Vector2.zero);
-            Image missionPlate = missionPanel.GetComponent<Image>();
-            missionPlate.raycastTarget=false;
-            if (uiAssetSprites.TryGetValue("skin_stat", out Sprite missionSkin)) { missionPlate.sprite = missionSkin; missionPlate.type = Image.Type.Sliced; }
-            else missionPlate.color = Color.clear;
-            MakeIcon(missionPanel, "mission", .03f, .16f, .12f, .84f, Color.white);
-            // Texto começa depois da tampa dourada da placa, sem encostar na emenda.
-            missionLabel = MakeLabel("Mission", missionPanel, "MISSÃO 01   DERROTE 10 INIMIGOS", 26, Cream,
-                new Vector2(0.20f, 0.20f), new Vector2(0.68f, 0.80f), TextAlignmentOptions.Left);
+            // HUD inferior aprovado (hud-approved-v8): uma chapa única rebitada reúne missão, poderes, FORÇA e melhorias.
+            BuildHudBackplate(combatRoot);
+            var missionPanel = MakePanel("Mission banner", combatRoot, Color.clear, new Vector2(.025f, .428f), new Vector2(.975f, .472f), Vector2.zero, Vector2.zero);
+            missionPanel.GetComponent<Image>().raycastTarget = false;
+            // Etiqueta âmbar com prancheta (peça extraída v8) + campo escuro com o objetivo e a recompensa.
+            RectTransform missionField = MakeArtPanel("Mission field", missionPanel, new Color(.04f, .08f, .12f, .97f), "hud_panel", .255f, .04f, 1f, .96f);
+            missionField.GetComponent<Image>().raycastTarget = false;
+            AddEdge(missionField, new Color(.30f, .45f, .58f), 2f);
+            Image missionTag = MakeIconSprite(missionPanel, ExtractedSprite("mission_banner"), 0f, 0f, .27f, 1f, Color.white);
+            missionTag.preserveAspect = false;
+            missionNumber = MakeLabel("Mission number", missionTag.rectTransform, "MISSÃO 01", 24, Ink, new Vector2(.33f, .14f), new Vector2(.95f, .86f), TextAlignmentOptions.Center);
+            if (startFont != null) missionNumber.font = startFont;
+            missionNumber.outlineWidth = 0f;
+            missionLabel = MakeLabel("Mission", missionPanel, "Derrote 10 inimigos", 24, Cream,
+                new Vector2(0.29f, 0.10f), new Vector2(0.80f, 0.90f), TextAlignmentOptions.Left);
             missionLabel.fontStyle = FontStyles.Bold;
-            missionReward = MakeLabel("Mission reward", missionPanel, "", 21, Gold,
-                new Vector2(0.69f, 0.20f), new Vector2(0.94f, 0.80f), TextAlignmentOptions.Center);
+            missionRewardIcon = MakeIcon(missionPanel, "crystal", .855f, .14f, .915f, .86f, Color.white);
+            missionReward = MakeLabel("Mission reward", missionPanel, "", 24, Cream,
+                new Vector2(0.80f, 0.10f), new Vector2(0.975f, 0.90f), TextAlignmentOptions.Right);
             missionReward.outlineWidth = .15f;
             missionReward.outlineColor = Ink;
 
@@ -441,8 +451,14 @@ namespace DigAndWonder
             // Ícone dedicado de vida ao lado do número (guia, seção 12: sem glifos no lugar de ícones).
             MakeIcon(healthLabel.transform, "health", 0f, 0f, .17f, 1f, Color.white);
             healthLabel.margin = new Vector4(52f, 0f, 0f, 0f);
-            playerHealthTrack = MakePanel("Health track", worldPanel, Ink, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            playerHealthTrack = MakePanel("Health track", worldPanel, new Color(.03f, .06f, .08f, .92f), new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            // Barra emoldurada: contorno escuro + friso de latão, reflexo no preenchimento (lê sobre o chão claro).
+            Outline hpEdge = playerHealthTrack.gameObject.AddComponent<Outline>();
+            hpEdge.effectColor = new Color(.85f, .58f, .16f, .9f);
+            hpEdge.effectDistance = new Vector2(3f, -3f);
             healthFill = MakePanel("Health fill", worldPanel, Mint, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            AddBarShine(healthFill.rectTransform);
+            for (int i = 0; i < enemyHealthFills.Length; i++) AddBarShine(enemyHealthFills[i].rectTransform);
             // Barra do chefe: chapa escura com contorno coral, emblema de perigo e barra grossa com reflexo.
             bossBar = MakeArtPanel("Boss health", worldPanel, new Color(.03f, .07f, .10f, .92f), "hud_panel", .06f, .595f, .94f, .685f);
             bossBar.GetComponent<Image>().raycastTarget = false;
@@ -461,15 +477,23 @@ namespace DigAndWonder
             bossBar.gameObject.SetActive(false);
             playerExperienceTrack = MakePanel("Experience track", avatar, Ink, new Vector2(.12f, .06f), new Vector2(.88f, .10f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             playerExperienceFill = MakePanel("Experience fill", avatar, Cyan, new Vector2(.12f, .06f), new Vector2(.88f, .10f), Vector2.zero, Vector2.zero).GetComponent<Image>();
+            // Selo de nível da broca no canto do retrato (padrão do gênero: nível sempre visível no topo).
+            RectTransform levelBadge = MakeArtPanel("Avatar level badge", avatar, new Color(.05f, .10f, .14f, .96f), "hud_panel", .52f, -.16f, 1.10f, .20f);
+            Outline badgeEdge = levelBadge.gameObject.AddComponent<Outline>();
+            badgeEdge.effectColor = Gold;
+            badgeEdge.effectDistance = new Vector2(2f, -2f);
+            avatarLevelLabel = MakeLabel("Avatar level", levelBadge, "NV.1", 20, Gold, new Vector2(.06f, .04f), new Vector2(.94f, .96f), TextAlignmentOptions.Center);
+            avatarLevelLabel.outlineWidth = .18f;
+            avatarLevelLabel.outlineColor = Ink;
             MakeOverlayButton("Open profile", avatar, "", 20, 0, 0, 1, 1, () => OpenTopMenu("perfil-info"));
             statusLabel = MakeLabel("Status", combatRoot, "", 25, Cream,
-                new Vector2(0.06f, 0.495f), new Vector2(0.94f, 0.53f), TextAlignmentOptions.Center);
+                new Vector2(0.12f, 0.512f), new Vector2(0.88f, 0.545f), TextAlignmentOptions.Center);
             combatLog = MakeLabel("Combat log", combatRoot, "", 18, Cream,
-                new Vector2(0.06f, 0.48f), new Vector2(0.94f, 0.495f), TextAlignmentOptions.Center);
+                new Vector2(0.12f, 0.495f), new Vector2(0.88f, 0.512f), TextAlignmentOptions.Center);
             statusLabel.outlineWidth = combatLog.outlineWidth = .2f;
             statusLabel.outlineColor = combatLog.outlineColor = Ink;
             // Faixa translúcida atrás das mensagens: leitura fixa sem depender do chão do cenário.
-            RectTransform statusBand = MakeArtPanel("Status plate", combatRoot, new Color(.02f, .06f, .08f, .62f), "hud_panel", .10f, .479f, .90f, .533f);
+            RectTransform statusBand = MakeArtPanel("Status plate", combatRoot, new Color(.02f, .06f, .08f, .62f), "hud_panel", .10f, .492f, .90f, .548f);
             statusBand.SetSiblingIndex(statusLabel.transform.GetSiblingIndex());
             statusPlate = statusBand.gameObject;
             BuildPowerBar(combatRoot);
@@ -478,19 +502,12 @@ namespace DigAndWonder
             // Painel de melhorias em chapa ilustrada. Ocupa o espaço que antes sobrava sob os poderes,
             // mostrando mais linhas sem comprimir o cenário; FORÇA passou para o cabeçalho.
             // Peças de nove partes esticavam as tampas douradas nesta altura; a chapa usa friso de latão como o dock.
-            menuPanel = MakeArtPanel("Upgrade panel", combatRoot, new Color(.07f, .15f, .20f), "hud_panel", 0.008f, 0.09f, 0.992f, 0.343f);
-            MakePanel("Panel brass edge", menuPanel, new Color(.85f, .58f, .16f), new Vector2(.02f, .985f), new Vector2(.98f, 1f), Vector2.zero, Vector2.zero)
-                .GetComponent<Image>().raycastTarget = false;
-            MakePanel("Panel title rule", menuPanel, new Color(.85f, .58f, .16f, .55f), new Vector2(.05f, .868f), new Vector2(.95f, .872f), Vector2.zero, Vector2.zero)
-                .GetComponent<Image>().raycastTarget = false;
+            // v8: as linhas de melhoria ficam direto na chapa rebitada, sem título próprio; o título só aparece em Modos.
+            menuPanel = MakePanel("Upgrade panel", combatRoot, Color.clear, new Vector2(0.012f, 0.094f), new Vector2(0.988f, 0.350f), Vector2.zero, Vector2.zero);
             menuTitle = MakeLabel("Tab title", menuPanel, "MELHORIAS DA BROCA", 26, Gold, new Vector2(0.05f, 0.88f), new Vector2(0.58f, 0.975f), TextAlignmentOptions.Left);
             if (startFont != null) menuTitle.font = startFont;
             menuTitle.outlineWidth = .2f;
             menuTitle.outlineColor = Ink;
-            MakeLabel("Force title", menuPanel, "FORÇA", 19, Cream, new Vector2(0.60f, 0.885f), new Vector2(0.74f, 0.965f), TextAlignmentOptions.Right);
-            forceValue = MakeLabel("Force value", menuPanel, "", 28, Gold, new Vector2(0.75f, 0.875f), new Vector2(0.925f, 0.975f), TextAlignmentOptions.Left);
-            forceValue.outlineWidth = .2f;
-            forceValue.outlineColor = Ink;
             menuBody = MakeLabel("Tab info", menuPanel, "", 18, Cream, new Vector2(0.08f, 0.16f), new Vector2(0.92f, 0.82f), TextAlignmentOptions.Center);
             menuBody.gameObject.SetActive(false);
             upgradeRowsRoot = BuildUpgradeScroll(menuPanel);
@@ -521,9 +538,9 @@ namespace DigAndWonder
 
             bottomBar = MakePanel("Bottom navigation", combatRoot, Deep, Vector2.zero, new Vector2(1,.088f),Vector2.zero,Vector2.zero);
             // Friso de latão contínuo até as bordas: separa o dock do painel sem moldura flutuante.
-            MakePanel("Dock brass edge", bottomBar, new Color(.85f, .58f, .16f), new Vector2(0, .955f), new Vector2(1, 1), Vector2.zero, Vector2.zero)
+            MakePanel("Dock brass edge", bottomBar, new Color(.30f, .42f, .54f), new Vector2(0, .955f), new Vector2(1, 1), Vector2.zero, Vector2.zero)
                 .GetComponent<Image>().raycastTarget = false;
-            MakePanel("Dock brass shadow", bottomBar, new Color(.42f, .26f, .08f), new Vector2(0, .935f), new Vector2(1, .955f), Vector2.zero, Vector2.zero)
+            MakePanel("Dock brass shadow", bottomBar, new Color(.03f, .06f, .09f), new Vector2(0, .935f), new Vector2(1, .955f), Vector2.zero, Vector2.zero)
                 .GetComponent<Image>().raycastTarget = false;
             string[] tabs = { "MINA", "MODOS", "OFICINA", "EQUIP.", "LOJA" };
             string[] icons = { "nav_mine", "nav_modes", "nav_workshop", "shield", "nav_shop" };
@@ -943,7 +960,14 @@ namespace DigAndWonder
             int crystals = firstClear ? driver.Economy.FirstClearCrystals +
                 (stageNumber % driver.Economy.MilestoneInterval == 0 ? driver.Economy.MilestoneCrystals : 0) : 0;
             bool newDiscovery = sim.Run.EncounterVersion >= 2 && DiscoveryCatalog.Find(stageNumber) != null && !sim.Profile.DiscoveryStages.Contains(stageNumber);
-            missionReward.text = sim.Run.IsStageCleared ? "CONCLUÍDA" : newDiscovery ? "DESCOBERTA\n+ BAÚ / CHAVE" : crystals > 0 ? "+" + crystals + " CRISTAIS" : specialEncounter ? "BAÚ + CHAVE" : "BÔNUS DE OURO";
+            // Recompensa em cristais aparece como ícone + número (v8); as demais continuam por extenso.
+            bool crystalReward = !sim.Run.IsStageCleared && !newDiscovery && crystals > 0;
+            missionReward.text = sim.Run.IsStageCleared ? "CONCLUÍDA" : newDiscovery ? "BAÚ + CHAVE" : crystalReward ? GameplayHudModel.Number(crystals) : specialEncounter ? "BAÚ + CHAVE" : "+ OURO";
+            missionReward.color = crystalReward ? Cream : Gold;
+            missionReward.rectTransform.anchorMin = new Vector2(crystalReward ? .92f : .78f, .10f);
+            missionReward.alignment = crystalReward ? TextAlignmentOptions.Left : TextAlignmentOptions.Right;
+            if (missionRewardIcon != null) missionRewardIcon.gameObject.SetActive(crystalReward);
+            if (missionNumber != null) missionNumber.text = specialEncounter ? (chapterPhase == 5 ? "MINI-CHEFE" : "CHEFE") : "MISSÃO " + chapterPhase.ToString("00");
             forceValue.text = GameplayHudModel.Number(GameplayHudModel.PowerRating(sim, driver.EquippedCharacter));
             RefreshPowerBar();
             if (displayedGold != sim.Gold || displayedCrystals != sim.Profile.Crystals)
@@ -965,6 +989,7 @@ namespace DigAndWonder
             CharacterLevelState characterLevel = driver.CurrentCharacterLevel;
             float experienceRatio = characterLevel.IsMaximum ? 1f : characterLevel.ExperienceToNextLevel > 0
                 ? Mathf.Clamp01((float)characterLevel.ExperienceInLevel / characterLevel.ExperienceToNextLevel) : 0f;
+            if (avatarLevelLabel != null) avatarLevelLabel.text = "NV." + characterLevel.Level;
             RectTransform xpTrack = playerExperienceTrack.rectTransform;
             playerExperienceFill.rectTransform.anchorMax = new Vector2(xpTrack.anchorMin.x + (xpTrack.anchorMax.x - xpTrack.anchorMin.x) * experienceRatio, xpTrack.anchorMax.y);
             SyncEnemyVisuals();
@@ -1014,8 +1039,8 @@ namespace DigAndWonder
             if (sprite == null || worldPanel.rect.height <= 0) return;
             float height = (unit.anchorMax.x - unit.anchorMin.x) * worldPanel.rect.width * sprite.rect.height / sprite.rect.width;
             float top = unit.anchorMin.y + height / worldPanel.rect.height;
-            playerHealthTrack.rectTransform.anchorMin = new Vector2(.06f, top + .010f);
-            playerHealthTrack.rectTransform.anchorMax = new Vector2(.25f, top + .024f);
+            playerHealthTrack.rectTransform.anchorMin = new Vector2(.06f, top + .008f);
+            playerHealthTrack.rectTransform.anchorMax = new Vector2(.27f, top + .025f);
             healthFill.rectTransform.anchorMin = playerHealthTrack.rectTransform.anchorMin;
             healthLabel.rectTransform.anchorMin = new Vector2(.045f, top + .027f);
             healthLabel.rectTransform.anchorMax = new Vector2(.30f, top + .058f);
@@ -1251,6 +1276,7 @@ namespace DigAndWonder
             bool upgradesVisible = currentTab == "MINA" || currentTab == "MELHORIAS";
             if (upgradeRowsRoot != null) upgradeRowsRoot.gameObject.SetActive(upgradesVisible);
             if (menuBody != null) menuBody.gameObject.SetActive(!upgradesVisible);
+            if (menuTitle != null) menuTitle.gameObject.SetActive(!upgradesVisible);
             foreach (KeyValuePair<UpgradeKind, UpgradeView> entry in upgradeViews)
             {
                 EconomyUpgradeRule rule = driver.Economy.Upgrade(entry.Key);
@@ -1261,26 +1287,31 @@ namespace DigAndWonder
                 view.Level.text = "NV. " + level;
                 view.Value.text = GameplayHudModel.UpgradeValue(entry.Key, sim, driver.EquippedCharacter);
                 view.Lock.gameObject.SetActive(!unlocked);
-                view.Coin.gameObject.SetActive(unlocked && !maxed);
-                view.Price.text = !unlocked ? "NV. " + rule.UnlockLevel : maxed ? "MÁXIMO" : GameplayHudModel.Number(rule.Cost(level));
-                view.Button.transform.Find("Upgrade action title").GetComponent<TextMeshProUGUI>().text = !unlocked ? "REQUER" : maxed ? "MÁXIMO" : "MELHORAR";
-                view.Price.rectTransform.anchorMin = new Vector2(unlocked && !maxed ? .39f : .14f, .18f);
-                view.Price.alignment = unlocked && !maxed ? TextAlignmentOptions.Left : TextAlignmentOptions.Center;
+                view.Coin.gameObject.SetActive(false);
+                bool purchasable = unlocked && !maxed;
+                view.Price.text = !unlocked ? "NV. " + rule.UnlockLevel : maxed ? "" : GameplayHudModel.Number(rule.Cost(level));
+                TextMeshProUGUI actionTitle = view.Button.transform.Find("Upgrade action title").GetComponent<TextMeshProUGUI>();
+                actionTitle.text = !unlocked ? "Requer" : maxed ? "Máximo" : "Melhorar";
+                // Máximo ocupa o botão inteiro; os demais estados mantêm título em cima e valor embaixo.
+                actionTitle.rectTransform.anchorMin = new Vector2(.10f, maxed ? .14f : .52f);
+                view.Price.rectTransform.anchorMin = new Vector2(purchasable ? .41f : .14f, .14f);
+                view.Price.alignment = purchasable ? TextAlignmentOptions.Left : TextAlignmentOptions.Center;
                 view.Button.interactable = driver.IsReady && GameplayHudModel.CanBuyUpgrade(sim.Profile, driver.Economy, entry.Key);
-                SetReadyPulse(view.Button.transform.Find("Upgrade action title"), view.Button.interactable);
-                // Guia, seção 9: ouro insuficiente dessatura a face e mantém o preço legível; coral fica para perigo.
-                bool affordable = unlocked && !maxed && sim.Profile.Gold >= rule.Cost(level);
-                view.Price.color = affordable || maxed ? Cream : new Color(.80f, .84f, .87f);
-                view.Face.color = unlocked ? new Color(.11f, .22f, .30f) : new Color(.06f, .11f, .15f);
+                SetReadyPulse(actionTitle.transform, view.Button.interactable);
+                // Guia, seção 9: ouro insuficiente dessatura a peça e mantém o preço legível; coral fica para perigo.
+                bool affordable = purchasable && sim.Profile.Gold >= rule.Cost(level);
+                view.Price.color = affordable ? Cream : new Color(.86f, .89f, .92f);
+                view.Value.color = unlocked ? new Color(.66f, .76f, .95f) : new Color(.48f, .55f, .64f);
                 Image actionFace = view.Button.GetComponent<Image>();
-                string actionSkin = view.Button.interactable ? "skin_action" : maxed ? "skin_tab_active" : "skin_tab";
-                if (uiAssetSprites.TryGetValue(actionSkin, out Sprite actionSprite) && actionFace.sprite != actionSprite)
+                // v8: ciano para comprar (desbloqueado), ciano escurecido sem ouro e chapa escura "em preparação" quando bloqueado.
+                Sprite actionSprite = purchasable ? ExtractedSprite("upgrade_button") : null;
+                if (actionFace.sprite != actionSprite || actionSprite == null)
                 {
                     actionFace.sprite = actionSprite;
-                    actionFace.type = Image.Type.Sliced;
+                    actionFace.type = Image.Type.Simple;
                     actionFace.preserveAspect = false;
                 }
-                actionFace.color = view.Button.interactable || maxed ? Color.white : unlocked ? new Color(.78f, .82f, .86f) : new Color(.55f, .6f, .65f);
+                actionFace.color = purchasable ? (affordable ? Color.white : new Color(.58f, .64f, .70f)) : maxed ? new Color(.62f, .48f, .14f) : new Color(.07f, .12f, .17f);
             }
             if (scrollThumb != null) scrollThumb.parent.gameObject.SetActive(upgradesVisible);
             restartButton.gameObject.SetActive(false);
@@ -1288,6 +1319,7 @@ namespace DigAndWonder
             continueButton.anchorMin = new Vector2(defeated && sim.Run.IsTraining ? .40f : .70f, .13f);
             continueButton.anchorMax = new Vector2(defeated && sim.Run.IsTraining ? .68f : .97f, .87f);
             missionReward.gameObject.SetActive(!restartButton.gameObject.activeSelf && !continueButton.gameObject.activeSelf);
+            if (missionRewardIcon != null && !missionReward.gameObject.activeSelf) missionRewardIcon.gameObject.SetActive(false);
             missionLabel.rectTransform.anchorMax = new Vector2(defeated && sim.Run.IsTraining ? .39f : .67f, .78f);
             trainingButton.gameObject.SetActive(currentTab == "MODOS");
             trainingPicker.gameObject.SetActive(currentTab == "MODOS");
@@ -1300,12 +1332,12 @@ namespace DigAndWonder
                 menuBody.text = driver.IsSaveBlocked ? "Aguardando salvar para continuar. Seu progresso foi preservado."
                     : sim.LastClearSummary + (driver.CanContinueCampaign ? "\nPróxima fase..." : "");
             foreach (KeyValuePair<string, Image> button in tabButtonImages)
-                button.Value.color = new Color(1f, 1f, 1f, 0f);
+                button.Value.color = button.Key == currentTab ? new Color(.15f, .29f, .38f) : new Color(.09f, .15f, .22f);
             foreach (KeyValuePair<string, GameObject> item in navHighlights)
             {
                 item.Value.SetActive(item.Key == currentTab);
                 Transform navLabel = item.Value.transform.parent.Find("Tab label");
-                if (navLabel != null) navLabel.GetComponent<TextMeshProUGUI>().color = item.Key == currentTab ? Cyan : Cream;
+                if (navLabel != null) navLabel.GetComponent<TextMeshProUGUI>().color = item.Key == currentTab ? White : new Color(.80f, .85f, .90f);
             }
             menuTitle.rectTransform.anchorMax = new Vector2(.965f, .99f);
         }
@@ -1475,36 +1507,49 @@ namespace DigAndWonder
 
         private void BuildPowerBar(RectTransform parent)
         {
-
-            // Círculo só com ícone/AUTO; estado (ON, recarga, nível) fica numa linha própria abaixo,
-            // sem atravessar o aro do slot.
-            const float slotBottom = 0.371f, slotTop = 0.419f, stateBottom = 0.347f, stateTop = 0.371f;
-            RectTransform auto = MakeArtPanel("Auto attack", parent, Color.white, "power_round", 0.024f, slotBottom, 0.17f, slotTop);
+            // Linha de poderes do HUD aprovado v8: AUTO com chave liga/desliga, cinco slots quadrados
+            // rebitados (ativo em ciano, bloqueado em ferro com cadeado) e o selo de FORÇA à direita.
+            const float rowBottom = 0.356f, rowTop = 0.422f;
+            Image autoFace = MakeIconSprite(parent, ExtractedSprite("auto_control"), .022f, rowBottom, .142f, rowTop, Color.white);
+            autoFace.raycastTarget = true;
+            RectTransform auto = autoFace.rectTransform;
             autoToggleButton = auto.gameObject.AddComponent<Button>();
-            autoToggleButton.targetGraphic = auto.GetComponent<Image>();
-            auto.GetComponent<Image>().raycastTarget = true;
+            autoToggleButton.targetGraphic = autoFace;
             autoToggleButton.onClick.AddListener(ToggleAutoAttack);
-            TextMeshProUGUI autoTitle = MakeLabel("Auto label", auto, "AUTO", 22, Cream, new Vector2(0.22f, 0.32f), new Vector2(0.78f, 0.68f), TextAlignmentOptions.Center);
-            autoTitle.outlineWidth = .2f;
-            autoTitle.outlineColor = Ink;
-            autoStateLabel = MakeLabel("Auto state", parent, "ON", 21, Cyan, new Vector2(0.024f, stateBottom), new Vector2(0.17f, stateTop), TextAlignmentOptions.Center);
+            TextMeshProUGUI autoTitle = MakeLabel("Auto label", auto, "AUTO", 22, Ink, new Vector2(0.14f, 0.60f), new Vector2(0.86f, 0.92f), TextAlignmentOptions.Center);
+            if (startFont != null) autoTitle.font = startFont;
+            autoTitle.outlineWidth = 0f;
+            // Capa cinza sobre a chave quando o ataque automático está desligado.
+            autoSwitchFace = MakeArtPanel("Auto switch off", auto, new Color(.30f, .35f, .40f), "hud_panel", .07f, .10f, .93f, .48f).GetComponent<Image>();
+            autoSwitchFace.raycastTarget = false;
+            autoStateLabel = MakeLabel("Auto state", auto, "ON", 20, Cream, new Vector2(0.10f, 0.12f), new Vector2(0.56f, 0.46f), TextAlignmentOptions.Center);
             autoStateLabel.outlineWidth = .2f;
             autoStateLabel.outlineColor = Ink;
 
             string[] powers = { "special", "attack", "core", "shield", "bolt" };
             for (int i = 0; i < powers.Length; i++)
             {
-                float left = 0.19f + i * 0.155f;
-                RectTransform slot = MakeArtPanel("Power slot " + i, parent, Color.white, "power_round",
-                    left, slotBottom, left + 0.135f, slotTop);
-                powerFaces[i] = slot.GetComponent<Image>();
-                powerIcons[i] = MakeIcon(slot, powers[i], 0.17f, 0.17f, 0.83f, 0.83f, Color.white);
-                powerLabels[i] = MakeLabel("Power state", parent, "", 19, Cream, new Vector2(left - 0.01f, stateBottom), new Vector2(left + 0.145f, stateTop), TextAlignmentOptions.Center);
-                powerLabels[i].outlineWidth = .2f;
+                float left = 0.150f + i * 0.111f;
+                Image frame = MakeIconSprite(parent, ExtractedSprite("power_active"), left, .3615f, left + 0.104f, .4165f, Color.white);
+                RectTransform slot = frame.rectTransform;
+                powerFaces[i] = frame;
+                powerIcons[i] = MakeIcon(slot, powers[i], 0.22f, 0.24f, 0.78f, 0.80f, Color.white);
+                MakePanel("Power state pill", slot, new Color(.02f, .05f, .08f, .88f), new Vector2(.16f, .02f), new Vector2(.84f, .26f), Vector2.zero, Vector2.zero).GetComponent<Image>().raycastTarget = false;
+                powerLabels[i] = MakeLabel("Power state", slot, "", 16, Cream, new Vector2(0.16f, 0.02f), new Vector2(0.84f, 0.26f), TextAlignmentOptions.Center);
+                powerLabels[i].outlineWidth = .25f;
                 powerLabels[i].outlineColor = Ink;
                 int powerIndex = i;
                 MakeOverlayButton("Inspect power " + i, slot, "", 15, 0, 0, 1, 1, () => OpenPower(powerIndex));
             }
+
+            Image force = MakeIconSprite(parent, ExtractedSprite("force_badge"), .712f, .363f, .978f, .415f, Color.white);
+            TextMeshProUGUI forceTitle = MakeLabel("Force title", force.rectTransform, "FORÇA", 18, Cream, new Vector2(.43f, .52f), new Vector2(.94f, .88f), TextAlignmentOptions.Center);
+            forceTitle.outlineWidth = .2f;
+            forceTitle.outlineColor = Ink;
+            forceValue = MakeLabel("Force value", force.rectTransform, "", 30, Gold, new Vector2(.43f, .10f), new Vector2(.94f, .56f), TextAlignmentOptions.Center);
+            if (startFont != null) forceValue.font = startFont;
+            forceValue.outlineWidth = .2f;
+            forceValue.outlineColor = Ink;
             RefreshAutoToggle();
         }
 
@@ -1521,13 +1566,16 @@ namespace DigAndWonder
             if (autoStateLabel == null || autoToggleButton == null) return;
             bool enabled = driver == null || driver.Simulation == null || driver.Simulation.AutoAttackEnabled;
             autoStateLabel.text = enabled ? "ON" : "OFF";
-            autoStateLabel.color = enabled ? Cyan : Cream;
-            autoToggleButton.targetGraphic.color = enabled ? new Color(.12f, .34f, .31f) : new Color(.23f, .27f, .32f);
+            autoStateLabel.color = Cream;
+            // ON: chave verde da arte com o texto à esquerda do botão branco; OFF: capa cinza com o texto à direita.
+            autoStateLabel.rectTransform.anchorMin = new Vector2(enabled ? .10f : .44f, .12f);
+            autoStateLabel.rectTransform.anchorMax = new Vector2(enabled ? .56f : .90f, .46f);
+            if (autoSwitchFace != null) autoSwitchFace.gameObject.SetActive(!enabled);
         }
 
         private RectTransform BuildUpgradeScroll(RectTransform parent)
         {
-            RectTransform viewport = Region("Upgrade viewport", parent, 0.035f, 0.045f, 0.935f, 0.865f);
+            RectTransform viewport = Region("Upgrade viewport", parent, 0.0f, 0.02f, 0.962f, 0.985f);
             var viewportImage = viewport.gameObject.AddComponent<Image>();
             viewportImage.color = new Color(0, 0, 0, 0.08f);
             viewportImage.raycastTarget = true;
@@ -1540,7 +1588,7 @@ namespace DigAndWonder
             content.offsetMin = Vector2.zero;
             content.offsetMax = Vector2.zero;
             var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 18f;
+            layout.spacing = 8f;
             layout.padding = new RectOffset(0, 0, 0, 8);
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
@@ -1554,9 +1602,9 @@ namespace DigAndWonder
             // The scrollbar is part of the visual language, not a default Unity scrollbar.
             // Keep it outside the masked content so the blue steel rail remains visible while scrolling.
             RectTransform rail = MakeArtPanel("Upgrade scroll rail", parent, Color.white,
-                "scroll_rail_structure", 0.945f, 0.05f, 0.972f, 0.86f);
+                "scroll_rail_structure", 0.968f, 0.03f, 0.995f, 0.975f);
             rail.GetComponent<Image>().raycastTarget = false;
-            scrollThumb = MakePanel("Scroll thumb", rail, Cyan, new Vector2(0.24f, 0.70f), new Vector2(0.76f, 0.96f), Vector2.zero, Vector2.zero);
+            scrollThumb = MakePanel("Scroll thumb", rail, new Color(.95f, .68f, .20f), new Vector2(0.24f, 0.70f), new Vector2(0.76f, 0.96f), Vector2.zero, Vector2.zero);
             scrollThumb.GetComponent<Image>().raycastTarget = false;
 
             upgradeScroll = parent.gameObject.AddComponent<ScrollRect>();
@@ -1596,17 +1644,22 @@ namespace DigAndWonder
         {
             IdleCombatSimulation sim = driver.Simulation;
             powerLabels[0].text = sim.Run.SpecialHitsRemaining > 0 ? "ATIVO" : sim.Run.SpecialCooldown > 0 ? GameplayHudModel.Number(Math.Ceiling(sim.Run.SpecialCooldown)) + "s" : "PRONTO";
-            powerFaces[0].sprite = SpriteFor("power_round");
-            powerFaces[0].color = sim.Run.SpecialCooldown <= 0 || sim.Run.SpecialHitsRemaining > 0 ? new Color(.12f, .48f, .43f) : new Color(.16f, .27f, .34f);
+            bool specialReady = sim.Run.SpecialCooldown <= 0 || sim.Run.SpecialHitsRemaining > 0;
+            powerFaces[0].sprite = ExtractedSprite("power_active");
+            powerFaces[0].color = specialReady ? Color.white : new Color(.62f, .70f, .76f);
+            powerIcons[0].color = specialReady ? Color.white : new Color(.70f, .75f, .80f);
             for (int i = 1; i < powerFaces.Length; i++)
             {
                 AttackPowerRule rule = driver.Economy.Powers[i - 1];
                 int rank = EconomyProgression.PowerRank(sim.Profile, sim.ActiveCharacterId, rule.Id);
                 bool unlocked = driver.CurrentCharacterLevel.Level >= rule.UnlockLevel;
-                powerFaces[i].sprite = SpriteFor("power_round");
-                powerIcons[i].gameObject.SetActive(true);
-                powerIcons[i].sprite = SpriteFor(unlocked ? PowerIconNames[i - 1] : "lock");
-                powerFaces[i].color = rank > 0 ? new Color(.12f, .37f, .35f) : new Color(.16f, .25f, .31f);
+                // Bloqueado usa a peça de ferro com cadeado já desenhado; desbloqueado usa a moldura ciano.
+                Sprite face = ExtractedSprite(unlocked ? "power_active" : "power_locked");
+                if (powerFaces[i].sprite != face) powerFaces[i].sprite = face;
+                powerIcons[i].gameObject.SetActive(unlocked);
+                powerIcons[i].sprite = SpriteFor(PowerIconNames[i - 1]);
+                powerIcons[i].color = rank > 0 ? Color.white : new Color(.70f, .75f, .80f);
+                powerFaces[i].color = !unlocked || rank > 0 ? Color.white : new Color(.62f, .70f, .76f);
                 powerLabels[i].text = !unlocked ? "NV." + rule.UnlockLevel : rank + "/" + rule.MaximumRank;
             }
             RefreshAutoToggle();
@@ -1637,39 +1690,50 @@ namespace DigAndWonder
             rowObject.transform.SetParent(content, false);
             RectTransform rowRect = (RectTransform)rowObject.transform;
             var element = rowObject.GetComponent<LayoutElement>();
-            element.preferredHeight = 156f;
-            element.minHeight = 156f;
+            // Proporção da peça aprovada upgrade_row (1457 × 226) na largura útil do painel.
+            element.preferredHeight = 160f;
+            element.minHeight = 160f;
             var rowImage = rowObject.GetComponent<Image>();
-            // Moldura leve e uniforme: chapa azul-aço com contorno fino de latão (sem tampas douradas grandes).
-            rowImage.sprite = SpriteFor("hud_panel");
-            rowImage.type = Image.Type.Sliced;
-            rowImage.color = new Color(.11f, .22f, .30f);
+            rowImage.sprite = ExtractedSprite("upgrade_row");
+            rowImage.type = Image.Type.Simple;
+            rowImage.preserveAspect = false;
+            rowImage.color = Color.white;
             rowImage.raycastTarget = false;
-            Outline rowEdge = rowObject.AddComponent<Outline>();
-            rowEdge.effectColor = new Color(.85f, .58f, .16f, .75f);
-            rowEdge.effectDistance = new Vector2(2f, -2f);
-            // A caixa do ícone cobre a tampa quadrada de latão da moldura, evitando peças aparecendo pela borda.
-            RectTransform iconFrame = MakeArtPanel("Upgrade icon", rowRect, new Color(.06f, .13f, .18f), "hud_panel", 0.008f, 0.06f, 0.19f, 0.94f);
-            MakeIcon(iconFrame, icon, 0.18f, 0.36f, 0.82f, 0.92f, Color.white);
-            TextMeshProUGUI levelLabel = MakeLabel("Upgrade level", iconFrame, "NV. 0", 22, Cream,
-                new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.32f), TextAlignmentOptions.Center);
-            levelLabel.fontStyle = FontStyles.Bold;
-            levelLabel.outlineWidth = 0.15f;
+            // Ícone e nível dentro da moldura âmbar desenhada na peça (x 4–18%).
+            MakeIcon(rowRect, icon, 0.060f, 0.38f, 0.162f, 0.88f, Color.white);
+            TextMeshProUGUI levelLabel = MakeLabel("Upgrade level", rowRect, "NV. 0", 20, Cream,
+                new Vector2(0.048f, 0.13f), new Vector2(0.174f, 0.40f), TextAlignmentOptions.Center);
+            levelLabel.outlineWidth = 0.2f;
             levelLabel.outlineColor = Ink;
             upgradeLevelLabels[title] = levelLabel;
-            TextMeshProUGUI titleLabel = MakeLabel("Upgrade title", rowRect, title, 28, Cream, new Vector2(0.23f, 0.52f), new Vector2(0.60f, 0.86f), TextAlignmentOptions.Left);
-            titleLabel.fontStyle = FontStyles.Bold;
-            TextMeshProUGUI valueLabel = MakeLabel("Upgrade value", rowRect, value, 25, new Color(.86f, .90f, .92f), new Vector2(0.23f, 0.17f), new Vector2(0.58f, 0.49f), TextAlignmentOptions.Left);
+            TextMeshProUGUI titleLabel = MakeLabel("Upgrade title", rowRect, title, 32, Cream, new Vector2(0.205f, 0.48f), new Vector2(0.655f, 0.90f), TextAlignmentOptions.Left);
+            if (startFont != null) titleLabel.font = startFont;
+            titleLabel.outlineWidth = .15f;
+            titleLabel.outlineColor = Ink;
+            TextMeshProUGUI valueLabel = MakeLabel("Upgrade value", rowRect, value, 25, new Color(.66f, .76f, .95f), new Vector2(0.205f, 0.12f), new Vector2(0.655f, 0.50f), TextAlignmentOptions.Left);
             if (readingFont != null) valueLabel.font = readingFont;
-            valueLabel.fontStyle = FontStyles.Bold;
-            RectTransform button = MakeArtActionButton("Upgrade action", rowRect, "MELHORAR", 24, 0.60f, 0.08f, 0.895f, 0.92f, action, "hud_panel");
+            // Botão sobre a área ciano desenhada na peça; o estado troca a arte em RefreshUpgradeViews.
+            RectTransform button = MakeArtActionButton("Upgrade action", rowRect, "Melhorar", 24, 0.672f, 0.15f, 0.970f, 0.86f, action, "hud_panel");
             button.GetComponentInChildren<TextMeshProUGUI>().gameObject.SetActive(false);
-            // Conteúdo dentro do miolo do botão: a moldura ilustrada ocupa ~14% de cada borda.
-            TextMeshProUGUI actionTitle = MakeLabel("Upgrade action title", button, "MELHORAR", 21, Cream, new Vector2(.16f, .50f), new Vector2(.84f, .75f), TextAlignmentOptions.Center);
+            Image buttonFace = button.GetComponent<Image>();
+            buttonFace.sprite = ExtractedSprite("upgrade_button");
+            buttonFace.type = Image.Type.Simple;
+            buttonFace.color = Color.white;
+            // Estado desabilitado opaco: sem isso o Unity desenha a 50% e a área ciano da linha aparece por baixo.
+            Button upgradeButton = button.GetComponent<Button>();
+            ColorBlock upgradeColors = upgradeButton.colors;
+            upgradeColors.disabledColor = Color.white;
+            upgradeButton.colors = upgradeColors;
+            AddEdge(button, new Color(.30f, .42f, .54f), 2f);
+            TextMeshProUGUI actionTitle = MakeLabel("Upgrade action title", button, "Melhorar", 25, Cream, new Vector2(.10f, .52f), new Vector2(.90f, .90f), TextAlignmentOptions.Center);
+            if (startFont != null) actionTitle.font = startFont;
             actionTitle.outlineWidth = .2f;
             actionTitle.outlineColor = Ink;
-            MakeIcon(button, "gold_coin", .24f, .20f, .37f, .48f, Color.white);
-            TextMeshProUGUI costLabel = MakeLabel("Upgrade cost", button, "", 26, Cream, new Vector2(.39f, .18f), new Vector2(.86f, .50f), TextAlignmentOptions.Left);
+            // A moeda já vem desenhada na peça upgrade_button; o ícone separado fica só como reserva.
+            Image coin = MakeIcon(button, "gold_coin", .21f, .22f, .38f, .56f, Color.white);
+            coin.gameObject.SetActive(false);
+            TextMeshProUGUI costLabel = MakeLabel("Upgrade cost", button, "", 28, Cream, new Vector2(.41f, .14f), new Vector2(.88f, .54f), TextAlignmentOptions.Left);
+            if (startFont != null) costLabel.font = startFont;
             costLabel.outlineWidth = .2f;
             costLabel.outlineColor = Ink;
             buttonComponent = button.GetComponent<Button>();
@@ -1766,33 +1830,26 @@ namespace DigAndWonder
         private RectTransform MakeNavButton(string name, Transform parent, string text, string icon, float left, float bottom,
             float right, float top, UnityEngine.Events.UnityAction action, Color stateColor)
         {
-            RectTransform rect = MakeArtPanel(name,parent,new Color(.11f,.20f,.29f),"hud_panel",left,bottom,right,top);
+            // v8: cada aba é uma célula escura própria; a ativa clareia e ganha barra ciano embaixo e em cima.
+            RectTransform rect = MakeArtPanel(name,parent,new Color(.09f,.15f,.22f),"hud_panel",left,bottom,right,top);
             Button button = rect.gameObject.AddComponent<Button>();
             Image image = rect.GetComponent<Image>();
             image.raycastTarget = true;
             button.targetGraphic = image;
             button.onClick.AddListener(action);
-            // Aba ativa usa a placa ilustrada ciano com cristal (mesma da loja); sem ela, mantém o traço ciano.
-            // Placa inteira (sem esticar em nove partes) atrás do ícone; o rótulo fica abaixo dela, sem cruzar a borda.
-            bool illustratedTab = uiAssetSprites.TryGetValue("skin_tab_active", out Sprite activeSkin);
-            RectTransform highlight = illustratedTab
-                ? MakePanel("Active nav glow", rect, Color.white, new Vector2(0.02f, 0.37f), new Vector2(0.98f, 0.99f), Vector2.zero, Vector2.zero)
-                : MakePanel("Active nav glow", rect, Cyan, new Vector2(0.12f, 0.01f), new Vector2(0.88f, 0.055f), Vector2.zero, Vector2.zero);
-            Image highlightImage = highlight.GetComponent<Image>();
-            highlightImage.raycastTarget = false;
-            if (illustratedTab) { highlightImage.sprite = activeSkin; highlightImage.type = Image.Type.Simple; highlightImage.preserveAspect = true; }
+            AddEdge(rect, new Color(.02f, .04f, .06f), 2f);
+            RectTransform highlight = Region("Active nav glow", rect, 0f, 0f, 1f, 1f);
+            MakePanel("Active nav bar", highlight, Cyan, new Vector2(.06f, .0f), new Vector2(.94f, .045f), Vector2.zero, Vector2.zero).GetComponent<Image>().raycastTarget = false;
+            MakePanel("Active nav top", highlight, new Color(0f, .96f, .83f, .55f), new Vector2(.0f, .975f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero).GetComponent<Image>().raycastTarget = false;
             navHighlights[text] = highlight.gameObject;
             highlight.gameObject.SetActive(stateColor == Cyan);
-            // Mesma família de ícones, mas pesos ópticos diferentes: diagonais finas (picareta, chave)
-            // recebem escala maior para igualar o tamanho percebido.
-            Image navIcon = MakeIcon(rect, icon, .27f, .43f, .73f, .95f, Color.white);
-            float optical = icon == "nav_mine" ? 1.18f : icon == "nav_workshop" ? 1.12f : icon == "shield" || icon == "nav_shop" ? .96f : 1f;
-            navIcon.rectTransform.localScale = new Vector3(optical, optical, 1f);
+            // Picareta ilustrada do v8; as demais peças nav_* extraídas são de outra família, então seguem os ícones do atlas.
+            Sprite illustrated = icon == "nav_mine" ? Resources.Load<Sprite>("Art/UI/Extracted/nav_mine") : null;
+            Image navIcon = illustrated != null ? MakeIconSprite(rect, illustrated, .17f, .34f, .83f, .97f, Color.white) : MakeIcon(rect, icon, .22f, .38f, .78f, .93f, Color.white);
             TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 22, Cream,
-                new Vector2(.03f, .05f), new Vector2(.97f, .36f), TextAlignmentOptions.Center);
+                new Vector2(.03f, .06f), new Vector2(.97f, .34f), TextAlignmentOptions.Center);
             label.outlineWidth = .18f;
             label.outlineColor = Ink;
-            label.fontStyle = FontStyles.Bold;
             return rect;
         }
 

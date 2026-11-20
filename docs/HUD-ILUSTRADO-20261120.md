@@ -73,6 +73,19 @@ O usuário escolheu esses dois blocos. Antes, vitória, chefe e broca nova eram 
   - Ajuda e Álbum entram com animação curta (0,2 s).
 - **Verificação:** capturas reais de chefe, vitória e broca liberada (forçadas no perfil de revisão, sem mudar a fase salva) e reinício da derrota confirmado. As animações foram verificadas só pelo código e pela execução sem erros. Ainda não foram avaliadas em movimento por uma pessoa.
 
+## Sexta rodada — HUD inferior fiel ao aprovado v8
+O usuário comparou o HUD do jogo com o mock aprovado (`Resources/Art/UI/hud-approved-v8.png`) e apontou a diferença de design. Causa: as peças recortadas desse mock em `Art/UI/Extracted/` existiam, mas o código montava o HUD com chapas genéricas. Só a moeda era usada.
+- **Chapa única** azul-marinho, rebitada, com divisórias entre missão, poderes e melhorias (`PrototypeGameUI.HudV8.cs`).
+- **Missão:** etiqueta âmbar `mission_banner` com "MISSÃO 01" (número da fase no capítulo; CHEFE ou MINI-CHEFE nos encontros especiais) e campo escuro com objetivo, ícone de cristal e quantidade.
+- **Poderes:** `auto_control` com chave ON/OFF (cinza quando desligado). Os slots são quadrados: `power_active` ciano quando desbloqueado e `power_locked` de ferro com cadeado. O estado aparece numa pílula escura dentro do slot. O selo `force_badge` mostra FORÇA, que saiu do cabeçalho.
+- **Melhorias:** cada linha usa a peça `upgrade_row`: ícone e nível na moldura âmbar, nome em Titan One e valor em lilás.
+  - O botão `upgrade_button` (moeda desenhada na peça) mostra "Melhorar" e o preço, e escurece quando falta ouro.
+  - Bloqueado vira chapa escura "Requer NV. x". O estado desabilitado ficou opaco, porque antes o Unity o desenhava a 50% e a arte ciano aparecia por baixo.
+  - O título "MELHORIAS DA BROCA" só aparece fora da Mina. Cabem duas linhas inteiras e parte da terceira.
+- **Navegação:** cada aba é uma célula escura. A ativa clareia e ganha barras ciano. A picareta usa a arte ilustrada do v8; as demais peças `nav_*` extraídas pertencem a outra família e não foram usadas.
+- **Cenário e topo:** a vida da broca ganhou barra emoldurada com reflexo, as barras de inimigos também ganharam reflexo e o retrato mostra o selo NV. da broca. A faixa de status subiu para não ser cortada pelo painel.
+- **Ainda diferente do v8:** placa da fase com trilha de ondas (bolinhas e caveira), números de vida acima dos inimigos e abas Pets/Baús (fora do escopo atual).
+
 ## Build Windows
 Menu **Dig & Wonder → Build Windows (.exe)** ou linha de comando:
 

@@ -224,7 +224,8 @@ namespace UnityEngine.UI
         public float scrollSensitivity, verticalNormalizedPosition;
     }
     public class CanvasGroup : UnityEngine.Component { public float alpha; public bool interactable, blocksRaycasts; }
-    public class Button : UnityEngine.Component { public Graphic targetGraphic; public bool interactable = true; public ButtonClickedEvent onClick = new ButtonClickedEvent(); public sealed class ButtonClickedEvent { public void AddListener(UnityAction action) { } } }
+    public struct ColorBlock { public UnityEngine.Color normalColor, highlightedColor, pressedColor, selectedColor, disabledColor; }
+    public class Button : UnityEngine.Component { public Graphic targetGraphic; public bool interactable = true; public ColorBlock colors; public ButtonClickedEvent onClick = new ButtonClickedEvent(); public sealed class ButtonClickedEvent { public void AddListener(UnityAction action) { } } }
 }
 
 namespace UnityEngine.Events { public delegate void UnityAction(); }
