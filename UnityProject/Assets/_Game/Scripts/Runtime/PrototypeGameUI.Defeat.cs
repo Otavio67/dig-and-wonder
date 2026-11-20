@@ -38,7 +38,7 @@ namespace DigAndWonder
             RectTransform card=MakeArtPanel("Defeat summary",defeatPopup,Color.white,"menu_background",.055f,.18f,.945f,.82f);
             TextMeshProUGUI title=MakeLabel("Defeat title",card,"BROCA AVARIADA!",48,Gold,new Vector2(.09f,.83f),new Vector2(.91f,.94f),TextAlignmentOptions.Center);
             if(startFont!=null)title.font=startFont;title.outlineWidth=.10f;title.outlineColor=Ink;
-            MakeIconSprite(card,FindResourceSprite("Art/Drill/drill_pioneira","hurt_00"),.33f,.70f,.67f,.83f,Color.white);
+            MakeIconSprite(card,FindResourceSprite("Art/Drill/drill_pioneira","action_03"),.33f,.70f,.67f,.83f,Color.white);
             var run=driver.Simulation.Run;
             int seconds=(int)run.ElapsedSeconds;
             string[] names={"TEMPO","TIROS","INIMIGOS","ONDAS"};

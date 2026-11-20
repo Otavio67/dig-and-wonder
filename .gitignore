@@ -24,3 +24,6 @@ Thumbs.db
 .DS_Store
 
 /error.log
+
+# Saídas locais de build Unity
+UnityProject/build/

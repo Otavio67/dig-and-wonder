@@ -52,14 +52,39 @@ namespace DigAndWonder.Editor
             EditorApplication.Exit(succeeded ? 0 : 1);
         }
 
-        private static string GetBuildOutputPath()
+        /// <summary>Build Windows para testar no PC em janela retrato 540x960 (redimensionável).</summary>
+        [MenuItem("Dig & Wonder/Build Windows (.exe)")]
+        public static void BuildWindowsPlayer()
+        {
+            EnsureProjectSetup();
+            EnemyPresentationBaker.Bake();
+            PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+            PlayerSettings.defaultScreenWidth = 540;
+            PlayerSettings.defaultScreenHeight = 960;
+            PlayerSettings.resizableWindow = true;
+            PlayerSettings.runInBackground = true;
+            AssetDatabase.SaveAssets();
+            string outputPath = GetBuildOutputPath("../../.tools/build/windows/DigAndWonder.exe");
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+            string[] scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled)
+                .Select(scene => scene.path).ToArray();
+            if (scenes.Length == 0)
+                throw new System.InvalidOperationException("Nenhuma cena está habilitada para o build.");
+
+            BuildReport report = BuildPipeline.BuildPlayer(scenes, outputPath, BuildTarget.StandaloneWindows64, BuildOptions.None);
+            bool succeeded = report.summary.result == BuildResult.Succeeded;
+            Debug.Log($"[DigAndWonderBuild] {report.summary.result}: {outputPath} ({report.summary.totalSize} bytes)");
+            if (Application.isBatchMode) EditorApplication.Exit(succeeded ? 0 : 1);
+        }
+
+        private static string GetBuildOutputPath(string fallback = "../../.tools/build/DigAndWonder-debug.apk")
         {
             string[] arguments = System.Environment.GetCommandLineArgs();
             for (int i = 0; i < arguments.Length - 1; i++)
             {
                 if (arguments[i] == "-buildOutput") return Path.GetFullPath(arguments[i + 1]);
             }
-            return Path.GetFullPath(Path.Combine(Application.dataPath, "../../.tools/build/DigAndWonder-debug.apk"));
+            return Path.GetFullPath(Path.Combine(Application.dataPath, fallback));
         }
 
         private static void WaitForBatchPreparation()
