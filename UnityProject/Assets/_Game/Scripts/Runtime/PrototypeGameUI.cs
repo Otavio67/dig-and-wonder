@@ -276,7 +276,7 @@ namespace DigAndWonder
             RectTransform avatar = MakeArtPanel("Pilot avatar", combatRoot, Steel, "hud_panel", 0.025f, 0.90f, 0.175f, 0.978f);
             RectTransform avatarCrop = Region("Portrait crop", avatar, .07f, .12f, .93f, .94f);
             avatarCrop.gameObject.AddComponent<RectMask2D>();
-            MakeIconSprite(avatarCrop, FindResourceSprite("Art/Drill/drill_pioneira", "idle_00"), -.25f, -.24f, 1.25f, 1.26f, Color.white);
+            MakeIconSprite(avatarCrop, FindResourceSprite("Art/Drill/drill_pioneira", "idle_00"), -.10f, -.02f, 1.10f, 1.12f, Color.white);
             MakeArtPanel("Gold wallet", combatRoot, Color.white, "wallet_panel", 0.225f, 0.92f, 0.505f, 0.978f);
             walletLabel = MakeLabel("Wallet", combatRoot, "0", 36, White, new Vector2(0.315f, 0.925f), new Vector2(0.49f, 0.97f), TextAlignmentOptions.Center);
             MakeArtPanel("Crystal wallet", combatRoot, Color.white, "crystal_wallet", 0.52f, 0.92f, 0.82f, 0.978f);
@@ -297,9 +297,11 @@ namespace DigAndWonder
             missionPlate.raycastTarget=false;
             if (uiAssetSprites.TryGetValue("skin_stat", out Sprite missionSkin)) { missionPlate.sprite = missionSkin; missionPlate.type = Image.Type.Sliced; }
             else missionPlate.color = Color.clear;
-            MakeIcon(missionPanel, "mission", .035f, .18f, .125f, .82f, Color.white);
-            missionLabel = MakeLabel("Mission", missionPanel, "MISSÃO 01   DERROTE 10 INIMIGOS", 24, Cream,
-                new Vector2(0.16f, 0.22f), new Vector2(0.67f, 0.78f), TextAlignmentOptions.Left);
+            MakeIcon(missionPanel, "mission", .03f, .16f, .12f, .84f, Color.white);
+            // Texto começa depois da tampa dourada da placa, sem encostar na emenda.
+            missionLabel = MakeLabel("Mission", missionPanel, "MISSÃO 01   DERROTE 10 INIMIGOS", 26, Cream,
+                new Vector2(0.20f, 0.20f), new Vector2(0.68f, 0.80f), TextAlignmentOptions.Left);
+            missionLabel.fontStyle = FontStyles.Bold;
             missionReward = MakeLabel("Mission reward", missionPanel, "", 21, Gold,
                 new Vector2(0.69f, 0.20f), new Vector2(0.94f, 0.80f), TextAlignmentOptions.Center);
             missionReward.outlineWidth = .15f;
@@ -416,6 +418,9 @@ namespace DigAndWonder
                 new Vector2(0.04f, 0.462f), new Vector2(0.38f, 0.493f), TextAlignmentOptions.Left);
             healthLabel.outlineWidth = .2f;
             healthLabel.outlineColor = Ink;
+            // Ícone dedicado de vida ao lado do número (guia, seção 12: sem glifos no lugar de ícones).
+            MakeIcon(healthLabel.transform, "health", 0f, 0f, .17f, 1f, Color.white);
+            healthLabel.margin = new Vector4(52f, 0f, 0f, 0f);
             playerHealthTrack = MakePanel("Health track", worldPanel, Ink, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             healthFill = MakePanel("Health fill", worldPanel, Mint, new Vector2(0.04f, 0.448f), new Vector2(0.38f, 0.46f), Vector2.zero, Vector2.zero).GetComponent<Image>();
             bossBar = MakeArtPanel("Boss health", worldPanel, new Color(.10f, .19f, .25f), "hud_panel", .08f, .68f, .92f, .755f);
@@ -441,7 +446,7 @@ namespace DigAndWonder
             // Painel de melhorias em chapa ilustrada. Ocupa o espaço que antes sobrava sob os poderes,
             // mostrando mais linhas sem comprimir o cenário; FORÇA passou para o cabeçalho.
             // Peças de nove partes esticavam as tampas douradas nesta altura; a chapa usa friso de latão como o dock.
-            menuPanel = MakeArtPanel("Upgrade panel", combatRoot, new Color(.07f, .15f, .20f), "hud_panel", 0.008f, 0.09f, 0.992f, 0.352f);
+            menuPanel = MakeArtPanel("Upgrade panel", combatRoot, new Color(.07f, .15f, .20f), "hud_panel", 0.008f, 0.09f, 0.992f, 0.343f);
             MakePanel("Panel brass edge", menuPanel, new Color(.85f, .58f, .16f), new Vector2(.02f, .985f), new Vector2(.98f, 1f), Vector2.zero, Vector2.zero)
                 .GetComponent<Image>().raycastTarget = false;
             MakePanel("Panel title rule", menuPanel, new Color(.85f, .58f, .16f, .55f), new Vector2(.05f, .868f), new Vector2(.95f, .872f), Vector2.zero, Vector2.zero)
@@ -1208,7 +1213,8 @@ namespace DigAndWonder
                 view.Coin.gameObject.SetActive(unlocked && !maxed);
                 view.Price.text = !unlocked ? "NV. " + rule.UnlockLevel : maxed ? "MÁXIMO" : GameplayHudModel.Number(rule.Cost(level));
                 view.Button.transform.Find("Upgrade action title").GetComponent<TextMeshProUGUI>().text = !unlocked ? "REQUER" : maxed ? "MÁXIMO" : "MELHORAR";
-                view.Price.rectTransform.anchorMin = new Vector2(unlocked && !maxed ? .41f : .25f, .10f);
+                view.Price.rectTransform.anchorMin = new Vector2(unlocked && !maxed ? .39f : .14f, .18f);
+                view.Price.alignment = unlocked && !maxed ? TextAlignmentOptions.Left : TextAlignmentOptions.Center;
                 view.Button.interactable = driver.IsReady && GameplayHudModel.CanBuyUpgrade(sim.Profile, driver.Economy, entry.Key);
                 // Guia, seção 9: ouro insuficiente dessatura a face e mantém o preço legível; coral fica para perigo.
                 bool affordable = unlocked && !maxed && sim.Profile.Gold >= rule.Cost(level);
@@ -1246,7 +1252,11 @@ namespace DigAndWonder
             foreach (KeyValuePair<string, Image> button in tabButtonImages)
                 button.Value.color = new Color(1f, 1f, 1f, 0f);
             foreach (KeyValuePair<string, GameObject> item in navHighlights)
+            {
                 item.Value.SetActive(item.Key == currentTab);
+                Transform navLabel = item.Value.transform.parent.Find("Tab label");
+                if (navLabel != null) navLabel.GetComponent<TextMeshProUGUI>().color = item.Key == currentTab ? Cyan : Cream;
+            }
             menuTitle.rectTransform.anchorMax = new Vector2(.965f, .99f);
         }
 
@@ -1415,23 +1425,32 @@ namespace DigAndWonder
         private void BuildPowerBar(RectTransform parent)
         {
 
-            RectTransform auto = MakeArtPanel("Auto attack", parent, Color.white, "power_round", 0.024f, 0.359f, 0.17f, 0.415f);
+            // Círculo só com ícone/AUTO; estado (ON, recarga, nível) fica numa linha própria abaixo,
+            // sem atravessar o aro do slot.
+            const float slotBottom = 0.371f, slotTop = 0.419f, stateBottom = 0.347f, stateTop = 0.371f;
+            RectTransform auto = MakeArtPanel("Auto attack", parent, Color.white, "power_round", 0.024f, slotBottom, 0.17f, slotTop);
             autoToggleButton = auto.gameObject.AddComponent<Button>();
             autoToggleButton.targetGraphic = auto.GetComponent<Image>();
             auto.GetComponent<Image>().raycastTarget = true;
             autoToggleButton.onClick.AddListener(ToggleAutoAttack);
-            MakeLabel("Auto label", auto, "AUTO", 28, Cream, new Vector2(0.08f, 0.50f), new Vector2(0.92f, 0.92f), TextAlignmentOptions.Center);
-            autoStateLabel = MakeLabel("Auto state", auto, "ON", 25, Cyan, new Vector2(0.12f, 0.09f), new Vector2(0.88f, 0.49f), TextAlignmentOptions.Center);
+            TextMeshProUGUI autoTitle = MakeLabel("Auto label", auto, "AUTO", 22, Cream, new Vector2(0.22f, 0.32f), new Vector2(0.78f, 0.68f), TextAlignmentOptions.Center);
+            autoTitle.outlineWidth = .2f;
+            autoTitle.outlineColor = Ink;
+            autoStateLabel = MakeLabel("Auto state", parent, "ON", 21, Cyan, new Vector2(0.024f, stateBottom), new Vector2(0.17f, stateTop), TextAlignmentOptions.Center);
+            autoStateLabel.outlineWidth = .2f;
+            autoStateLabel.outlineColor = Ink;
 
             string[] powers = { "special", "attack", "core", "shield", "bolt" };
             for (int i = 0; i < powers.Length; i++)
             {
                 float left = 0.19f + i * 0.155f;
                 RectTransform slot = MakeArtPanel("Power slot " + i, parent, Color.white, "power_round",
-                    left, 0.359f, left + 0.135f, 0.415f);
+                    left, slotBottom, left + 0.135f, slotTop);
                 powerFaces[i] = slot.GetComponent<Image>();
-                powerIcons[i] = MakeIcon(slot, powers[i], 0.12f, 0.30f, 0.88f, 0.94f, Color.white);
-                powerLabels[i] = MakeLabel("Power state", slot, "", 19, Cream, new Vector2(0.04f, 0.06f), new Vector2(0.96f, 0.33f), TextAlignmentOptions.Center);
+                powerIcons[i] = MakeIcon(slot, powers[i], 0.17f, 0.17f, 0.83f, 0.83f, Color.white);
+                powerLabels[i] = MakeLabel("Power state", parent, "", 19, Cream, new Vector2(left - 0.01f, stateBottom), new Vector2(left + 0.145f, stateTop), TextAlignmentOptions.Center);
+                powerLabels[i].outlineWidth = .2f;
+                powerLabels[i].outlineColor = Ink;
                 int powerIndex = i;
                 MakeOverlayButton("Inspect power " + i, slot, "", 15, 0, 0, 1, 1, () => OpenPower(powerIndex));
             }
@@ -1572,24 +1591,30 @@ namespace DigAndWonder
             rowImage.type = Image.Type.Sliced;
             rowImage.color = illustratedRow ? Color.white : new Color(.15f, .25f, .31f);
             rowImage.raycastTarget = false;
-            RectTransform iconFrame = MakeArtPanel("Upgrade icon", rowRect, new Color(.06f, .13f, .18f), "hud_panel", 0.035f, 0.11f, 0.195f, 0.89f);
-            MakeIcon(iconFrame, icon, 0.05f, 0.30f, 0.95f, 0.98f, Color.white);
+            // A caixa do ícone cobre a tampa quadrada de latão da moldura, evitando peças aparecendo pela borda.
+            RectTransform iconFrame = MakeArtPanel("Upgrade icon", rowRect, new Color(.06f, .13f, .18f), "hud_panel", 0.008f, 0.06f, 0.19f, 0.94f);
+            MakeIcon(iconFrame, icon, 0.18f, 0.36f, 0.82f, 0.92f, Color.white);
             TextMeshProUGUI levelLabel = MakeLabel("Upgrade level", iconFrame, "NV. 0", 22, Cream,
-                new Vector2(0.06f, 0.08f), new Vector2(0.94f, 0.30f), TextAlignmentOptions.Center);
+                new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.32f), TextAlignmentOptions.Center);
             levelLabel.fontStyle = FontStyles.Bold;
             levelLabel.outlineWidth = 0.15f;
             levelLabel.outlineColor = Ink;
             upgradeLevelLabels[title] = levelLabel;
             TextMeshProUGUI titleLabel = MakeLabel("Upgrade title", rowRect, title, 28, Cream, new Vector2(0.23f, 0.52f), new Vector2(0.60f, 0.86f), TextAlignmentOptions.Left);
             titleLabel.fontStyle = FontStyles.Bold;
-            TextMeshProUGUI valueLabel = MakeLabel("Upgrade value", rowRect, value, 23, new Color(.78f, .84f, .87f), new Vector2(0.23f, 0.17f), new Vector2(0.60f, 0.49f), TextAlignmentOptions.Left);
+            TextMeshProUGUI valueLabel = MakeLabel("Upgrade value", rowRect, value, 25, new Color(.86f, .90f, .92f), new Vector2(0.23f, 0.17f), new Vector2(0.58f, 0.49f), TextAlignmentOptions.Left);
             if (readingFont != null) valueLabel.font = readingFont;
             valueLabel.fontStyle = FontStyles.Bold;
-            RectTransform button = MakeArtActionButton("Upgrade action", rowRect, "MELHORAR", 24, 0.615f, 0.12f, 0.895f, 0.88f, action, "hud_panel");
+            RectTransform button = MakeArtActionButton("Upgrade action", rowRect, "MELHORAR", 24, 0.60f, 0.08f, 0.895f, 0.92f, action, "hud_panel");
             button.GetComponentInChildren<TextMeshProUGUI>().gameObject.SetActive(false);
-            MakeLabel("Upgrade action title", button, "MELHORAR", 24, Cream, new Vector2(.06f, .50f), new Vector2(.94f, .88f), TextAlignmentOptions.Center);
-            MakeIcon(button, "gold_coin", .25f, .13f, .39f, .44f, Color.white);
-            TextMeshProUGUI costLabel = MakeLabel("Upgrade cost", button, "", 25, Cream, new Vector2(.41f, .10f), new Vector2(.90f, .46f), TextAlignmentOptions.Left);
+            // Conteúdo dentro do miolo do botão: a moldura ilustrada ocupa ~14% de cada borda.
+            TextMeshProUGUI actionTitle = MakeLabel("Upgrade action title", button, "MELHORAR", 21, Cream, new Vector2(.14f, .53f), new Vector2(.86f, .80f), TextAlignmentOptions.Center);
+            actionTitle.outlineWidth = .2f;
+            actionTitle.outlineColor = Ink;
+            MakeIcon(button, "gold_coin", .24f, .20f, .37f, .48f, Color.white);
+            TextMeshProUGUI costLabel = MakeLabel("Upgrade cost", button, "", 26, Cream, new Vector2(.39f, .18f), new Vector2(.86f, .50f), TextAlignmentOptions.Left);
+            costLabel.outlineWidth = .2f;
+            costLabel.outlineColor = Ink;
             buttonComponent = button.GetComponent<Button>();
             buttonLabel = costLabel;
             return button;
@@ -1691,18 +1716,21 @@ namespace DigAndWonder
             button.targetGraphic = image;
             button.onClick.AddListener(action);
             // Aba ativa usa a placa ilustrada ciano com cristal (mesma da loja); sem ela, mantém o traço ciano.
+            // Placa inteira (sem esticar em nove partes) atrás do ícone; o rótulo fica abaixo dela, sem cruzar a borda.
             bool illustratedTab = uiAssetSprites.TryGetValue("skin_tab_active", out Sprite activeSkin);
             RectTransform highlight = illustratedTab
-                ? MakePanel("Active nav glow", rect, Color.white, new Vector2(0.03f, 0.03f), new Vector2(0.97f, 0.97f), Vector2.zero, Vector2.zero)
+                ? MakePanel("Active nav glow", rect, Color.white, new Vector2(0.02f, 0.37f), new Vector2(0.98f, 0.99f), Vector2.zero, Vector2.zero)
                 : MakePanel("Active nav glow", rect, Cyan, new Vector2(0.12f, 0.01f), new Vector2(0.88f, 0.055f), Vector2.zero, Vector2.zero);
             Image highlightImage = highlight.GetComponent<Image>();
             highlightImage.raycastTarget = false;
-            if (illustratedTab) { highlightImage.sprite = activeSkin; highlightImage.type = Image.Type.Sliced; }
+            if (illustratedTab) { highlightImage.sprite = activeSkin; highlightImage.type = Image.Type.Simple; highlightImage.preserveAspect = true; }
             navHighlights[text] = highlight.gameObject;
             highlight.gameObject.SetActive(stateColor == Cyan);
-            MakeIcon(rect, icon, .23f, .40f, .77f, .90f, Color.white);
+            MakeIcon(rect, icon, .30f, .46f, .70f, .90f, Color.white);
             TextMeshProUGUI label = MakeLabel("Tab label", rect, text, 22, Cream,
-                new Vector2(.03f, .04f), new Vector2(.97f, .38f), TextAlignmentOptions.Center);
+                new Vector2(.03f, .05f), new Vector2(.97f, .36f), TextAlignmentOptions.Center);
+            label.outlineWidth = .18f;
+            label.outlineColor = Ink;
             label.fontStyle = FontStyles.Bold;
             return rect;
         }

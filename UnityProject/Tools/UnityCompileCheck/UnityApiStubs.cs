@@ -70,6 +70,7 @@ namespace UnityEngine
     public class CanvasRenderer : Component { }
     public enum ScreenOrientation { Portrait }
     public enum UIOrientation { Portrait }
+    public enum FullScreenMode { ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed }
     public struct Rect
     {
         public float xMin, yMin, xMax, yMax;
@@ -134,6 +135,7 @@ namespace UnityEngine
         public static string version => "0.0.24";
         public static string persistentDataPath => "/tmp";
         public static string dataPath => "/tmp/UnityProject/Assets";
+        public static bool isBatchMode => true;
     }
     public sealed class WaitForSecondsRealtime { public WaitForSecondsRealtime(float seconds) { } }
     public static class Time { public static float deltaTime; public static float unscaledDeltaTime; }
@@ -241,7 +243,7 @@ namespace TMPro
     {
         public TMP_FontAsset font;
         public string text; public int fontSize; public bool enableAutoSizing; public float fontSizeMin, fontSizeMax; public TextAlignmentOptions alignment; public TextWrappingModes textWrappingMode; public FontStyles fontStyle;
-        public float outlineWidth; public UnityEngine.Color outlineColor;
+        public float outlineWidth; public UnityEngine.Color outlineColor; public UnityEngine.Vector4 margin;
     }
 }
 
@@ -303,6 +305,9 @@ namespace UnityEditor
     {
         public static UnityEngine.UIOrientation defaultInterfaceOrientation;
         public static string companyName, productName;
+        public static UnityEngine.FullScreenMode fullScreenMode;
+        public static int defaultScreenWidth, defaultScreenHeight;
+        public static bool resizableWindow, runInBackground;
     }
     public sealed class SerializedObject : IDisposable
     {
@@ -319,7 +324,7 @@ namespace UnityEditor
         public EditorBuildSettingsScene(string path, bool enabled) { }
     }
     public static class EditorBuildSettings { public static EditorBuildSettingsScene[] scenes; }
-    public enum BuildTarget { Android }
+    public enum BuildTarget { Android, StandaloneWindows64 }
     public enum BuildOptions { None }
     public static class BuildPipeline
     {

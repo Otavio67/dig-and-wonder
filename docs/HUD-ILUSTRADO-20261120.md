@@ -21,6 +21,16 @@ O usuário pediu que eu definisse e aplicasse uma melhoria definitiva no HUD. Pe
 
 Economia, save, regras de combate e catálogos não foram alterados.
 
+## Segunda rodada — ícones, textos e botões
+O usuário pediu mais ajustes em todas as áreas, principalmente ícones, textos fora do lugar e botões. A revisão usou capturas em 1080 × 1920 (`DW_UI_REVIEW_SUPERSIZE=2`), recortadas por região.
+- **Topo:** o retrato mostra a broca inteira, e não mais cortada.
+- **Cenário:** a vida da broca ganhou o ícone dedicado de coração ao lado do número.
+- **Missão:** o texto começa depois da tampa dourada e ficou maior.
+- **Poderes e AUTO:** o círculo mostra só o ícone ou o AUTO, centralizado e maior. O estado (ON/OFF, recarga, 0/5, NV.x) foi para uma linha própria abaixo, sem cruzar o aro.
+- **Linhas de melhoria:** a caixa do ícone cobre a peça de latão que aparecia pela borda e o valor ficou maior e mais claro. "MELHORAR" e o preço ficam dentro do miolo do botão, sem encostar na moldura. Bloqueado e Máximo centralizam o texto.
+- **Navegação:** a placa ciano inteira fica atrás do ícone, sem esticar em nove partes. O rótulo fica abaixo dela, em ciano na aba ativa, e todos os rótulos ganharam contorno.
+- **Compilação com stubs:** recebeu as APIs usadas pelo build Windows e por `TMP margin`. Na primeira rodada esse check quebrava, o que teria falhado o CI.
+
 ## Build Windows
 Menu **Dig & Wonder → Build Windows (.exe)** ou linha de comando:
 

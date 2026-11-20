@@ -40,6 +40,7 @@ namespace DigAndWonder.Editor
             catch(Exception e){Debug.LogWarning("[UIReview] GameView size: "+e.Message);}
             EditorApplication.isPlaying=true;Attach();
         }
+        static void Shot(string folder,string file){int s;ScreenCapture.CaptureScreenshot(Path.Combine(folder,file),int.TryParse(Environment.GetEnvironmentVariable("DW_UI_REVIEW_SUPERSIZE"),out s)&&s>1?s:1);}
         static void Call(PrototypeGameUI ui,string name,params object[] args)=>typeof(PrototypeGameUI).GetMethod(name,Private).Invoke(ui,args);
         static void Tick()
         {
@@ -56,20 +57,20 @@ namespace DigAndWonder.Editor
             try
             {
                 if(step==0){Call(ui,"BeginMining");Call(ui,"OpenTopMenu","perfil-info");}
-                else if(step==1) ScreenCapture.CaptureScreenshot(Path.Combine(folder,"perfil.png"));
+                else if(step==1) Shot(folder,"perfil.png");
                 else if(step==2) Call(ui,"OpenTopMenu","loja-cristais");
-                else if(step==3) ScreenCapture.CaptureScreenshot(Path.Combine(folder,"loja.png"));
+                else if(step==3) Shot(folder,"loja.png");
                 else if(step==4) Call(ui,"OpenTopMenu","configuracoes");
-                else if(step==5) ScreenCapture.CaptureScreenshot(Path.Combine(folder,"configuracoes.png"));
+                else if(step==5) Shot(folder,"configuracoes.png");
                 else if(step==6) Call(ui,"CloseTopMenu");
-                else if(step==7) ScreenCapture.CaptureScreenshot(Path.Combine(folder,"hud.png"));
+                else if(step==7) Shot(folder,"hud.png");
                 else if(step==8)
                 {
                     var driver=UnityEngine.Object.FindFirstObjectByType<AutoBattleDriver>();
                     driver.Simulation.Run.IsPlayerDefeated=true;driver.Simulation.Run.PlayerHealth=0;
                     Call(ui,"OpenDefeatPopup");
                 }
-                else if(step==9){ScreenCapture.CaptureScreenshot(Path.Combine(folder,"derrota.png"));next=EditorApplication.timeSinceStartup+11;SessionState.SetInt(Key+"step",10);return;}
+                else if(step==9){Shot(folder,"derrota.png");next=EditorApplication.timeSinceStartup+11;SessionState.SetInt(Key+"step",10);return;}
                 else if(step==10)
                 {
                     var driver=UnityEngine.Object.FindFirstObjectByType<AutoBattleDriver>();
